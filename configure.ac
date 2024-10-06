@@ -1721,12 +1721,12 @@ AS_IF([test "x$with_threads" = "xnone"],
 
 AS_IF([test "x$USE_THREADS" = "xposix"],
   [CC="$PTHREAD_CC"
-  AC_DEFINE([MHD_USE_POSIX_THREADS],[1],[define to use pthreads])
+  AC_DEFINE([mhd_THREADS_KIND_POSIX],[1],[define to use pthreads])
   MHD_LIB_CFLAGS="$MHD_LIB_CFLAGS $PTHREAD_CFLAGS"
   MHD_LIBDEPS="$PTHREAD_LIBS $MHD_LIBDEPS"
   MHD_LIBDEPS_PKGCFG="$PTHREAD_LIBS $MHD_LIBDEPS_PKGCFG"],
   [AS_IF([test "x$USE_THREADS" = "xw32"],
-   [AC_DEFINE([MHD_USE_W32_THREADS],[1],[define to use W32 threads])])])
+   [AC_DEFINE([mhd_THREADS_KIND_W32],[1],[define to use W32 threads])])])
 AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
 AM_CONDITIONAL([MHD_USE_THREADS], [test "x$USE_THREADS" != "xnone"])
@@ -1905,11 +1905,11 @@ choke me
 #endif
 
 /* Keep in sync with mhd_threads.h */
-#if defined(MHD_USE_POSIX_THREADS) && (defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI) || \
+#if defined(mhd_THREADS_KIND_POSIX) && (defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI) || \
     defined(HAVE_PTHREAD_SETNAME_NP_GNU) || defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) || defined(HAVE_PTHREAD_SETNAME_NP_DARWIN) || \
     defined(HAVE_PTHREAD_SETNAME_NP_NETBSD) )
 (void) 0; /* no-op */
-#elif defined(MHD_USE_W32_THREADS) && defined(_MSC_FULL_VER)
+#elif defined(mhd_THREADS_KIND_W32) && defined(_MSC_FULL_VER)
 (void) 0; /* no-op */
 #else
 #error No thread name function is available.

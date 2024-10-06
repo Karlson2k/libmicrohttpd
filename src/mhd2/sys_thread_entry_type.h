@@ -29,10 +29,10 @@
 
 #include "mhd_sys_options.h"
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 #  define mhd_THRD_RTRN_TYPE void*
 #  define mhd_THRD_CALL_SPEC
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
 #  define mhd_THRD_RTRN_TYPE unsigned
 #  define mhd_THRD_CALL_SPEC __stdcall
 #endif

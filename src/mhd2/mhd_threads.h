@@ -38,12 +38,12 @@
 
 #include "mhd_sys_options.h"
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 #  include <pthread.h>
 #  ifndef MHD_USE_THREADS
 #    define MHD_USE_THREADS 1
 #  endif
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
 #  include <windows.h>
 #  ifndef MHD_USE_THREADS
 #    define MHD_USE_THREADS 1
@@ -56,12 +56,12 @@
 #include "sys_base_types.h"
 #include "sys_thread_entry_type.h"
 
-#if defined(MHD_USE_POSIX_THREADS) && defined(MHD_USE_W32_THREADS)
-#  error Both MHD_USE_POSIX_THREADS and MHD_USE_W32_THREADS are defined
-#endif /* MHD_USE_POSIX_THREADS && MHD_USE_W32_THREADS */
+#if defined(mhd_THREADS_KIND_POSIX) && defined(mhd_THREADS_KIND_W32)
+#  error Both mhd_THREADS_KIND_POSIX and mhd_THREADS_KIND_W32 are defined
+#endif /* mhd_THREADS_KIND_POSIX && mhd_THREADS_KIND_W32 */
 
 #ifndef MHD_NO_THREAD_NAMES
-#  if defined(MHD_USE_POSIX_THREADS)
+#  if defined(mhd_THREADS_KIND_POSIX)
 #    if defined(HAVE_PTHREAD_SETNAME_NP_GNU) || \
   defined(HAVE_PTHREAD_SET_NAME_NP_FREEBSD) || \
   defined(HAVE_PTHREAD_SETNAME_NP_DARWIN) || \
@@ -70,7 +70,7 @@
   defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI)
 #      define MHD_USE_THREAD_NAME_
 #    endif /* HAVE_PTHREAD_SETNAME_NP */
-#  elif defined(MHD_USE_W32_THREADS)
+#  elif defined(mhd_THREADS_KIND_W32)
 #    ifdef _MSC_FULL_VER
 /* Thread names only available with VC compiler */
 #      define MHD_USE_THREAD_NAME_
@@ -80,19 +80,19 @@
 
 /* ** Thread handle - used to control the thread ** */
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 /**
  * The native type to control the thread from other threads
  */
 typedef pthread_t mhd_thread_handle_native;
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
 /**
  * The native type to control the thread from other threads
  */
 typedef HANDLE mhd_thread_handle_native;
 #endif
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 #  if defined(__gnu_linux__) || \
   (defined(__linux__) && defined(__GLIBC__))
 /* The next part of code is disabled because it relies on undocumented
@@ -107,7 +107,7 @@ typedef HANDLE mhd_thread_handle_native;
         ((mhd_thread_handle_native) 0)
 #  endif /* Disabled code */
 #  endif /* __gnu_linux__ || (__linux__ && __GLIBC__) */
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
 /* On W32 the invalid value for thread handle is described directly in
   the official documentation. */
 /**
@@ -115,9 +115,9 @@ typedef HANDLE mhd_thread_handle_native;
  */
 #  define mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID \
         ((mhd_thread_handle_native) NULL)
-#endif /* MHD_USE_W32_THREADS */
+#endif /* mhd_THREADS_KIND_W32 */
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 /**
  * Wait until specified thread is ended and free the thread handle on success.
  * @param native_handle the handle to watch
@@ -125,7 +125,7 @@ typedef HANDLE mhd_thread_handle_native;
  */
 #  define mhd_join_thread(native_handle) \
         (! pthread_join ((native_handle), NULL))
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
 /**
  * Wait until specified thread is ended and the free thread handle on success.
  * @param native_handle the handle to watch
@@ -211,7 +211,7 @@ typedef mhd_thread_handle_native mhd_thread_handle;
 
 /* ** Thread ID - used to check threads match ** */
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 /**
  * The native type used to check whether the current thread matches
  * the expected thread
@@ -229,7 +229,7 @@ typedef pthread_t mhd_thread_ID_native;
  */
 #  define mhd_thread_ID_native_equal(id1,id2) \
         (pthread_equal ((id1),(id2)))
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
 /**
  * The native type used to check whether the current thread matches
  * the expected thread
@@ -258,7 +258,7 @@ typedef DWORD mhd_thread_ID_native;
         mhd_thread_ID_native_equal ((id), mhd_thread_ID_native_current ())
 
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 #  if defined(mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID)
 /**
  * The native invalid value for native thread ID
@@ -266,13 +266,13 @@ typedef DWORD mhd_thread_ID_native;
 #    define MHD_THREAD_ID_NATIVE_VALUE_INVALID_ \
         mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID
 #  endif /* mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID */
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
 /**
  * The native invalid value for native thread ID
  */
  #  define MHD_THREAD_ID_NATIVE_VALUE_INVALID_ \
          ((mhd_thread_ID_native) 0)
-#endif /* MHD_USE_W32_THREADS */
+#endif /* mhd_THREADS_KIND_W32 */
 
 #if ! defined(MHD_THREAD_ID_NATIVE_VALUE_INVALID_)
 /**
@@ -356,7 +356,7 @@ typedef mhd_thread_ID_native mhd_thread_ID;
         mhd_thread_ID_set_native ((ID_ptr),mhd_thread_ID_native_current ())
 
 
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
 #  if defined(mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID) && \
   ! defined(MHD_THREAD_ID_NATIVE_VALUE_INVALID_)
 #    error \
@@ -366,7 +366,7 @@ typedef mhd_thread_ID_native mhd_thread_ID;
 #    error \
   MHD_THREAD_ID_NATIVE_VALUE_INVALID_ is not defined, but MHD_THREAD_ID_NATIVE_VALUE_INVALID_ is defined
 #  endif
-#endif /* MHD_USE_POSIX_THREADS */
+#endif /* mhd_THREADS_KIND_POSIX */
 
 /* When staring a new thread, the kernel (and thread implementation) may
  * pause the calling (initial) thread and start the new thread.
@@ -396,7 +396,7 @@ typedef mhd_thread_ID_native mhd_thread_ID;
 /* * handle - must be valid when other thread knows that particular thread
      is started.
    * ID     - must be valid when code is executed inside thread */
-#if defined(MHD_USE_POSIX_THREADS) && \
+#if defined(mhd_THREADS_KIND_POSIX) && \
   defined(MHD_PTHREAD_CREATE__SET_ID_BEFORE_START_THREAD) && \
   defined(mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID) && \
   defined(MHD_THREAD_ID_NATIVE_VALUE_INVALID_) && \
@@ -408,7 +408,7 @@ union mhd_thread_handle_ID_
 };
 typedef union mhd_thread_handle_ID_ mhd_thread_handle_ID;
 #  define MHD_THREAD_HANDLE_ID_IS_UNION 1
-#else  /* !MHD_USE_POSIX_THREADS
+#else  /* !mhd_THREADS_KIND_POSIX
           || !MHD_PTHREAD_CREATE__SET_ID_BEFORE_START_THREAD
           || !mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID
           || !MHD_THREAD_ID_NATIVE_VALUE_INVALID_
@@ -419,7 +419,7 @@ struct mhd_thread_handle_ID_
   mhd_thread_ID ID;            /**< To be used in the thread itself */
 };
 typedef struct mhd_thread_handle_ID_ mhd_thread_handle_ID;
-#endif /* !MHD_USE_POSIX_THREADS
+#endif /* !mhd_THREADS_KIND_POSIX
           || !MHD_PTHREAD_CREATE__SET_ID_BEFORE_START_THREAD
           || !mhd_THREAD_HANDLE_NATIVE_VALUE_INVALID
           || !MHD_THREAD_ID_NATIVE_VALUE_INVALID_
@@ -471,9 +471,9 @@ typedef struct mhd_thread_handle_ID_ mhd_thread_handle_ID;
         mhd_thread_ID_is_valid ((hndl_id).ID)
 
 #if defined(MHD_THREAD_HANDLE_ID_IS_UNION)
-#  if defined(MHD_USE_W32_THREADS)
+#  if defined(mhd_THREADS_KIND_W32)
 #    error mhd_thread_handle_ID cannot be a union with W32 threads
-#  endif /* MHD_USE_W32_THREADS */
+#  endif /* mhd_THREADS_KIND_W32 */
 /**
  * Set current thread ID in the variable pointed by the @a hndl_id_ptr
  */

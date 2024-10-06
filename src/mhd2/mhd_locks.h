@@ -41,14 +41,14 @@
 
 #ifdef MHD_USE_THREADS
 
-#if defined(MHD_USE_W32_THREADS)
+#if defined(mhd_THREADS_KIND_W32)
 #  define mhd_MUTEX_KIND_W32_CS 1
 #  if _WIN32_WINNT >= 0x0602 /* Win8 or later */
 #    include <synchapi.h>
 #  else
 #    include <windows.h>
 #  endif
-#elif defined(HAVE_PTHREAD_H) && defined(MHD_USE_POSIX_THREADS)
+#elif defined(HAVE_PTHREAD_H) && defined(mhd_THREADS_KIND_POSIX)
 #  define mhd_MUTEX_KIND_PTHREAD 1
 #  include <pthread.h>
 #  ifdef HAVE_STDDEF_H

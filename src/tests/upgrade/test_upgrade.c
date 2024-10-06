@@ -61,13 +61,13 @@
 #  endif /* HAVE_FORK && HAVE_WAITPID */
 #endif /* HTTPS_SUPPORT */
 
-#if defined(MHD_POSIX_SOCKETS)
-#  ifdef MHD_WINSOCK_SOCKETS
-#    error Both MHD_POSIX_SOCKETS and MHD_WINSOCK_SOCKETS are defined
-#  endif /* MHD_WINSOCK_SOCKETS */
-#elif ! defined(MHD_WINSOCK_SOCKETS)
-#  error Neither MHD_POSIX_SOCKETS nor MHD_WINSOCK_SOCKETS are defined
-#endif /* MHD_WINSOCK_SOCKETS */
+#if defined(MHD_SOCKETS_KIND_POSIX)
+#  ifdef MHD_SOCKETS_KIND_WINSOCK
+#    error Both MHD_SOCKETS_KIND_POSIX and MHD_SOCKETS_KIND_WINSOCK are defined
+#  endif /* MHD_SOCKETS_KIND_WINSOCK */
+#elif ! defined(MHD_SOCKETS_KIND_WINSOCK)
+#  error Neither MHD_SOCKETS_KIND_POSIX nor MHD_SOCKETS_KIND_WINSOCK are defined
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 
 
 #ifndef mhd_SSTR_LEN
@@ -89,7 +89,7 @@
 #  define SHUT_RDWR SD_BOTH
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  if defined(ENETUNREACH)
 #    define mhdt_SCKT_HARD_ERR ENETUNREACH
 #  elif defined(ENOTCONN)
@@ -103,7 +103,7 @@
 #  else
 #    define mhdt_SCKT_HARD_ERR 99 /* Fallback, never used in practice */
 #  endif
-#else /* MHD_WINSOCK_SOCKETS */
+#else /* MHD_SOCKETS_KIND_WINSOCK */
 #  define mhdt_SCKT_HARD_ERR WSAENETRESET
 #endif
 
@@ -123,9 +123,9 @@ _externalErrorExit_func (const char *errDesc, const char *funcName, int lineNum)
 
   fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
            strerror (errno));
-#ifdef MHD_WINSOCK_SOCKETS
+#ifdef MHD_SOCKETS_KIND_WINSOCK
   fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
   fflush (stderr);
   exit (99);
 }
@@ -167,9 +167,9 @@ _testErrorLog_func (const char *errDesc, const char *funcName, int lineNum)
 
   fprintf (stderr, ".\nLast errno value: %d (%s)\n", (int) errno,
            strerror (errno));
-#ifdef MHD_WINSOCK_SOCKETS
+#ifdef MHD_SOCKETS_KIND_WINSOCK
   fprintf (stderr, "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
   fflush (stderr);
 }
 
@@ -328,7 +328,7 @@ gnutlscli_connect (int *sock,
 static void
 make_blocking (MHD_Socket fd)
 {
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
   int flags;
 
   flags = fcntl (fd, F_GETFL);
@@ -337,12 +337,12 @@ make_blocking (MHD_Socket fd)
   if ((flags & ~O_NONBLOCK) != flags)
     if (-1 == fcntl (fd, F_SETFL, flags & ~O_NONBLOCK))
       externalErrorExitDesc ("fcntl() failed");
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   unsigned long flags = 0;
 
   if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
     externalErrorExitDesc ("ioctlsocket() failed");
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 }
 
 
@@ -357,7 +357,7 @@ make_blocking (MHD_Socket fd)
 static void
 make_nonblocking (MHD_Socket fd)
 {
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
   int flags;
 
   flags = fcntl (fd, F_GETFL);
@@ -366,12 +366,12 @@ make_nonblocking (MHD_Socket fd)
   if (O_NONBLOCK != (flags & O_NONBLOCK))
     if (-1 == fcntl (fd, F_SETFL, flags | O_NONBLOCK))
       externalErrorExitDesc ("fcntl() failed");
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   unsigned long flags = 1;
 
   if (0 != ioctlsocket (fd, (int) FIONBIO, &flags))
     externalErrorExitDesc ("ioctlsocket() failed");
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 }
 
 
@@ -393,13 +393,13 @@ make_nodelay (MHD_Socket fd)
                        sizeof (on_val)))
     return; /* Success exit point */
 
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
   fprintf (stderr, "Failed to enable TCP_NODELAY on socket (ignored). "
            "errno: %d (%s)\n", (int) errno, strerror (errno));
-#else /* MHD_WINSOCK_SOCKETS */
+#else /* MHD_SOCKETS_KIND_WINSOCK */
   fprintf (stderr, "Failed to enable TCP_NODELAY on socket (ignored). "
            "WSAGetLastError() value: %d\n", (int) WSAGetLastError ());
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
   fflush (stderr);
 #endif /* TCP_NODELAY */
 }
@@ -632,10 +632,10 @@ wr_wait_socket_ready_noabort_ (struct wr_socket *s,
   struct timeval tmo;
   struct timeval *tmo_ptr;
 
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
   if (FD_SETSIZE <= s->fd)
     externalErrorExitDesc ("Too large FD value");
-#endif /* ! MHD_WINSOCK_SOCKETS */
+#endif /* ! MHD_SOCKETS_KIND_WINSOCK */
   FD_ZERO (&fds);
   FD_SET (s->fd, &fds);
   if (0 <= timeout_ms)
@@ -666,12 +666,12 @@ wr_wait_socket_ready_noabort_ (struct wr_socket *s,
     fprintf (stderr, "Timeout");
   else
   {
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
     fprintf (stderr, "Error %d (%s)", (int) errno, strerror (errno));
-#else /* MHD_WINSOCK_SOCKETS */
+#else /* MHD_SOCKETS_KIND_WINSOCK */
     fprintf (stderr, "Error (WSAGetLastError code: %d)",
              (int) WSAGetLastError ());
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
   }
   fprintf (stderr, " waiting for socket to be available for %s.\n",
            (WR_WAIT_FOR_RECV == wait_for) ? "receiving" : "sending");
@@ -715,7 +715,7 @@ wr_connect_tmo (struct wr_socket *s,
     bool connect_completed = false;
 
     err = mhd_SCKT_GET_LERR ();
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
     while (! connect_completed && (EINTR == err))
     {
       connect_completed = (0 == connect (s->fd, addr, (socklen_t) length));
@@ -728,7 +728,7 @@ wr_connect_tmo (struct wr_socket *s,
           connect_completed = true;
       }
     }
-#endif /* MHD_POSIX_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_POSIX */
     if (! connect_completed &&
         (mhd_SCKT_ERR_IS_INPROGRESS (err)
          || mhd_SCKT_ERR_IS_EAGAIN (err))) /* No modern system uses EAGAIN, except W32 */

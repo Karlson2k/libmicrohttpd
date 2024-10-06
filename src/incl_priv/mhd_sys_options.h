@@ -326,11 +326,11 @@
 #endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE
           || HAVE_DARWIN_SENDFILE */
 
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX) || defined(mhd_THREADS_KIND_W32)
 #  ifndef MHD_USE_THREADS
 #    define MHD_USE_THREADS 1
 #  endif
-#endif /* MHD_USE_POSIX_THREADS || MHD_USE_W32_THREADS */
+#endif /* mhd_THREADS_KIND_POSIX || mhd_THREADS_KIND_W32 */
 
 /**
  * Macro to drop 'const' qualifier from pointer.

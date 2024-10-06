@@ -26,7 +26,7 @@
 
 #include "mhd_threads.h"
 #include "sys_null_macro.h"
-#ifdef MHD_USE_W32_THREADS
+#ifdef mhd_THREADS_KIND_W32
 #  include <process.h>
 #endif
 #if defined(MHD_USE_THREAD_NAME_)
@@ -47,7 +47,7 @@
 
 #else  /* MHD_USE_THREAD_NAME_ */
 
-#  if defined(MHD_USE_POSIX_THREADS)
+#  if defined(mhd_THREADS_KIND_POSIX)
 #    if defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || \
   defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI)
 #      define MHD_USE_THREAD_ATTR_SETNAME 1
@@ -111,7 +111,7 @@ mhd_set_thread_name (const mhd_thread_ID_native thread_id,
 #      define mhd_set_cur_thread_name(n) (! (pthread_setname_np ((n))))
 #    endif /* HAVE_PTHREAD_SETNAME_NP_DARWIN */
 
-#  elif defined(MHD_USE_W32_THREADS)
+#  elif defined(mhd_THREADS_KIND_W32)
 #    ifndef _MSC_FULL_VER
 #error Thread name available only for VC-compiler
 #    else  /* _MSC_FULL_VER */
@@ -167,7 +167,7 @@ mhd_set_thread_name (const mhd_thread_ID_native thread_id,
 #      define mhd_set_cur_thread_name(n) \
         mhd_set_thread_name ((mhd_thread_ID_native) (-1),(n))
 #    endif /* _MSC_FULL_VER */
-#  endif /* MHD_USE_W32_THREADS */
+#  endif /* mhd_THREADS_KIND_W32 */
 
 #endif /* MHD_USE_THREAD_NAME_ */
 
@@ -189,7 +189,7 @@ mhd_create_thread (mhd_thread_handle_ID *handle_id,
                    mhd_THREAD_START_ROUTINE start_routine,
                    void *arg)
 {
-#if defined(MHD_USE_POSIX_THREADS)
+#if defined(mhd_THREADS_KIND_POSIX)
   int res;
 #  if defined(mhd_thread_handle_ID_get_native_handle_ptr)
   pthread_t *const new_tid_ptr =
@@ -234,7 +234,7 @@ mhd_create_thread (mhd_thread_handle_ID *handle_id,
 #  endif /* ! mhd_thread_handle_ID_set_current_thread_ID */
 
   return 0 == res;
-#elif defined(MHD_USE_W32_THREADS)
+#elif defined(mhd_THREADS_KIND_W32)
   uintptr_t thr_handle;
   unsigned int stack_size_w32;
 #  if SIZEOF_SIZE_T != SIZEOF_UNSIGNED_INT
@@ -262,7 +262,7 @@ mhd_create_thread (mhd_thread_handle_ID *handle_id,
                                           thr_handle);
 
   return true;
-#endif /* MHD_USE_W32_THREADS */
+#endif /* mhd_THREADS_KIND_W32 */
 }
 
 
