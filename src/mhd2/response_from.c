@@ -228,9 +228,9 @@ MHD_response_from_iovec (
     if ((total_size < iov[i].iov_len) || (0 > (ssize_t) total_size)
         || (((size_t) total_size) != total_size))
       return NULL; /* Larger than send function may report as success */
-#if defined(MHD_POSIX_SOCKETS) || ! defined(_WIN64)
+#if defined(MHD_SOCKETS_KIND_POSIX) || ! defined(_WIN64)
     i_cp++;
-#else  /* ! MHD_POSIX_SOCKETS && _WIN64 */
+#else  /* ! MHD_SOCKETS_KIND_POSIX && _WIN64 */
     if (1)
     {
       size_t i_add;
@@ -242,7 +242,7 @@ MHD_response_from_iovec (
       if (i_cp < i_add)
         return NULL; /* Counter overflow */
     }
-#endif /* ! MHD_POSIX_SOCKETS && _WIN64 */
+#endif /* ! MHD_SOCKETS_KIND_POSIX && _WIN64 */
   }
   if (0 == total_size)
   {
@@ -278,7 +278,7 @@ MHD_response_from_iovec (
 
       if (0 == element_size)
         continue;         /* skip zero-sized elements */
-#if defined(MHD_WINSOCK_SOCKETS) && defined(_WIN64)
+#if defined(MHD_SOCKETS_KIND_WINSOCK) && defined(_WIN64)
       while (mhd_IOV_ELMN_MAX_SIZE < element_size)
       {
         iov_copy[i_cp].iov_base = (char *) mhd_DROP_CONST (buf);
@@ -287,7 +287,7 @@ MHD_response_from_iovec (
         element_size -= mhd_IOV_ELMN_MAX_SIZE;
         i_cp++;
       }
-#endif /* MHD_WINSOCK_SOCKETS && _WIN64 */
+#endif /* MHD_SOCKETS_KIND_WINSOCK && _WIN64 */
       iov_copy[i_cp].iov_base = mhd_DROP_CONST (buf);
       iov_copy[i_cp].iov_len = (mhd_iov_elmn_size) element_size;
       i_cp++;

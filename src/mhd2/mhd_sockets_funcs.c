@@ -28,7 +28,7 @@
 #include "mhd_sockets_funcs.h"
 #include "sys_sockets_headers.h"
 #include "sys_ip_headers.h"
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 #  ifdef HAVE_SYS_TYPES_H
 #    include <sys/types.h>
 #  endif
@@ -38,7 +38,7 @@
 #    include <stdlib.h>
 #  endif
 #  include <fcntl.h>
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  include <windows.h>
 #endif
 #ifndef INADDR_LOOPBACK
@@ -51,7 +51,7 @@
 MHD_INTERNAL bool
 mhd_socket_nonblocking (MHD_Socket sckt)
 {
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
   // TODO: detect constants in configure
 #if defined(F_GETFL) && defined(O_NONBLOCK) && defined(F_SETFL)
   int get_flags;
@@ -68,12 +68,12 @@ mhd_socket_nonblocking (MHD_Socket sckt)
   if (-1 != fcntl (sckt, F_SETFL, set_flags))
     return true;
 #endif /* F_GETFL && O_NONBLOCK && F_SETFL */
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   unsigned long set_flag = 1;
 
   if (0 == ioctlsocket (sckt, (long) FIONBIO, &set_flag))
     return true;
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 
   return false;
 }
@@ -82,7 +82,7 @@ mhd_socket_nonblocking (MHD_Socket sckt)
 MHD_INTERNAL bool
 mhd_socket_noninheritable (MHD_Socket sckt)
 {
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
   // TODO: detect constants in configure
 #if defined(F_GETFD) && defined(FD_CLOEXEC) && defined(F_SETFD)
   int get_flags;
@@ -99,10 +99,10 @@ mhd_socket_noninheritable (MHD_Socket sckt)
   if (-1 != fcntl (sckt, F_SETFD, set_flags))
     return true;
 #endif /* F_GETFD && FD_CLOEXEC && F_SETFD */
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   if (SetHandleInformation ((HANDLE) sckt, HANDLE_FLAG_INHERIT, 0))
     return true;
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
   return false;
 }
 
@@ -163,7 +163,7 @@ mhd_socket_shut_wr (MHD_Socket sckt)
 static bool
 mhd_socket_blocking (MHD_Socket sckt)
 {
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
   // TODO: detect constants in configure
 #if defined(F_GETFL) && defined(O_NONBLOCK) && defined(F_SETFL)
   int get_flags;
@@ -180,12 +180,12 @@ mhd_socket_blocking (MHD_Socket sckt)
   if (-1 != fcntl (sckt, F_SETFL, set_flags))
     return true;
 #endif /* F_GETFL && O_NONBLOCK && F_SETFL */
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   unsigned long set_flag = 0;
 
   if (0 == ioctlsocket (sckt, (long) FIONBIO, &set_flag))
     return true;
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 
   return false;
 }

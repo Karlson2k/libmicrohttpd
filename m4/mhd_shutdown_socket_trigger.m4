@@ -109,14 +109,14 @@ AC_DEFUN([_MHD_RUN_CHECK_SOCKET_SHUTDOWN_TRIGGER],[dnl
 #  endif
    typedef int MHD_Socket;
 #  define MHD_INVALID_SOCKET (-1)
-#  define MHD_POSIX_SOCKETS 1
+#  define MHD_SOCKETS_KIND_POSIX 1
 #else
 #  include <winsock2.h>
 #  include <ws2tcpip.h>
 #  include <windows.h>
    typedef SOCKET MHD_Socket;
 #  define MHD_INVALID_SOCKET (INVALID_SOCKET)
-#  define MHD_WINSOCK_SOCKETS 1
+#  define MHD_SOCKETS_KIND_WINSOCK 1
 #endif
 
 #include <pthread.h>
@@ -201,7 +201,7 @@ static MHD_Socket create_socket(void)
 
 static void close_socket(MHD_Socket fd)
 {
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
   close(fd);
 #else
   closesocket(fd);
@@ -333,7 +333,7 @@ static int test_it(void)
 
 static int init(void)
 {
-#ifdef MHD_WINSOCK_SOCKETS
+#ifdef MHD_SOCKETS_KIND_WINSOCK
   WSADATA wsa_data;
 
   if (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
@@ -341,15 +341,15 @@ static int init(void)
       WSACleanup();
       return 0;
     }
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
   return 1;
 }
 
 static void cleanup(void)
 {
-#ifdef MHD_WINSOCK_SOCKETS
+#ifdef MHD_SOCKETS_KIND_WINSOCK
   WSACleanup();
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 }
 
 int main(void)

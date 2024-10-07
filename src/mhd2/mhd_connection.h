@@ -619,7 +619,7 @@ struct MHD_Connection
    */
   bool sk_spipe_suppress;
 
-// #ifndef MHD_WINSOCK_SOCKETS // TODO: conditionally use in the code
+// #ifndef MHD_SOCKETS_KIND_WINSOCK // TODO: conditionally use in the code
   /**
    * Tracks TCP_CORK / TCP_NOPUSH of the connection socket.
    */

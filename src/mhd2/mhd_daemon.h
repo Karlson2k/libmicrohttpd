@@ -461,7 +461,7 @@ struct mhd_ListenSocket
  */
 struct mhd_DaemonNetworkSettings
 {
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
   /**
    * The maximum number for the network FDs.
    * The valid FD number must be less then @a max_fd_num.
@@ -959,7 +959,7 @@ struct MHD_Daemon
 };
 
 
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 /**
  * Checks whether @a fd socket number fits limitations for the @a d_ptr daemon
  */

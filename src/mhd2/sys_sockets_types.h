@@ -34,7 +34,7 @@
 
 #include "mhd_socket_type.h"
 
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 #  ifdef HAVE_SYS_SOCKET_H
 #    include <sys/socket.h>
 #  else

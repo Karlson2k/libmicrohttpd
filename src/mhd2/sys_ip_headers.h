@@ -32,7 +32,7 @@
 #include "mhd_socket_type.h"
 #include "sys_sockets_headers.h"
 
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 #  ifdef HAVE_INETLIB_H
 #    include <inetLib.h>
 #  endif /* HAVE_INETLIB_H */

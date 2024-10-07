@@ -604,11 +604,11 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
   else
     sk_nonbl = true;
 
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
   sk_spipe_supprs = false;
-#else  /* MHD_WINSOCK_SOCKETS */
+#else  /* MHD_SOCKETS_KIND_WINSOCK */
   sk_spipe_supprs = true; /* Nothing to suppress on W32 */
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 #if defined(MHD_socket_nosignal_)
   if (! sk_spipe_supprs)
     sk_spipe_supprs = MHD_socket_nosignal_ (client_socket);
@@ -652,7 +652,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
        socket as the initial offset into the pool for load
        balancing */
     unsigned int offset;
-#ifdef MHD_WINSOCK_SOCKETS
+#ifdef MHD_SOCKETS_KIND_WINSOCK
     uint_fast64_t osb = (uint_fast64_t) client_socket;
     osb ^= (((uint_fast64_t) client_socket) >> 9);
     osb ^= (((uint_fast64_t) client_socket) >> 18);
@@ -752,11 +752,11 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
                      | SOCK_NOSIGPIPE_OR_ZERO))))
   {
     sk_nonbl = (SOCK_NONBLOCK_OR_ZERO != 0);
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
     sk_spipe_supprs = (SOCK_NOSIGPIPE_OR_ZERO != 0);
-#else  /* MHD_WINSOCK_SOCKETS */
+#else  /* MHD_SOCKETS_KIND_WINSOCK */
     sk_spipe_supprs = true; /* Nothing to suppress on W32 */
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
     sk_cloexec = (SOCK_CLOEXEC_OR_ZERO != 0);
   }
 #endif /* USE_ACCEPT4 */
@@ -772,11 +772,11 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 #else  /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
     sk_nonbl = false;
 #endif /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
     sk_spipe_supprs = false;
-#else  /* MHD_WINSOCK_SOCKETS */
+#else  /* MHD_SOCKETS_KIND_WINSOCK */
     sk_spipe_supprs = true; /* Nothing to suppress on W32 */
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
     sk_cloexec = false;
   }
 #endif /* _DEBUG || !USE_ACCEPT4 */

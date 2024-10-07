@@ -68,11 +68,11 @@ MHD_C_DECLRATIONS_START_HERE_
  * MHD_Socket is type for socket FDs
  */
 #  if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
-#    define MHD_POSIX_SOCKETS 1
+#    define MHD_SOCKETS_KIND_POSIX 1
 typedef int MHD_Socket;
 #    define MHD_INVALID_SOCKET (-1)
 #  else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
-#    define MHD_WINSOCK_SOCKETS 1
+#    define MHD_SOCKETS_KIND_WINSOCK 1
 typedef SOCKET MHD_Socket;
 #    define MHD_INVALID_SOCKET (INVALID_SOCKET)
 #  endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */

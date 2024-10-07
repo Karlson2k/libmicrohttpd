@@ -51,7 +51,7 @@
 
 
 #if ! defined (MHD_USE_POLL) && \
-  (defined(MHD_POSIX_SOCKETS) || ! defined(MHD_USE_SELECT))
+  (defined(MHD_SOCKETS_KIND_POSIX) || ! defined(MHD_USE_SELECT))
 #  if defined(_WIN32) || defined(HAVE_NANOSLEEP) || defined(HAVE_USLEEP)
 #    define mhd_HAVE_MHD_SLEEP 1
 
@@ -95,7 +95,7 @@ mhd_sleep (uint_fast32_t millisec)
 
 
 #endif /* _WIN32 || HAVE_NANOSLEEP || HAVE_USLEEP */
-#endif /* ! MHD_USE_POLL) && (MHD_POSIX_SOCKETS || ! MHD_USE_SELECT) */
+#endif /* ! MHD_USE_POLL) && (MHD_SOCKETS_KIND_POSIX || ! MHD_USE_SELECT) */
 
 
 MHD_EXTERN_
@@ -219,11 +219,11 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
 #else /* ! MHD_USE_POLL */
 #  if defined(MHD_USE_SELECT)
       bool use_select;
-#    ifdef MHD_POSIX_SOCKETS
+#    ifdef MHD_SOCKETS_KIND_POSIX
       use_select = (socket_fd < FD_SETSIZE);
-#    else  /* MHD_WINSOCK_SOCKETS */
+#    else  /* MHD_SOCKETS_KIND_WINSOCK */
       use_select = true;
-#    endif /* MHD_WINSOCK_SOCKETS */
+#    endif /* MHD_SOCKETS_KIND_WINSOCK */
       if (use_select)
       {
         fd_set rfds;
@@ -231,11 +231,11 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
         int wait_err;
         struct timeval tmvl;
 
-#    ifdef MHD_POSIX_SOCKETS
+#    ifdef MHD_SOCKETS_KIND_POSIX
         tmvl.tv_sec = (time_t) (max_wait_millisec / 1000);
-#    else  /* MHD_WINSOCK_SOCKETS */
+#    else  /* MHD_SOCKETS_KIND_WINSOCK */
         tmvl.tv_sec = (long) (max_wait_millisec / 1000);
-#    endif /* MHD_WINSOCK_SOCKETS */
+#    endif /* MHD_SOCKETS_KIND_WINSOCK */
         if ((max_wait_millisec / 1000 != (uint_fast64_t) tmvl.tv_sec) ||
             (0 > tmvl.tv_sec))
         {
@@ -451,11 +451,11 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
     }
 #else /* ! MHD_USE_POLL */
 #  if defined(MHD_USE_SELECT)
-#    ifdef MHD_POSIX_SOCKETS
+#    ifdef MHD_SOCKETS_KIND_POSIX
     use_select = (socket_fd < FD_SETSIZE);
-#    else  /* MHD_WINSOCK_SOCKETS */
+#    else  /* MHD_SOCKETS_KIND_WINSOCK */
     use_select = true;
-#    endif /* MHD_WINSOCK_SOCKETS */
+#    endif /* MHD_SOCKETS_KIND_WINSOCK */
     if (use_select)
     {
       fd_set wfds;
@@ -472,11 +472,11 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
       }
       else
       {
-#    ifdef MHD_POSIX_SOCKETS
+#    ifdef MHD_SOCKETS_KIND_POSIX
         tmvl.tv_sec = (time_t) (wait_left / 1000);
-#    else  /* MHD_WINSOCK_SOCKETS */
+#    else  /* MHD_SOCKETS_KIND_WINSOCK */
         tmvl.tv_sec = (long) (wait_left / 1000);
-#    endif /* MHD_WINSOCK_SOCKETS */
+#    endif /* MHD_SOCKETS_KIND_WINSOCK */
         if ((max_wait_millisec / 1000 != (uint_fast64_t) tmvl.tv_sec) ||
             (0 > tmvl.tv_sec))
         {

@@ -33,7 +33,7 @@
 
 #include "mhd_socket_type.h"
 
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 #  include "sys_base_types.h" /* required on old platforms */
 #  ifdef HAVE_SYS_SOCKET_H
 #    include <sys/socket.h>
@@ -41,32 +41,32 @@
 #  ifdef HAVE_SOCKLIB_H
 #    include <sockLib.h>
 #  endif /* HAVE_SOCKLIB_H */
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  include <winsock2.h>
 #endif
 #ifdef HAVE_SYS_UN_H
 #  include <sys/un.h>
 #endif
 
-#if defined(HAVE_SOCK_NONBLOCK) && ! defined(MHD_WINSOCK_SOCKETS)
+#if defined(HAVE_SOCK_NONBLOCK) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SOCK_NONBLOCK SOCK_NONBLOCK
 #else
 #  define mhd_SOCK_NONBLOCK (0)
 #endif
 
-#if defined(SOCK_CLOEXEC) && ! defined(MHD_WINSOCK_SOCKETS)
+#if defined(SOCK_CLOEXEC) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SOCK_CLOEXEC SOCK_CLOEXEC
 #else
 #  define mhd_SOCK_CLOEXEC (0)
 #endif
 
-#if defined(SOCK_NOSIGPIPE) && ! defined(MHD_WINSOCK_SOCKETS)
+#if defined(SOCK_NOSIGPIPE) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SOCK_NOSIGPIPE SOCK_NOSIGPIPE
 #else
 #  define mhd_SOCK_NOSIGPIPE (0)
 #endif
 
-#if defined(MSG_NOSIGNAL) && ! defined(MHD_WINSOCK_SOCKETS)
+#if defined(MSG_NOSIGNAL) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_MSG_NOSIGNAL MSG_NOSIGNAL
 #else
 #  define mhd_MSG_NOSIGNAL (0)
@@ -95,28 +95,28 @@
  * mhd_SCKT_OPT_BOOL is the type for bool parameters
  * for setsockopt()/getsockopt() functions
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  define mhd_SCKT_OPT_BOOL int
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_OPT_BOOL BOOL
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 
 /**
  * mhd_SCKT_SEND_SIZE is type used to specify size for send() and recv()
  * functions
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 typedef size_t mhd_SCKT_SEND_SIZE;
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 typedef int mhd_SCKT_SEND_SIZE;
 #endif
 
 /**
  * MHD_SCKT_SEND_MAX_SIZE_ is maximum send()/recv() size value.
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  define MHD_SCKT_SEND_MAX_SIZE_ SSIZE_MAX
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define MHD_SCKT_SEND_MAX_SIZE_ (0x7FFFFFFF) /* INT_MAX */
 #endif
 
@@ -132,7 +132,7 @@ typedef int mhd_SCKT_SEND_SIZE;
 
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || \
   defined(__OpenBSD__) || defined(__NetBSD__) || \
-  defined(MHD_WINSOCK_SOCKETS) || defined(__MACH__) || defined(__sun) || \
+  defined(MHD_SOCKETS_KIND_WINSOCK) || defined(__MACH__) || defined(__sun) || \
   defined(SOMEBSD)
 /* Most of the OSes inherit nonblocking setting from the listen socket */
 #  define MHD_ACCEPTED_INHERITS_NONBLOCK 1
@@ -150,10 +150,10 @@ typedef int mhd_SCKT_SEND_SIZE;
  * so sendfile() or writev() calls are avoided in application threads.
  */
 #  define mhd_SEND_SPIPE_SUPPRESS_POSSIBLE   1
-#endif /* MHD_WINSOCK_SOCKETS || MHD_socket_nosignal_ || MSG_NOSIGNAL */
+#endif /* MHD_SOCKETS_KIND_WINSOCK || MHD_socket_nosignal_ || MSG_NOSIGNAL */
 
 
-#if ! defined(MHD_WINSOCK_SOCKETS)
+#if ! defined(MHD_SOCKETS_KIND_WINSOCK)
 /**
  * Indicate that suppression of SIGPIPE is required for some network
  * system calls.

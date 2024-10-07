@@ -35,14 +35,14 @@
 #include "mhd_sockets_macros.h"
 #include "sys_ip_headers.h"
 
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 #  include "sys_errno.h"
 #endif
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
 #endif
 
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 #  include <fcntl.h>
 #  ifdef MHD_USE_SELECT
 #    ifdef HAVE_SYS_SELECT_H
@@ -611,13 +611,13 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
   if (MHD_INVALID_SOCKET == sk)
   {
     mhd_assert (NULL != p_use_sa);
-#if defined(MHD_WINSOCK_SOCKETS) && defined(WSA_FLAG_NO_HANDLE_INHERIT)
+#if defined(MHD_SOCKETS_KIND_WINSOCK) && defined(WSA_FLAG_NO_HANDLE_INHERIT)
     /* May fail before Win7 SP1 */
     sk = WSASocketW (p_use_sa->sa_family, SOCK_STREAM, 0,
                      NULL, 0, WSA_FLAG_OVERLAPPED | WSA_FLAG_NO_HANDLE_INHERIT);
 
     if (MHD_INVALID_SOCKET == sk)
-#endif /* MHD_WINSOCK_SOCKETS && WSA_FLAG_NO_HANDLE_INHERIT */
+#endif /* MHD_SOCKETS_KIND_WINSOCK && WSA_FLAG_NO_HANDLE_INHERIT */
     sk = socket (p_use_sa->sa_family,
                  SOCK_STREAM | mhd_SOCK_NONBLOCK
                  | mhd_SOCK_CLOEXEC | mhd_SOCK_NOSIGPIPE, 0);
@@ -808,7 +808,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 
       if (MHD_D_OPTION_BIND_TYPE_NOT_SHARED >= d->settings->listen_addr_reuse)
       {
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
 #ifdef SO_REUSEADDR
         mhd_SCKT_OPT_BOOL on_val1 = 1;
         if (0 != setsockopt (sk, SOL_SOCKET, SO_REUSEADDR,
@@ -822,17 +822,17 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         mhd_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED, \
                      "The OS does not support address reuse for sockets");
 #endif /* ! SO_REUSEADDR */
-#endif /* ! MHD_WINSOCK_SOCKETS */
+#endif /* ! MHD_SOCKETS_KIND_WINSOCK */
         if (MHD_D_OPTION_BIND_TYPE_NOT_SHARED > d->settings->listen_addr_reuse)
         {
-#if defined(SO_REUSEPORT) || defined(MHD_WINSOCK_SOCKETS)
+#if defined(SO_REUSEPORT) || defined(MHD_SOCKETS_KIND_WINSOCK)
           mhd_SCKT_OPT_BOOL on_val2 = 1;
           if (0 != setsockopt (sk, SOL_SOCKET,
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
                                SO_REUSEPORT,
-#else  /* ! MHD_WINSOCK_SOCKETS */
+#else  /* ! MHD_SOCKETS_KIND_WINSOCK */
                                SO_REUSEADDR, /* On W32 it is the same as SO_REUSEPORT on other platforms */
-#endif /* ! MHD_WINSOCK_SOCKETS */
+#endif /* ! MHD_SOCKETS_KIND_WINSOCK */
                                (const void *) &on_val2, sizeof (on_val2)))
           {
             mhd_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED, \
@@ -841,12 +841,12 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
             ret = MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_FAILED;
             break;
           }
-#else  /* ! SO_REUSEADDR && ! MHD_WINSOCK_SOCKETS */
+#else  /* ! SO_REUSEADDR && ! MHD_SOCKETS_KIND_WINSOCK */
           mhd_LOG_MSG (d, MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED, \
                        "The OS does not support address sharing for sockets");
           ret = MHD_SC_LISTEN_ADDRESS_REUSE_ENABLE_NOT_SUPPORTED;
           break;
-#endif /* ! SO_REUSEADDR && ! MHD_WINSOCK_SOCKETS */
+#endif /* ! SO_REUSEADDR && ! MHD_SOCKETS_KIND_WINSOCK */
         }
       }
 #if defined(SO_EXCLUSIVEADDRUSE) || defined(SO_EXCLBIND)
@@ -1329,9 +1329,9 @@ daemon_init_net (struct MHD_Daemon *restrict d,
 
   mhd_assert (! d->dbg.net_inited);
   mhd_assert (! d->dbg.net_deinited);
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
   d->net.cfg.max_fd_num = s->fd_number_limit;
-#endif /* MHD_POSIX_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_POSIX */
 
   ret = daemon_choose_and_preinit_events (d, s);
   if (MHD_SC_OK != ret)
@@ -1342,14 +1342,14 @@ daemon_init_net (struct MHD_Daemon *restrict d,
   /* No direct return of error codes is allowed beyond this point.
      Deinit/cleanup must be performed before return of any error. */
 
-#if defined(MHD_POSIX_SOCKETS) && defined(MHD_USE_SELECT)
+#if defined(MHD_SOCKETS_KIND_POSIX) && defined(MHD_USE_SELECT)
   if (mhd_POLL_TYPE_SELECT == d->events.poll_type)
   {
     if ((MHD_INVALID_SOCKET == d->net.cfg.max_fd_num) ||
         (FD_SETSIZE < d->net.cfg.max_fd_num))
       d->net.cfg.max_fd_num = FD_SETSIZE;
   }
-#endif /* MHD_POSIX_SOCKETS && MHD_USE_SELECT */
+#endif /* MHD_SOCKETS_KIND_POSIX && MHD_USE_SELECT */
 
   if (MHD_SC_OK == ret)
   {
@@ -2071,7 +2071,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
   limit_by_select = UINT_MAX;
 
   error_by_fd_setsize = false;
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
   if (1)
   {
     limit_by_num = (unsigned int) d->net.cfg.max_fd_num;
@@ -2107,7 +2107,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
     else
       limit_by_num = (unsigned int) INT_MAX;
   }
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   if (1)
   {
 #ifdef MHD_USE_SELECT
@@ -2135,7 +2135,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
 #endif /* MHD_USE_SELECT */
     (void) 0; /* Mute compiler warning */
   }
-#endif /* MHD_POSIX_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_POSIX */
   if (error_by_fd_setsize)
   {
     mhd_LOG_MSG ( \
@@ -2154,7 +2154,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
   {
     /* No user configuration provided */
     unsigned int suggested_limit;
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
 #define TYPICAL_NOFILES_LIMIT (1024)  /* The usual limit for the number of open FDs */
     suggested_limit = TYPICAL_NOFILES_LIMIT;
     suggested_limit -= 3; /* The numbers zero, one and two are used typically */
@@ -2165,13 +2165,13 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
       --suggested_limit; /* One FD is used for the listening socket */
     if (suggested_limit > TYPICAL_NOFILES_LIMIT)
       suggested_limit = 0; /* Overflow */
-#else  /* MHD_WINSOCK_SOCKETS */
+#else  /* MHD_SOCKETS_KIND_WINSOCK */
 #ifdef _WIN64
     suggested_limit = 2048;
 #else
     suggested_limit = 1024;
 #endif
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
     if (suggested_limit < num_worker_daemons)
     {
       /* Use at least one connection for every worker daemon and

@@ -31,7 +31,7 @@
 
 #ifdef MHD_USE_SELECT
 #  include "mhd_socket_type.h"
-#  if defined(MHD_POSIX_SOCKETS)
+#  if defined(MHD_SOCKETS_KIND_POSIX)
 #    ifdef HAVE_SYS_SELECT_H
 #      include <sys/select.h>
 #    else
@@ -50,7 +50,7 @@
 #        include  <selectLib.h>
 #      endif
 #    endif
-#  elif defined(MHD_WINSOCK_SOCKETS)
+#  elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #    include <winsock2.h>
 #  else
 #error Uknown sockets type

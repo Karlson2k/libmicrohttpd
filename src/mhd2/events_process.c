@@ -35,7 +35,7 @@
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
 #endif
-#ifdef MHD_POSIX_SOCKETS
+#ifdef MHD_SOCKETS_KIND_POSIX
 #  include "sys_errno.h"
 #endif
 
@@ -389,11 +389,11 @@ fd_set_wrap (MHD_Socket fd,
                                               it is added */
   mhd_assert (mhd_POLL_TYPE_SELECT == d->events.poll_type);
   (void) d; /* Unused with non-debug builds */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
   FD_SET (fd, fs);
   if (*max < fd)
     *max = fd;
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   /* Use custom set function to take advantage of know uniqueness of
    * used sockets (to skip useless (for this function) check for duplicated
    * sockets implemented in system's macro). */
@@ -622,16 +622,16 @@ get_all_net_updates_by_select (struct MHD_Daemon *restrict d,
 
   max_wait = get_max_wait (d); // TODO: use correct timeout value
 
-#ifdef MHD_WINSOCK_SOCKETS
+#ifdef MHD_SOCKETS_KIND_WINSOCK
   if (0 == max_socket)
   {
     Sleep ((unsigned int) max_wait);
     return true;
   }
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 
   tmvl.tv_sec = max_wait / 1000;
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
   tmvl.tv_usec = (uint_least16_t) ((max_wait % 1000) * 1000);
 #else
   tmvl.tv_usec = (int) ((max_wait % 1000) * 1000);
@@ -650,7 +650,7 @@ get_all_net_updates_by_select (struct MHD_Daemon *restrict d,
     bool is_ignored_error;
     is_hard_error = false;
     is_ignored_error = false;
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
     err = errno;
     if (0 != err)
     {
@@ -658,7 +658,7 @@ get_all_net_updates_by_select (struct MHD_Daemon *restrict d,
         ((mhd_EBADF_OR_ZERO == err) || (mhd_EINVAL_OR_ZERO == err));
       is_ignored_error = (mhd_EINTR_OR_ZERO == err);
     }
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
     err = WSAGetLastError ();
     is_hard_error =
       ((WSAENETDOWN == err) || (WSAEFAULT == err) || (WSAEINVAL == err) ||
@@ -904,7 +904,7 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
     bool is_ignored_error;
     is_hard_error = false;
     is_ignored_error = false;
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
     err = errno;
     if (0 != err)
     {
@@ -912,7 +912,7 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
         ((mhd_EFAULT_OR_ZERO == err) || (mhd_EINVAL_OR_ZERO == err));
       is_ignored_error = (mhd_EINTR_OR_ZERO == err);
     }
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
     err = WSAGetLastError ();
     is_hard_error =
       ((WSAENETDOWN == err) || (WSAEFAULT == err) || (WSAEINVAL == err));

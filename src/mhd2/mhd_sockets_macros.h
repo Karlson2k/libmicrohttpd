@@ -33,7 +33,7 @@
 #include "sys_base_types.h"
 #include "sys_sockets_headers.h"
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  include "sys_errno.h"
 #  ifdef HAVE_UNISTD_H
 #    include <unistd.h>
@@ -41,7 +41,7 @@
 #    include <stdlib.h>
 #  endif
 #  include "sys_errno.h"
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  include <winsock2.h>
 #endif
 
@@ -49,9 +49,9 @@
  * Close the socket FD
  * @param sckt the socket to close
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  define mhd_socket_close(sckt) close (sckt)
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_socket_close(sckt) closesocket (sckt)
 #endif
 
@@ -91,22 +91,22 @@
 /**
  * Last socket error
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  define mhd_SCKT_GET_LERR() errno
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_GET_LERR() (WSAGetLastError ())
 #endif
 
 /**
  * Set last socket error
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  define mhd_SCKT_SET_LERR(err) do { errno = (err); } while (0)
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_SET_LERR(err) WSASetLastError ((err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  if defined(EAGAIN) && defined(EWOULDBLOCK) && \
   ((EWOULDBLOCK + 0) != (EAGAIN + 0))
 #    define mhd_SCKT_ERR_IS_EAGAIN(err) \
@@ -118,121 +118,121 @@
 #  else
 #    define mhd_SCKT_ERR_IS_EAGAIN(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_EAGAIN(err) (WSAEWOULDBLOCK == (err))
 #endif
 
 #define mhd_SCKT_LERR_IS_EAGAIN() mhd_SCKT_ERR_IS_EAGAIN (mhd_SCKT_GET_LERR ())
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef EAFNOSUPPORT
 #    define mhd_SCKT_ERR_IS_AF(err) (EAFNOSUPPORT == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_AF(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_AF(err) (WSAEAFNOSUPPORT == (err))
 #endif
 
 #define mhd_SCKT_LERR_IS_AF() mhd_SCKT_ERR_IS_AF (mhd_SCKT_GET_LERR ())
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef EINVAL
 #    define mhd_SCKT_ERR_IS_EINVAL(err) (EINVAL == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_EINVAL(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_EINVAL(err) (WSAEINVAL == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef EINTR
 #    define mhd_SCKT_ERR_IS_EINTR(err) (EINTR == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_EINTR(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_EINTR(err) (WSAEINTR == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef ECONNRESET
 #    define mhd_SCKT_ERR_IS_CONNRESET(err) (ECONNRESET == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_CONNRESET(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_CONNRESET(err) (WSAECONNRESET == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef ENOTCONN
 #    define mhd_SCKT_ERR_IS_NOTCONN(err) (ENOTCONN == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_NOTCONNT(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_NOTCONN(err) (WSAENOTCONN == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef EOPNOTSUPP
 #    define mhd_SCKT_ERR_IS_OPNOTSUPP(err) (EOPNOTSUPP == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_OPNOTSUPP(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_OPNOTSUPP(err) (WSAEOPNOTSUPP == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef ENOPROTOOPT
 #    define mhd_SCKT_ERR_IS_NOPROTOOPT(err) (ENOPROTOOPT == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_NOPROTOOPT(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_NOPROTOOPT(err) (WSAENOPROTOOPT == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef EBADF
 #    define mhd_SCKT_ERR_IS_BADF(err) (EBADF == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_BADF(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_BADF(err) ((void) (err), ! ! 0)
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef ENOTSOCK
 #    define mhd_SCKT_ERR_IS_NOTSOCK(err) (ENOTSOCK == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_NOTSOCK(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_NOTSOCK(err) (WSAENOTSOCK == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef EPIPE
 #    define mhd_SCKT_ERR_IS_PIPE(err) (EPIPE == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_PIPE(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_PIPE(err) (WSAESHUTDOWN == (err))
 #endif
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef EINPROGRESS
 #    define mhd_SCKT_ERR_IS_INPROGRESS(err) (EINPROGRESS == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_INPROGRESS(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_INPROGRESS(err) (WSAEINPROGRESS == (err))
 #endif
 
@@ -242,13 +242,13 @@
  * @return boolean true is @a err match described socket error code,
  *         boolean false otherwise.
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef ECONNABORTED
 #    define mhd_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT(err) (ECONNABORTED == (err))
 #  else
 #    define mhd_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT(err) ((void) (err), ! ! 0)
 #  endif
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_DISCNN_BEFORE_ACCEPT(err) (WSAECONNRESET == (err))
 #endif
 
@@ -258,7 +258,7 @@
  * It can be keep-alive ping failure or timeout to get ACK for the
  * transmitted data.
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 /* + EHOSTUNREACH: probably reported by intermediate
    + ETIMEDOUT: probably keep-alive ping failure
    + ENETUNREACH: probably cable physically disconnected or similar */
@@ -267,7 +267,7 @@
          ((mhd_EHOSTUNREACH_OR_ZERO == (err)) || \
           (mhd_ETIMEDOUT_OR_ZERO == (err)) || \
           (mhd_ENETUNREACH_OR_ZERO == (err))))
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_CONN_BROKEN(err) \
         ( (WSAENETRESET == (err)) || (WSAECONNABORTED == (err)) || \
           (WSAETIMEDOUT == (err)) )
@@ -278,12 +278,12 @@
  * @return boolean true if @a err is any kind of "low resource" error,
  *         boolean false otherwise.
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #    define mhd_SCKT_ERR_IS_LOW_RESOURCES(err) \
         ((0 != (err)) && \
          ((mhd_EMFILE_OR_ZERO == (err)) || (mhd_ENFILE_OR_ZERO == (err)) || \
           (mhd_ENOMEM_OR_ZERO == (err)) || (mhd_ENOBUFS_OR_ZERO == (err))))
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_LOW_RESOURCES(err) \
         ( (WSAEMFILE == (err)) || (WSAENOBUFS == (err)) )
 #endif
@@ -294,16 +294,16 @@
  * @return boolean true if @a err is any kind of "low memory" error,
  *         boolean false otherwise.
  */
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #    define mhd_SCKT_ERR_IS_LOW_MEM(err) \
         ((0 != (err)) && \
          ((mhd_ENOMEM_OR_ZERO == (err)) || (mhd_ENOBUFS_OR_ZERO == (err))))
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SCKT_ERR_IS_LOW_MEM(err) (WSAENOBUFS == (err))
 #endif
 
 
-#if defined(MHD_POSIX_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_POSIX)
 #  ifdef HAVE_SOCKETPAIR
 #    ifdef MHD_AF_UNIX
 #      define mhd_socket_pair(fdarr_ptr) \

@@ -33,7 +33,7 @@
 
 #ifndef MHD_INVALID_SOCKET
 #  if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
-#    define MHD_POSIX_SOCKETS 1 /* The POSIX-style sockets are used */
+#    define MHD_SOCKETS_KIND_POSIX 1 /* The POSIX-style sockets are used */
 /**
  * MHD_Socket is type for socket FDs
  *
@@ -45,7 +45,7 @@ typedef int MHD_Socket;
  */
 #    define MHD_INVALID_SOCKET (-1)
 #  else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
-#    define MHD_WINSOCK_SOCKETS 1 /* The WinSock-style sockets are used */
+#    define MHD_SOCKETS_KIND_WINSOCK 1 /* The WinSock-style sockets are used */
 #    include <winsock2.h>
 /**
  * MHD_Socket is type for socket FDs

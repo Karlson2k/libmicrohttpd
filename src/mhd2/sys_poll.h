@@ -34,10 +34,10 @@
 
 #ifdef MHD_USE_POLL
 #  include "mhd_socket_type.h"
-#  if defined(MHD_POSIX_SOCKETS)
+#  if defined(MHD_SOCKETS_KIND_POSIX)
 #    include <poll.h>
 #    define mhd_poll poll
-#  elif defined(MHD_WINSOCK_SOCKETS)
+#  elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #    include <winsock2.h>
 #    define mhd_poll WSAPoll
 #  else

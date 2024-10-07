@@ -71,9 +71,9 @@
 #include "mhd_limits.h"
 
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV) || \
-  defined(MHD_WINSOCK_SOCKETS)
+  defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_USE_VECT_SEND 1
-#endif /* HAVE_SENDMSG || HAVE_WRITEV || MHD_WINSOCK_SOCKETS */
+#endif /* HAVE_SENDMSG || HAVE_WRITEV || MHD_SOCKETS_KIND_WINSOCK */
 
 
 #ifdef mhd_USE_VECT_SEND
@@ -1365,15 +1365,15 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
 {
   bool send_error;
   size_t items_to_send;
-#ifndef MHD_WINSOCK_SOCKETS
+#ifndef MHD_SOCKETS_KIND_WINSOCK
   ssize_t res;
 #endif
 #ifdef HAVE_SENDMSG
   struct msghdr msg;
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
   DWORD bytes_sent;
   DWORD cnt_w;
-#endif /* MHD_WINSOCK_SOCKETS */
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 
   // TODO: assert for non-TLS
 
@@ -1417,7 +1417,7 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
     *sent = (size_t) res;
   else
     send_error = true;
-#elif defined(MHD_WINSOCK_SOCKETS)
+#elif defined(MHD_SOCKETS_KIND_WINSOCK)
 #ifdef _WIN64
   if (items_to_send > ULONG_MAX)
   {
@@ -1437,7 +1437,7 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
     *sent = (size_t) bytes_sent;
   else
     send_error = true;
-#else /* !HAVE_SENDMSG && !HAVE_WRITEV && !MHD_WINSOCK_SOCKETS */
+#else /* !HAVE_SENDMSG && !HAVE_WRITEV && !MHD_SOCKETS_KIND_WINSOCK */
 #error No vector-send function available
 #endif
 

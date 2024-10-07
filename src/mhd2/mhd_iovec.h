@@ -50,7 +50,7 @@
 
 #include "mhd_limits.h"
 
-#if defined(MHD_WINSOCK_SOCKETS)
+#if defined(MHD_SOCKETS_KIND_WINSOCK)
 /**
  * Internally used I/O vector type for use with winsock.
  * Binary matches system "WSABUF".

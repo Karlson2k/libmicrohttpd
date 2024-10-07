@@ -29,7 +29,7 @@
 #if defined(MHD_ITC_PIPE_)
 #  ifdef MHD_HAVE_MHD_ITC_NONBLOCKING
 #    include "mhd_sockets_funcs.h"
-#    ifndef MHD_POSIX_SOCKETS
+#    ifndef MHD_SOCKETS_KIND_POSIX
 #error Pipe-based ITC can be used only with POSIX sockets
 #    endif
 
