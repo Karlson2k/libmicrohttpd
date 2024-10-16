@@ -1,0 +1,64 @@
+{
+    "version": "v1.0.0",
+    "entity": {
+        "type": "business",
+        "role": "maintainer",
+        "name": "Taler Operations AG",
+        "email": "ceo@taler-ops.ch",
+        "phone": "",
+        "description": "Taler Operations AG currently engages both maintainers of GNU libmicrohttpd and is interested in continuing to fund them maintaining GNU libmicrohttpd as LGPL'ed FLOSS. The company is not interested in making any profit from funding the developers. Having the company is primarily  a good way to keep one of them legally in Europe and outside of Moscow.",
+        "webpageUrl": {
+            "url": "https://taler-ops.ch/",
+            "wellKnown": ""
+        }
+    },
+    "projects": [{
+        "guid": "libmicrohttpd",
+        "name": "GNU libmicrohttpd",
+        "description": "The Zombo App is a database application that solves many problems and makes anything possible. Anything at all. Its possibilities are only limited by the user's own imagination.\n\nIt has been in active development for a decade and is used by millions of people worldwide. It is the next frontier.\n\nPS: This is a dummy demo listing.",
+        "webpageUrl": {
+            "url": "https://www.gnu.org/s/libmicrohttpd"
+        },
+        "repositoryUrl": {
+            "url": "https://git.gnunet.org/libmicrohttpd"
+        },
+        "licenses": ["spdx:LGPL-3.0"],
+        "tags": ["http", "library", "high-performance", "embedded"]
+    }],
+    "funding": {
+        "channels": [
+            {
+                "guid": "mybank",
+                "type": "bank",
+                "address": "",
+                "description": "Will accept direct bank transfers. Please e-mail me for details."
+            }
+        ],
+        "plans": [
+            {
+                "guid": "developer-time",
+                "status": "active",
+                "name": "Developer compensation",
+                "description": "This will cover the cost of one developer working part-time on the projects.",
+                "amount": 1000,
+                "currency": "CHF",
+                "frequency": "monthly",
+                "channels": ["mybank"]
+            },
+            {
+                "guid": "angel-plan",
+                "status": "active",
+                "name": "Goodwill plan",
+                "description": "Pay anything you wish to show your goodwill for the project.",
+                "amount": 0,
+                "currency": "CHF",
+                "frequency": "one-time",
+                "channels": ["mybank", "mypay"]
+            }
+        ],
+        "history": [
+            {"year": 2023, "income": 0, "expenses": 0, "taxes": 0, "currency": "USD", "description": "Let's fix this."}
+        ]
+    }
+}
+
