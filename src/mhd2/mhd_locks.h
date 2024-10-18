@@ -136,11 +136,18 @@ typedef CRITICAL_SECTION mhd_mutex;
 #if defined(mhd_MUTEX_KIND_PTHREAD)
 #  if defined(PTHREAD_MUTEX_INITIALIZER)
 /**
+ * The value to statically initialise mutex
+ */
+#    define mhd_MUTEX_INITIALISER_STAT       PTHREAD_MUTEX_INITIALIZER
+#  endif /* PTHREAD_MUTEX_INITIALIZER */
+#endif
+
+#ifdef mhd_MUTEX_INITIALISER_STAT
+/**
  *  Define static mutex and statically initialise it.
  */
-#    define MHD_MUTEX_STATIC_DEFN_INIT_(m) \
-        static mhd_mutex m = PTHREAD_MUTEX_INITIALIZER
-#  endif /* PTHREAD_MUTEX_INITIALIZER */
+#  define mhd_MUTEX_STATIC_DEFN_INIT_(m) \
+        static mhd_mutex m = mhd_MUTEX_INITIALISER_STAT
 #endif
 
 #if defined(mhd_MUTEX_KIND_PTHREAD)
