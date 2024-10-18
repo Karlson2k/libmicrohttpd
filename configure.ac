@@ -1386,6 +1386,7 @@ AS_CASE(["$host_os"],
      mhd_host_os='Windows/MinGW'
      AC_MSG_RESULT([[$mhd_host_os]])
      AC_CHECK_HEADERS([winsock2.h ws2tcpip.h], [], [AC_MSG_ERROR([[Winsock2 headers are required for W32]])], [AC_INCLUDES_DEFAULT])
+     AC_CHECK_HEADERS([sdkddkver.h], [], [], [AC_INCLUDES_DEFAULT])
      AC_CACHE_CHECK([for MS lib utility], [ac_cv_use_ms_lib_tool],
        [mslibcheck=`lib 2>&1`
         AS_IF([echo "$mslibcheck" | $GREP -e '^Microsoft (R) Library Manager' - >/dev/null],
