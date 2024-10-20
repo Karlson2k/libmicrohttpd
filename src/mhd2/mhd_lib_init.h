@@ -56,7 +56,7 @@ MHD_lib_global_check_init (void);
  * Check whether the library has been de-initialised and de-initialise if needed
  */
 MHD_EXTERN_ void
-MHD_lib_global_check_deinit (void)
+MHD_lib_global_check_deinit (void);
 
 #  define MHD_GLOBAL_INIT_CHECK() MHD_lib_global_check_init ()
 
