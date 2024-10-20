@@ -29,6 +29,11 @@
 #include "mhd_sys_options.h"
 #include "autoinit_funcs.h"
 
+#if ! defined(_AUTOINIT_FUNCS_ARE_SUPPORTED) \
+  && defined(AIF_AUTOINIT_FUNCS_ARE_SUPPORTED)
+#  define _AUTOINIT_FUNCS_ARE_SUPPORTED 1
+#endif
+
 /**
  * Initialise library global resources
  */

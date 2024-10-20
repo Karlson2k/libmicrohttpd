@@ -44,6 +44,12 @@
 #include "mhd_sys_options.h"
 #include "mhd_lib_init.h"
 
+#if ! defined(_SET_INIT_AND_DEINIT_FUNCS) \
+  && defined(AIF_SET_INIT_AND_DEINIT_FUNCS)
+#  define _SET_INIT_AND_DEINIT_FUNCS(FI,FD) \
+        AIF_SET_INIT_AND_DEINIT_FUNCS (FI,FD)
+#endif
+
 /* Forward declarations */
 void
 mhd_lib_global_init_wrap (void);
