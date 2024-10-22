@@ -29,11 +29,6 @@
 #include "mhd_sys_options.h"
 #include "autoinit_funcs.h"
 
-#if ! defined(_AUTOINIT_FUNCS_ARE_SUPPORTED) \
-  && defined(AIF_AUTOINIT_FUNCS_ARE_SUPPORTED)
-#  define _AUTOINIT_FUNCS_ARE_SUPPORTED 1
-#endif
-
 /**
  * Initialise library global resources
  */
@@ -46,9 +41,9 @@ mhd_lib_global_init (void);
 void
 mhd_lib_global_deinit (void);
 
-#ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
+#ifdef AIF_AUTOINIT_FUNCS_ARE_SUPPORTED
 #  define MHD_GLOBAL_INIT_CHECK() ((void) 0)
-#else /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
+#else /* ! AIF_AUTOINIT_FUNCS_ARE_SUPPORTED */
 /* The functions are exported, but not declared in public header */
 
 /**
@@ -65,7 +60,7 @@ MHD_lib_global_check_deinit (void);
 
 #  define MHD_GLOBAL_INIT_CHECK() MHD_lib_global_check_init ()
 
-#endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
+#endif /* ! AIF_AUTOINIT_FUNCS_ARE_SUPPORTED */
 
 
 #endif /* ! MHD_LIB_INIT_H */

@@ -24,14 +24,18 @@
  * @author Karlson2k (Evgeny Grin)
  */
 #include "mhd_sys_options.h"
-#include "mhd_lib_init.h"
+
 #include "mhd_panic.h"
-#include "mhd_mono_clock.h"
+
 #include "mhd_socket_type.h"
-#include "mhd_send.h"
 #ifdef MHD_SOCKETS_KIND_WINSOCK
 #  include <winsock2.h>
 #endif
+
+#include "mhd_mono_clock.h"
+#include "mhd_send.h"
+
+#include "mhd_lib_init.h"
 
 void
 mhd_lib_global_init (void)
@@ -62,7 +66,7 @@ mhd_lib_global_deinit (void)
 }
 
 
-#ifndef _AUTOINIT_FUNCS_ARE_SUPPORTED
+#ifndef AIF_AUTOINIT_FUNCS_ARE_SUPPORTED
 static volatile int mhd_lib_global_inited = 0;
 static volatile int mhd_lib_global_not_inited = ! 0;
 
@@ -86,4 +90,4 @@ MHD_lib_global_check_deinit (void)
 }
 
 
-#endif /* ! _AUTOINIT_FUNCS_ARE_SUPPORTED */
+#endif /* ! AIF_AUTOINIT_FUNCS_ARE_SUPPORTED */

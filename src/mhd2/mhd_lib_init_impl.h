@@ -44,12 +44,6 @@
 #include "mhd_sys_options.h"
 #include "mhd_lib_init.h"
 
-#if ! defined(_SET_INIT_AND_DEINIT_FUNCS) \
-  && defined(AIF_SET_INIT_AND_DEINIT_FUNCS)
-#  define _SET_INIT_AND_DEINIT_FUNCS(FI,FD) \
-        AIF_SET_INIT_AND_DEINIT_FUNCS (FI,FD)
-#endif
-
 /* Forward declarations */
 void
 mhd_lib_global_init_wrap (void);
@@ -72,11 +66,11 @@ mhd_lib_global_deinit_wrap (void)
 }
 
 
-#ifdef _AUTOINIT_FUNCS_ARE_SUPPORTED
+#ifdef AIF_AUTOINIT_FUNCS_ARE_SUPPORTED
 
-_SET_INIT_AND_DEINIT_FUNCS (mhd_lib_global_init_wrap, \
-                            mhd_lib_global_deinit_wrap);
+AIF_SET_INIT_AND_DEINIT_FUNCS (mhd_lib_global_init_wrap, \
+                               mhd_lib_global_deinit_wrap);
 
-#endif /* _AUTOINIT_FUNCS_ARE_SUPPORTED */
+#endif /* AIF_AUTOINIT_FUNCS_ARE_SUPPORTED */
 
 #endif /* MHD_LIB_INIT_IMPL_H_IN_DAEMON_CREATE_C */
