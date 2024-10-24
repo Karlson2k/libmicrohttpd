@@ -1282,11 +1282,16 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_UPGRADED_WAITING_NOT_SUPPORTED = 50840
   ,
   /**
+   * Global initialisation of MHD library failed
+   */
+  MHD_SC_LIB_INIT_GLOBAL_FAILED = 51000
+  ,
+  /**
    * Something wrong in the internal MHD logic.
    * This error should be never returned if MHD works as expected.
    * If this code is ever returned, please report to MHD maintainers.
    */
-  MHD_SC_INTERNAL_ERROR = 51000
+  MHD_SC_INTERNAL_ERROR = 59900
   ,
 
   /* 60000-level errors are because the application
