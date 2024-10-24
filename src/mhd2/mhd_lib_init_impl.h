@@ -32,7 +32,7 @@
 #endif
 #define MHD_LIB_INIT_IMPL_H 1
 
-/* Due to the bug in GCC/binutils, on some platforms (at least on W32)
+/* Due to peculiarities of linking, on some platforms (at least on W32)
  * the automatic initialisation functions are not called when library is used
  * as a static library and no function is used/referred from the same
  * object/module/c-file.
@@ -42,34 +42,21 @@
 #else  /* MHD_LIB_INIT_IMPL_H_IN_DAEMON_CREATE_C */
 
 #include "mhd_sys_options.h"
-#include "mhd_lib_init.h"
-
-/* Forward declarations */
-void
-mhd_lib_global_init_wrap (void);
-
-void
-mhd_lib_global_deinit_wrap (void);
+#include "mhd_lib_init_auto.h"
 
 
-void
-mhd_lib_global_init_wrap (void)
-{
-  mhd_lib_global_init ();
-}
+#ifdef mhd_AUTOINIT_FUNCS_USE
 
-
-void
-mhd_lib_global_deinit_wrap (void)
-{
-  mhd_lib_global_deinit ();
-}
-
-
-#ifdef AIF_AUTOINIT_FUNCS_ARE_SUPPORTED
-
-AIF_SET_INIT_AND_DEINIT_FUNCS (mhd_lib_global_init_wrap, \
-                               mhd_lib_global_deinit_wrap);
+#  ifndef mhd_AUTOINIT_FUNCS_PRAGMA
+/* Call automatically initialiser and deinitialiser functions */
+AIF_SET_INIT_AND_DEINIT_FUNCS (mhd_lib_global_init_auto, \
+                               mhd_lib_global_deinit_auto);
+#  else
+/* Call automatically initialiser function */
+#pragma init(mhd_lib_global_init_auto)
+/* Call automatically deinitialiser function */
+#pragma fini(mhd_lib_global_deinit_auto)
+#  endif
 
 #endif /* AIF_AUTOINIT_FUNCS_ARE_SUPPORTED */
 

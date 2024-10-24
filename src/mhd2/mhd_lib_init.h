@@ -27,40 +27,24 @@
 #ifndef MHD_LIB_INIT_H
 #define MHD_LIB_INIT_H 1
 #include "mhd_sys_options.h"
-#include "autoinit_funcs.h"
+
+#include "sys_bool_type.h"
 
 /**
- * Initialise library global resources
+ * Check whether the library was initialised and initialise if needed.
+ * Increment number of active users of library global resources.
+ * @return 'true' if succeed,
+ *         'false' if failed
  */
-void
-mhd_lib_global_init (void);
+MHD_INTERNAL bool
+mhd_lib_init_global_if_needed (void);
 
 /**
- * Deinitialise and free library global resources
+ * Decrement number of the library active users of global global resources and
+ * deinitialise the library if no active users left.
  */
-void
-mhd_lib_global_deinit (void);
-
-#ifdef AIF_AUTOINIT_FUNCS_ARE_SUPPORTED
-#  define MHD_GLOBAL_INIT_CHECK() ((void) 0)
-#else /* ! AIF_AUTOINIT_FUNCS_ARE_SUPPORTED */
-/* The functions are exported, but not declared in public header */
-
-/**
- * Check whether the library was initialised and initialise if needed
- */
-MHD_EXTERN_ void
-MHD_lib_global_check_init (void);
-
-/**
- * Check whether the library has been de-initialised and de-initialise if needed
- */
-MHD_EXTERN_ void
-MHD_lib_global_check_deinit (void);
-
-#  define MHD_GLOBAL_INIT_CHECK() MHD_lib_global_check_init ()
-
-#endif /* ! AIF_AUTOINIT_FUNCS_ARE_SUPPORTED */
+MHD_INTERNAL void
+mhd_lib_deinit_global_if_needed (void);
 
 
 #endif /* ! MHD_LIB_INIT_H */

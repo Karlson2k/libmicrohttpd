@@ -240,6 +240,8 @@ mclock_init_mach_time (void)
 
   return true;
 }
+
+
 #else  /* ! mhd_USE_MACH_TIME */
 #  define mclock_init_mach_time()     (true)
 #endif /* ! mhd_USE_MACH_TIME */
@@ -321,7 +323,7 @@ static enum mhd_mono_clock_source mono_clock_source =
  * Initialise milliseconds counters.
  */
 MHD_INTERNAL void
-mhd_monotonic_msec_counter_init (void)
+mhd_mclock_init_once (void)
 {
 #ifdef HAVE_CLOCK_GET_TIME
   mach_timespec_t cur_time;
@@ -567,35 +569,30 @@ mhd_monotonic_msec_counter_init (void)
 }
 
 
-/**
- * Deinitialise milliseconds counters by freeing any allocated resources
- */
-MHD_INTERNAL void
-mhd_monotonic_msec_counter_finish (void)
-{
 #ifdef HAVE_CLOCK_GET_TIME
+/* Resources may be allocated only for Darwin clock_get_time() */
+
+MHD_INTERNAL void
+mhd_mclock_deinit (void)
+{
   if (mhd_MCLOCK_SOUCE_GET_TIME == mono_clock_source)
     mclock_deinit_clock_get_time ();
-#endif
 }
 
 
-MHD_INTERNAL bool
-mhd_monotonic_msec_counter_re_init (void)
+MHD_INTERNAL void
+mhd_mclock_re_init (void)
 {
-#ifdef HAVE_CLOCK_GET_TIME
   if (mhd_MCLOCK_SOUCE_GET_TIME == mono_clock_source)
   {
     if (! mclock_init_clock_get_time ())
-    {
       /* Fallback to full initialisation */
-      return mhd_monotonic_msec_counter_init ();
-    }
+      mhd_mclock_init_once ();
   }
-#endif
-  return true;
 }
 
+
+#endif /* HAVE_CLOCK_GET_TIME */
 
 /**
  * Monotonic milliseconds counter, useful for timeout calculation.

@@ -166,7 +166,7 @@ iov_max_init_ (void)
  */
 #  define mhd_IOV_MAX    mhd_iov_max_
 #else  /* ! HAVE_SYSCONF || ! _SC_IOV_MAX */
-#  define iov_max_init_() (void) 0
+#  define iov_max_init_() ((void) 0)
 #    if defined(IOV_MAX)
 
 /**
@@ -177,11 +177,8 @@ iov_max_init_ (void)
 #endif /* ! HAVE_SYSCONF || ! _SC_IOV_MAX */
 
 
-/**
- * Initialises static variables
- */
 void
-mhd_send_init_static_vars (void)
+mhd_send_init_once (void)
 {
   /* FreeBSD 11 and later allow to specify read-ahead size
    * and handles SF_NODISKIO differently.

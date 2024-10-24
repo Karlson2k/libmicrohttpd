@@ -28,6 +28,9 @@
 
 #include "sys_base_types.h"
 #include "sys_malloc.h"
+#ifndef NDEBUG
+#  include <stdio.h> /* For debug print */
+#endif /* ! NDEBUG */
 
 #include "mhd_public_api.h"
 
@@ -51,7 +54,14 @@ MHD_daemon_create (MHD_RequestCallback req_cb,
   struct MHD_Daemon *d;
   struct DaemonOptions *s;
 
-  MHD_GLOBAL_INIT_CHECK ();
+  if (! mhd_lib_init_global_if_needed ())
+  {
+#ifndef NDEBUG
+    fprintf (stderr, "Failed to initialise MHD library.\n");
+    fflush (stderr);
+#endif /* ! NDEBUG */
+    return NULL;
+  }
 
   if (NULL == req_cb)
     return NULL;

@@ -39,10 +39,11 @@ struct MHD_Connection; /* forward declaration */
 struct mhd_iovec_track; /* forward declaration */
 
 /**
- * Initialises static variables
+ * Initialises static variables.
+ * Need to be called only once.
  */
 void
-mhd_send_init_static_vars (void);
+mhd_send_init_once (void);
 
 
 /**

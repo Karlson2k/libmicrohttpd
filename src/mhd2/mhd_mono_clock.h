@@ -31,23 +31,33 @@
 #include "sys_bool_type.h"
 
 /**
- * Initialise milliseconds counters.
+ * Initialise milliseconds counters completely.
+ * Must be called only one time per application run.
  */
 MHD_INTERNAL void
-mhd_monotonic_msec_counter_init (void);
+mhd_mclock_init_once (void);
 
+
+#ifdef HAVE_CLOCK_GET_TIME
+/* Resources may be allocated only for Darwin clock_get_time() */
 
 /**
  * Deinitialise milliseconds counters by freeing any allocated resources
  */
 MHD_INTERNAL void
-mhd_monotonic_msec_counter_finish (void);
+mhd_mclock_deinit (void);
 
 /**
  * Re-initialise monotonic clocks are de-initialisaion has been performed
  */
-MHD_INTERNAL bool
-mhd_monotonic_msec_counter_re_init (void);
+MHD_INTERNAL void
+mhd_mclock_re_init (void);
+
+#else  /* ! HAVE_CLOCK_GET_TIME */
+/* No-op implementation */
+#  define mhd_mclock_deinit()   ((void) 0)
+#  define mhd_mclock_re_init()  ((void) 0)
+#endif /* ! HAVE_CLOCK_GET_TIME */
 
 
 /**

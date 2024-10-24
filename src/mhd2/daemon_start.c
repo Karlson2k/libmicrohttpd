@@ -68,6 +68,8 @@
 
 #include "mhd_assert.h"
 #include "mhd_sockets_funcs.h"
+
+#include "mhd_lib_init.h"
 #include "daemon_logger.h"
 
 #ifdef MHD_USE_THREADS
@@ -2914,4 +2916,6 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
   daemon->state = mhd_DAEMON_STATE_STOPPED; /* Useful only for debugging */
 
   free (daemon);
+
+  mhd_lib_deinit_global_if_needed ();
 }
