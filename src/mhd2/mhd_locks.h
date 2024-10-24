@@ -146,7 +146,7 @@ typedef CRITICAL_SECTION mhd_mutex;
 /**
  *  Define static mutex and statically initialise it.
  */
-#  define mhd_MUTEX_STATIC_DEFN_INIT_(m) \
+#  define mhd_MUTEX_STATIC_DEFN_INIT(m) \
         static mhd_mutex m = mhd_MUTEX_INITIALISER_STAT
 #endif
 
@@ -237,13 +237,15 @@ typedef CRITICAL_SECTION mhd_mutex;
 
 #else  /* ! MHD_USE_THREADS */
 
-#define mhd_mutex_init(ignore) (! 0)
-#define mhd_mutex_destroy(ignore) (! 0)
-#define mhd_mutex_destroy_chk(ignore) (void) 0
-#define mhd_mutex_lock(ignore) (! 0)
-#define mhd_mutex_lock_chk(ignore) (void) 0
-#define mhd_mutex_unlock(ignore) (! 0)
-#define mhd_mutex_unlock_chk(ignore) (void) 0
+#  define mhd_mutex_init(ignored) (! 0)
+#  define mhd_MUTEX_INITIALISER_STAT /* empty */
+#  define mhd_MUTEX_STATIC_DEFN_INIT(ignored) /* nothing */
+#  define mhd_mutex_destroy(ignored) (! 0)
+#  define mhd_mutex_destroy_chk(ignored) (void) 0
+#  define mhd_mutex_lock(ignored) (! 0)
+#  define mhd_mutex_lock_chk(ignored) (void) 0
+#  define mhd_mutex_unlock(ignored) (! 0)
+#  define mhd_mutex_unlock_chk(ignored) (void) 0
 
 #endif /* ! MHD_USE_THREADS */
 
