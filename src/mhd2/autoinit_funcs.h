@@ -78,7 +78,7 @@
 * The header version number in packed BCD form.
 * (For example, version 1.9.30-1 would be 0x01093001)
 */
-#define AIF_VERSION 0x02000000
+#define AIF_VERSION 0x02000100
 
 /* Define AUTOINIT_FUNCS_NO_WARNINGS to disable all custom warnings
    in this header */
@@ -524,9 +524,18 @@
 #error User-defined initialiser and deinitialiser functions are not supported
 #  endif /* AUTOINIT_FUNCS_EMIT_ERROR_IF_NOT_SUPPORTED */
 
-#  if defined(__SUNPRO_C) && ! defined(AUTOINIT_FUNCS_NO_WARNINGS_SUNPRO_C)
+#  if defined(__SUNPRO_C) && (defined(sun) || defined(__sun)) \
+  && (defined(__SVR4) || defined(__svr4__))
+/* "#parama init(func_name)" can be used. "func_name" must be declared.
+   The form is "void func_name(void)". */
+#    define AIF_PRAGMA_INIT_SUPPORTED        1
+/* "#parama fini(func_name)" can be used. "func_name" must be declared.
+   The form is "void func_name(void)". */
+#    define AIF_PRAGMA_FINI_SUPPORTED        1
+#    if ! defined(AUTOINIT_FUNCS_NO_WARNINGS_SUNPRO_C)
 #warning The compiler supports "#pragma init(func1)" and "#pragma fini(func2)"
 #warning Use "pragma" to set initialiser and deinitialiser functions
+#    endif
 #  endif
 
 /* "Not supported" implementation */
