@@ -19,7 +19,7 @@
 
 /**
  * @file src/mhd2/mhd_mono_clock.h
- * @brief  internal monotonic clock functions implementations
+ * @brief  monotonic clock functions implementations
  * @author Karlson2k (Evgeny Grin)
  */
 
@@ -197,6 +197,11 @@ enum mhd_mono_clock_source
   mhd_MCLOCK_SOUCE_PERFCOUNTER
 };
 
+/**
+ * The active source of the monotonic time
+ */
+static enum mhd_mono_clock_source mono_clock_source =
+  mhd_MCLOCK_SOUCE_NO_SOURCE;
 
 /**
  * Initialise milliseconds counters.
@@ -207,7 +212,6 @@ mhd_monotonic_msec_counter_init (void)
 #ifdef HAVE_CLOCK_GET_TIME
   mach_timespec_t cur_time;
 #endif /* HAVE_CLOCK_GET_TIME */
-  enum mhd_mono_clock_source mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
 #ifdef HAVE_CLOCK_GETTIME
   struct timespec ts;
 
@@ -216,6 +220,8 @@ mhd_monotonic_msec_counter_init (void)
 #ifdef HAVE_CLOCK_GET_TIME
   mono_clock_service = mhd_CLOCK_SERV_INVALID;
 #endif /* HAVE_CLOCK_GET_TIME */
+
+  mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
 
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_MONOTONIC_COARSE
@@ -396,13 +402,7 @@ mhd_monotonic_msec_counter_init (void)
   }
   else
 #endif /* HAVE_GETHRTIME */
-  if (! 0)
-  {
-    /* no suitable clock source was found */
-    mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
-  }
-
-  (void) mono_clock_source; /* avoid compiler warning */
+  (void) 0; /* The end of if-else chain */
 
   /* Initialise start values for fallbacks */
 #ifdef HAVE_TIMESPEC_GET
@@ -456,9 +456,9 @@ mhd_monotonic_msec_counter (void)
   if ( (mhd_CLOCK_ID_UNWANTED != mono_clock_id) &&
        (0 == clock_gettime (mono_clock_id,
                             &ts)) )
-    return (uint_fast64_t) (((uint_fast64_t) (ts.tv_sec - mono_clock_start))
-                            * 1000
-                            + (uint_fast64_t) (ts.tv_nsec / 1000000));
+    return (uint_fast64_t)
+           (((uint_fast64_t) (ts.tv_sec - mono_clock_start)) * 1000
+            + (uint_fast64_t) (ts.tv_nsec / 1000000));
 #endif /* HAVE_CLOCK_GETTIME */
 #ifdef HAVE_CLOCK_GET_TIME
   if (mhd_CLOCK_SERV_INVALID != mono_clock_service)
@@ -467,10 +467,9 @@ mhd_monotonic_msec_counter (void)
 
     if (KERN_SUCCESS == clock_get_time (mono_clock_service,
                                         &cur_time))
-      return (uint_fast64_t) (((uint_fast64_t) (cur_time.tv_sec
-                                                - mono_clock_start))
-                              * 1000 + (uint_fast64_t) (cur_time.tv_nsec
-                                                        / 1000000));
+      return (uint_fast64_t)
+             (((uint_fast64_t) (cur_time.tv_sec - mono_clock_start)) * 1000
+              + (uint_fast64_t) (cur_time.tv_nsec / 1000000));
   }
 #endif /* HAVE_CLOCK_GET_TIME */
 #if defined(_WIN32)
@@ -505,9 +504,9 @@ mhd_monotonic_msec_counter (void)
   {
     struct timeval tv;
     if (0 == gettimeofday (&tv, NULL))
-      return (uint_fast64_t) (((uint_fast64_t) (tv.tv_sec - gettime_start))
-                              * 1000
-                              + (uint_fast64_t) (tv.tv_usec / 1000));
+      return (uint_fast64_t)
+             (((uint_fast64_t) (tv.tv_sec - gettime_start)) * 1000
+              + (uint_fast64_t) (tv.tv_usec / 1000));
   }
 #endif /* HAVE_GETTIMEOFDAY */
 
