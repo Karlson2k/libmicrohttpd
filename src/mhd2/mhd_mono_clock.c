@@ -1,6 +1,6 @@
 /*
   This file is part of libmicrohttpd
-  Copyright (C) 2015-2022 Karlson2k (Evgeny Grin)
+  Copyright (C) 2015-2024 Karlson2k (Evgeny Grin)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,8 @@
 
 #include "mhd_mono_clock.h"
 
+#include "sys_bool_type.h"
+
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 /* Prefer native clock source over wrappers */
 #  ifdef HAVE_CLOCK_GETTIME
@@ -49,15 +51,14 @@
 /* for host_get_clock_service(), mach_host_self(), mach_task_self() */
 #  include <mach/clock.h>
 /* for clock_get_time() */
-
-#  define mhd_CLOCK_SERV_INVALID ((clock_serv_t) -2)
-
-static clock_serv_t mono_clock_service = mhd_CLOCK_SERV_INVALID;
 #endif /* HAVE_CLOCK_GET_TIME */
 
 #ifdef _WIN32
 #  include <windows.h>
 #endif /* _WIN32 */
+
+#include "mhd_assert.h"
+
 
 #ifdef HAVE_CLOCK_GETTIME
 #  ifdef CLOCK_REALTIME
@@ -75,11 +76,14 @@ static clockid_t mono_clock_id = mhd_CLOCK_ID_UNWANTED;
 static time_t mono_clock_start;
 #endif /* HAVE_CLOCK_GETTIME || HAVE_CLOCK_GET_TIME || HAVE_GETHRTIME */
 
-#if defined(HAVE_TIMESPEC_GET) || defined(HAVE_GETTIMEOFDAY)
-/* The start value shared for timespec_get() and gettimeofday () */
-static time_t gettime_start;
-#endif /* HAVE_TIMESPEC_GET || HAVE_GETTIMEOFDAY */
-static time_t sys_clock_start;
+#ifdef HAVE_CLOCK_GET_TIME
+#  if ! defined(SYSTEM_CLOCK) && defined(REALTIME_CLOCK)
+#    define SYSTEM_CLOCK REALTIME_CLOCK
+#  endif
+#  define mhd_CLOCK_SERV_INVALID ((clock_serv_t) -2)
+
+static clock_serv_t mono_clock_service = mhd_CLOCK_SERV_INVALID;
+#endif /* HAVE_CLOCK_GET_TIME */
 
 #ifdef HAVE_GETHRTIME
 static hrtime_t hrtime_start;
@@ -94,6 +98,68 @@ static uint64_t perf_start;     /* 'uint64_t' is available on W32 always */
 #  endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
 
+/* Start values for fallback sources */
+#if defined(HAVE_TIMESPEC_GET) || defined(HAVE_GETTIMEOFDAY)
+/* The start value shared for timespec_get() and gettimeofday () */
+static time_t gettime_start;
+#endif /* HAVE_TIMESPEC_GET || HAVE_GETTIMEOFDAY */
+static time_t sys_clock_start;
+
+
+#ifdef HAVE_CLOCK_GET_TIME
+/**
+ * Initialise Darwin-specific resources for 'clock_get_time()'
+ * @param[out] cur_time the optional pointer to get the current time value,
+ *                      can be NULL
+ * @return 'true' if succeed,
+ *         'false' if failed
+ */
+static MHD_FN_PAR_OUT_ (1) MHD_FN_MUST_CHECK_RESULT_ bool
+clock_darwin_init (mach_timespec_t *cur_time)
+{
+  mhd_assert (mhd_CLOCK_SERV_INVALID == mono_clock_service);
+
+  if (KERN_SUCCESS == host_get_clock_service (mach_host_self (),
+                                              SYSTEM_CLOCK,
+                                              &mono_clock_service))
+    return false;
+
+  if (NULL != cur_time)
+  {
+    if (KERN_SUCCESS != clock_get_time (mono_clock_service,
+                                        cur_time))
+    {
+      (void) mach_port_deallocate (mach_task_self (),
+                                   mono_clock_service);
+      mono_clock_service = mhd_CLOCK_SERV_INVALID;
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+/**
+ * De-initialise Darwin-specific resources for 'clock_get_time()'
+ */
+static void
+clock_darwin_deinit (void)
+{
+  if (mhd_CLOCK_SERV_INVALID != mono_clock_service)
+  {
+    (void) mach_port_deallocate (mach_task_self (),
+                                 mono_clock_service);
+    mono_clock_service = mhd_CLOCK_SERV_INVALID;
+  }
+}
+
+
+#else  /* HAVE_CLOCK_GET_TIME */
+/* No-op implementation */
+#  define clock_darwin_init(ptr) ((void) ptr, false)
+#  define clock_darwin_deinit() ((void) 0)
+#endif /* HAVE_CLOCK_GET_TIME */
 
 /**
  * Type of monotonic clock source
@@ -272,11 +338,7 @@ mhd_monotonic_msec_counter_init (void)
   /* Darwin-specific monotonic clock */
   /* Should be monotonic as clock_set_time function always unconditionally */
   /* failed on modern kernels */
-  if ( (KERN_SUCCESS == host_get_clock_service (mach_host_self (),
-                                                SYSTEM_CLOCK,
-                                                &mono_clock_service)) &&
-       (KERN_SUCCESS == clock_get_time (mono_clock_service,
-                                        &cur_time)) )
+  if (mclock_init_clock_get_time (&cur_time))
   {
     mono_clock_start = cur_time.tv_sec;
     mono_clock_source = mhd_MCLOCK_SOUCE_GET_TIME;
@@ -340,16 +402,6 @@ mhd_monotonic_msec_counter_init (void)
     mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
   }
 
-#ifdef HAVE_CLOCK_GET_TIME
-  if ( (mhd_MCLOCK_SOUCE_GET_TIME != mono_clock_source) &&
-       (mhd_CLOCK_SERV_INVALID != mono_clock_service) )
-  {
-    /* clock service was initialised but clock_get_time failed */
-    mach_port_deallocate (mach_task_self (),
-                          mono_clock_service);
-    mono_clock_service = mhd_CLOCK_SERV_INVALID;
-  }
-#else
   (void) mono_clock_source; /* avoid compiler warning */
 
   /* Initialise start values for fallbacks */
@@ -382,14 +434,7 @@ mhd_monotonic_msec_counter_init (void)
 MHD_INTERNAL void
 mhd_monotonic_msec_counter_finish (void)
 {
-#ifdef HAVE_CLOCK_GET_TIME
-  if (mhd_CLOCK_SERV_INVALID != mono_clock_service)
-  {
-    mach_port_deallocate (mach_task_self (),
-                          mono_clock_service);
-    mono_clock_service = mhd_CLOCK_SERV_INVALID;
-  }
-#endif /* HAVE_CLOCK_GET_TIME */
+  clock_darwin_deinit ();
 }
 
 

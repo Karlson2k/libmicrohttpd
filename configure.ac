@@ -3720,8 +3720,12 @@ MHD_FIND_LIB([clock_gettime],[[#include <time.h>]],
 
 MHD_CHECK_FUNC([clock_get_time],
   [[
-#include <mach/clock.h>
 #include <mach/mach.h>
+#include <mach/clock.h>
+
+#if !defined(SYSTEM_CLOCK) && defined(REALTIME_CLOCK)
+#  define SYSTEM_CLOCK REALTIME_CLOCK
+#endif
   ]],
   [[
     clock_serv_t cs;
