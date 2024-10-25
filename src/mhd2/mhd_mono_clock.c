@@ -21,8 +21,6 @@
  * @file src/mhd2/mhd_mono_clock.h
  * @brief  internal monotonic clock functions implementations
  * @author Karlson2k (Evgeny Grin)
- *
- * TODO: update code style
  */
 
 #include "mhd_sys_options.h"
@@ -52,9 +50,9 @@
 #  include <mach/clock.h>
 /* for clock_get_time() */
 
-#  define _MHD_INVALID_CLOCK_SERV ((clock_serv_t) -2)
+#  define mhd_CLOCK_SERV_INVALID ((clock_serv_t) -2)
 
-static clock_serv_t mono_clock_service = _MHD_INVALID_CLOCK_SERV;
+static clock_serv_t mono_clock_service = mhd_CLOCK_SERV_INVALID;
 #endif /* HAVE_CLOCK_GET_TIME */
 
 #ifdef _WIN32
@@ -63,12 +61,12 @@ static clock_serv_t mono_clock_service = _MHD_INVALID_CLOCK_SERV;
 
 #ifdef HAVE_CLOCK_GETTIME
 #  ifdef CLOCK_REALTIME
-#    define _MHD_UNWANTED_CLOCK CLOCK_REALTIME
+#    define mhd_CLOCK_ID_UNWANTED CLOCK_REALTIME
 #  else  /* !CLOCK_REALTIME */
-#    define _MHD_UNWANTED_CLOCK ((clockid_t) -2)
+#    define mhd_CLOCK_ID_UNWANTED ((clockid_t) -2)
 #  endif /* !CLOCK_REALTIME */
 
-static clockid_t mono_clock_id = _MHD_UNWANTED_CLOCK;
+static clockid_t mono_clock_id = mhd_CLOCK_ID_UNWANTED;
 #endif /* HAVE_CLOCK_GETTIME */
 
 /* sync clocks; reduce chance of value wrap */
@@ -89,10 +87,10 @@ static hrtime_t hrtime_start;
 
 #ifdef _WIN32
 #  if _WIN32_WINNT >= 0x0600
-static uint64_t tick_start;
+static uint64_t tick_start;     /* 'uint64_t' is available on W32 always */
 #  else  /* _WIN32_WINNT < 0x0600 */
-static uint64_t perf_freq;
-static uint64_t perf_start;
+static uint64_t perf_freq;      /* 'uint64_t' is available on W32 always */
+static uint64_t perf_start;     /* 'uint64_t' is available on W32 always */
 #  endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
 
@@ -100,66 +98,59 @@ static uint64_t perf_start;
 /**
  * Type of monotonic clock source
  */
-enum _MHD_mono_clock_source
+enum mhd_mono_clock_source
 {
   /**
    * No monotonic clock
    */
-  _MHD_CLOCK_NO_SOURCE = 0,
+  mhd_MCLOCK_SOUCE_NO_SOURCE = 0,
 
   /**
    * clock_gettime() with specific clock
    */
-  _MHD_CLOCK_GETTIME,
+  mhd_MCLOCK_SOUCE_GETTIME,
 
   /**
    * clock_get_time() with specific clock service
    */
-  _MHD_CLOCK_GET_TIME,
+  mhd_MCLOCK_SOUCE_GET_TIME,
 
   /**
    * gethrtime() / 1000000000
    */
-  _MHD_CLOCK_GETHRTIME,
+  mhd_MCLOCK_SOUCE_GETHRTIME,
 
   /**
    * GetTickCount64() / 1000
    */
-  _MHD_CLOCK_GETTICKCOUNT64,
+  mhd_MCLOCK_SOUCE_GETTICKCOUNT64,
 
   /**
    * QueryPerformanceCounter() / QueryPerformanceFrequency()
    */
-  _MHD_CLOCK_PERFCOUNTER
+  mhd_MCLOCK_SOUCE_PERFCOUNTER
 };
 
 
 /**
  * Initialise milliseconds counters.
  */
-void
-MHD_monotonic_msec_counter_init (void)
+MHD_INTERNAL void
+mhd_monotonic_msec_counter_init (void)
 {
 #ifdef HAVE_CLOCK_GET_TIME
   mach_timespec_t cur_time;
 #endif /* HAVE_CLOCK_GET_TIME */
-  enum _MHD_mono_clock_source mono_clock_source = _MHD_CLOCK_NO_SOURCE;
+  enum mhd_mono_clock_source mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
 #ifdef HAVE_CLOCK_GETTIME
   struct timespec ts;
 
-  mono_clock_id = _MHD_UNWANTED_CLOCK;
+  mono_clock_id = mhd_CLOCK_ID_UNWANTED;
 #endif /* HAVE_CLOCK_GETTIME */
 #ifdef HAVE_CLOCK_GET_TIME
-  mono_clock_service = _MHD_INVALID_CLOCK_SERV;
+  mono_clock_service = mhd_CLOCK_SERV_INVALID;
 #endif /* HAVE_CLOCK_GET_TIME */
 
-  /* just a little syntactic trick to get the
-     various following ifdef's to work out nicely */
-  if (0)
-  {
-    (void) 0; /* Mute possible compiler warning */
-  }
-  else
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_MONOTONIC_COARSE
   /* Linux-specific fast value-getting clock */
@@ -170,7 +161,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_MONOTONIC_COARSE;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_MONOTONIC_COARSE */
@@ -182,7 +173,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_MONOTONIC_FAST;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_MONOTONIC_COARSE */
@@ -195,7 +186,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_MONOTONIC_RAW_APPROX;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_MONOTONIC_RAW */
@@ -208,7 +199,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_MONOTONIC_RAW;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_MONOTONIC_RAW */
@@ -220,7 +211,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_BOOTTIME;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_BOOTTIME */
@@ -233,7 +224,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_MONOTONIC;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_MONOTONIC */
@@ -245,7 +236,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_UPTIME;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_BOOTTIME */
@@ -253,7 +244,7 @@ MHD_monotonic_msec_counter_init (void)
 #ifdef HAVE_CLOCK_GET_TIME
   /* Darwin-specific monotonic clock */
   /* Should be monotonic as clock_set_time function always unconditionally */
-  /* failed on latest kernels */
+  /* failed on modern kernels */
   if ( (KERN_SUCCESS == host_get_clock_service (mach_host_self (),
                                                 SYSTEM_CLOCK,
                                                 &mono_clock_service)) &&
@@ -261,7 +252,7 @@ MHD_monotonic_msec_counter_init (void)
                                         &cur_time)) )
   {
     mono_clock_start = cur_time.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GET_TIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GET_TIME;
   }
   else
 #endif /* HAVE_CLOCK_GET_TIME */
@@ -272,7 +263,7 @@ MHD_monotonic_msec_counter_init (void)
   if (1)
   {
     tick_start = GetTickCount64 ();
-    mono_clock_source = _MHD_CLOCK_GETTICKCOUNT64;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTICKCOUNT64;
   }
   else
 #else  /* _WIN32_WINNT < 0x0600 */
@@ -283,11 +274,11 @@ MHD_monotonic_msec_counter_init (void)
     LARGE_INTEGER freq;
     LARGE_INTEGER perf_counter;
 
-    QueryPerformanceFrequency (&freq);       /* never fail on XP and later */
-    QueryPerformanceCounter (&perf_counter); /* never fail on XP and later */
+    (void) QueryPerformanceFrequency (&freq);       /* never fail on XP and later */
+    (void) QueryPerformanceCounter (&perf_counter); /* never fail on XP and later */
     perf_freq = (uint64_t) freq.QuadPart;
     perf_start = (uint64_t) perf_counter.QuadPart;
-    mono_clock_source = _MHD_CLOCK_PERFCOUNTER;
+    mono_clock_source = mhd_MCLOCK_SOUCE_PERFCOUNTER;
   }
   else
 #endif /* _WIN32_WINNT < 0x0600 */
@@ -301,7 +292,7 @@ MHD_monotonic_msec_counter_init (void)
   {
     mono_clock_id = CLOCK_HIGHRES;
     mono_clock_start = ts.tv_sec;
-    mono_clock_source = _MHD_CLOCK_GETTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
   }
   else
 #endif /* CLOCK_HIGHRES */
@@ -312,23 +303,28 @@ MHD_monotonic_msec_counter_init (void)
   if (1)
   {
     hrtime_start = gethrtime ();
-    mono_clock_source = _MHD_CLOCK_GETHRTIME;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETHRTIME;
   }
   else
 #endif /* HAVE_GETHRTIME */
+  if (0) /* Prevent compiler error if all macros above are not defined */
+  {
+    (void) 0; /* Mute possible compiler warning */
+  }
+  else
   {
     /* no suitable clock source was found */
-    mono_clock_source = _MHD_CLOCK_NO_SOURCE;
+    mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
   }
 
 #ifdef HAVE_CLOCK_GET_TIME
-  if ( (_MHD_CLOCK_GET_TIME != mono_clock_source) &&
-       (_MHD_INVALID_CLOCK_SERV != mono_clock_service) )
+  if ( (mhd_MCLOCK_SOUCE_GET_TIME != mono_clock_source) &&
+       (mhd_CLOCK_SERV_INVALID != mono_clock_service) )
   {
     /* clock service was initialised but clock_get_time failed */
     mach_port_deallocate (mach_task_self (),
                           mono_clock_service);
-    mono_clock_service = _MHD_INVALID_CLOCK_SERV;
+    mono_clock_service = mhd_CLOCK_SERV_INVALID;
   }
 #else
   (void) mono_clock_source; /* avoid compiler warning */
@@ -360,15 +356,15 @@ MHD_monotonic_msec_counter_init (void)
 /**
  * Deinitialise milliseconds counters by freeing any allocated resources
  */
-void
-MHD_monotonic_msec_counter_finish (void)
+MHD_INTERNAL void
+mhd_monotonic_msec_counter_finish (void)
 {
 #ifdef HAVE_CLOCK_GET_TIME
-  if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
+  if (mhd_CLOCK_SERV_INVALID != mono_clock_service)
   {
     mach_port_deallocate (mach_task_self (),
                           mono_clock_service);
-    mono_clock_service = _MHD_INVALID_CLOCK_SERV;
+    mono_clock_service = mhd_CLOCK_SERV_INVALID;
   }
 #endif /* HAVE_CLOCK_GET_TIME */
 }
@@ -381,15 +377,15 @@ MHD_monotonic_msec_counter_finish (void)
  *
  * @return number of microseconds from some fixed moment
  */
-uint_fast64_t
-MHD_monotonic_msec_counter (void)
+MHD_INTERNAL uint_fast64_t
+mhd_monotonic_msec_counter (void)
 {
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_TIMESPEC_GET)
   struct timespec ts;
 #endif /* HAVE_CLOCK_GETTIME || HAVE_TIMESPEC_GET */
 
 #ifdef HAVE_CLOCK_GETTIME
-  if ( (_MHD_UNWANTED_CLOCK != mono_clock_id) &&
+  if ( (mhd_CLOCK_ID_UNWANTED != mono_clock_id) &&
        (0 == clock_gettime (mono_clock_id,
                             &ts)) )
     return (uint_fast64_t) (((uint_fast64_t) (ts.tv_sec - mono_clock_start))
@@ -397,7 +393,7 @@ MHD_monotonic_msec_counter (void)
                             + (uint_fast64_t) (ts.tv_nsec / 1000000));
 #endif /* HAVE_CLOCK_GETTIME */
 #ifdef HAVE_CLOCK_GET_TIME
-  if (_MHD_INVALID_CLOCK_SERV != mono_clock_service)
+  if (mhd_CLOCK_SERV_INVALID != mono_clock_service)
   {
     mach_timespec_t cur_time;
 

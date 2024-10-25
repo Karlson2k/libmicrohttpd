@@ -601,7 +601,7 @@ mhd_stream_is_timeout_expired (struct MHD_Connection *restrict c)
   if (0 == timeout)
     return false;
 
-  now = MHD_monotonic_msec_counter (); // TODO: Get and use timer value one time only per round
+  now = mhd_monotonic_msec_counter (); // TODO: Get and use timer value one time only per round
   since_actv = now - c->last_activity;
   /* Keep the next lines in sync with #connection_get_wait() to avoid
    * undesired side-effects like busy-waiting. */
@@ -652,7 +652,7 @@ mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
     return;  /* Skip update of activity for connections
                without timeout timer. */
 
-  c->last_activity = MHD_monotonic_msec_counter (); // TODO: Get and use time value one time per round
+  c->last_activity = mhd_monotonic_msec_counter (); // TODO: Get and use time value one time per round
   if (mhd_D_HAS_THR_PER_CONN (d))
     return; /* each connection has personal timeout */
 

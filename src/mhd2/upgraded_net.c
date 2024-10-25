@@ -391,7 +391,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
     if (! wait_indefinitely)
     {
       uint_fast64_t cur_time;
-      cur_time = MHD_monotonic_msec_counter ();
+      cur_time = mhd_monotonic_msec_counter ();
 
       if (! finish_time_set)
       {

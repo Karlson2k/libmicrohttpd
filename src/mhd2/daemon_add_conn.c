@@ -205,7 +205,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
   connection->connection_timeout_ms = daemon->conns.cfg.timeout;
   connection->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
   if (0 != connection->connection_timeout_ms)
-    connection->last_activity = MHD_monotonic_msec_counter ();
+    connection->last_activity = mhd_monotonic_msec_counter ();
 
   // TODO: init TLS
   *conn_out = connection;

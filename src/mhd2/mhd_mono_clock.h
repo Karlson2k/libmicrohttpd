@@ -32,15 +32,15 @@
 /**
  * Initialise milliseconds counters.
  */
-void
-MHD_monotonic_msec_counter_init (void);
+MHD_INTERNAL void
+mhd_monotonic_msec_counter_init (void);
 
 
 /**
  * Deinitialise milliseconds counters by freeing any allocated resources
  */
-void
-MHD_monotonic_msec_counter_finish (void);
+MHD_INTERNAL void
+mhd_monotonic_msec_counter_finish (void);
 
 
 /**
@@ -50,7 +50,7 @@ MHD_monotonic_msec_counter_finish (void);
  *
  * @return number of microseconds from some fixed moment
  */
-uint_fast64_t
-MHD_monotonic_msec_counter (void);
+MHD_INTERNAL uint_fast64_t
+mhd_monotonic_msec_counter (void);
 
 #endif /* MHD_MONO_CLOCK_H */

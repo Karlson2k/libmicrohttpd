@@ -51,15 +51,15 @@ mhd_lib_global_init (void)
       MHD_PANIC ("Failed to initialise WinSock.");
   }
 #endif /* MHD_SOCKETS_KIND_WINSOCK */
-  MHD_monotonic_msec_counter_init();
-  mhd_send_init_static_vars();
+  mhd_monotonic_msec_counter_init ();
+  mhd_send_init_static_vars ();
 }
 
 
 void
 mhd_lib_global_deinit (void)
 {
-  MHD_monotonic_msec_counter_finish();
+  mhd_monotonic_msec_counter_finish ();
 #if defined(MHD_SOCKETS_KIND_WINSOCK)
   (void) WSACleanup ();
 #endif /* MHD_SOCKETS_KIND_WINSOCK */
