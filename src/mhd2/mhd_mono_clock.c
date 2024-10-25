@@ -154,8 +154,8 @@ mhd_monotonic_msec_counter_init (void)
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_MONOTONIC_COARSE
   /* Linux-specific fast value-getting clock */
-  /* Can be affected by frequency adjustment and don't count time in suspend, */
-  /* but preferred since it's fast */
+  /* Can be affected by frequency adjustment and doesn't count time
+   * in suspend, but preferred since it's fast */
   if (0 == clock_gettime (CLOCK_MONOTONIC_COARSE,
                           &ts))
   {
@@ -177,6 +177,19 @@ mhd_monotonic_msec_counter_init (void)
   }
   else
 #endif /* CLOCK_MONOTONIC_COARSE */
+#ifdef CLOCK_UPTIME_FAST
+  /* FreeBSD/DragonFly fast value-getting clock */
+  /* Can be affected by frequency adjustment and doesn't count time
+   * in suspend, but preferred since it's fast */
+  if (0 == clock_gettime (CLOCK_UPTIME_FAST,
+                          &ts))
+  {
+    mono_clock_id = CLOCK_MONOTONIC_FAST;
+    mono_clock_start = ts.tv_sec;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
+  }
+  else
+#endif /* CLOCK_UPTIME_FAST */
 #ifdef CLOCK_MONOTONIC_RAW_APPROX
   /* Darwin-specific clock */
   /* Not affected by frequency adjustment, returns clock value cached at
@@ -190,10 +203,24 @@ mhd_monotonic_msec_counter_init (void)
   }
   else
 #endif /* CLOCK_MONOTONIC_RAW */
+#ifdef CLOCK_UPTIME_RAW_APPROX
+  /* Darwin-specific clock */
+  /* Not affected by frequency adjustment, but doesn't count time in suspend.
+   * Returns clock value cached at context switch.
+   * Can be "milliseconds old", but it's fast. */
+  if (0 == clock_gettime (CLOCK_UPTIME_RAW_APPROX,
+                          &ts))
+  {
+    mono_clock_id = CLOCK_UPTIME_RAW_APPROX;
+    mono_clock_start = ts.tv_sec;
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTIME;
+  }
+  else
+#endif /* CLOCK_UPTIME_RAW_APPROX */
 #ifdef CLOCK_MONOTONIC_RAW
   /* Linux and Darwin clock */
   /* Not affected by frequency adjustment,
-   * on Linux don't count time in suspend */
+   * on Linux doesn't count time in suspend */
   if (0 == clock_gettime (CLOCK_MONOTONIC_RAW,
                           &ts))
   {
@@ -204,7 +231,7 @@ mhd_monotonic_msec_counter_init (void)
   else
 #endif /* CLOCK_MONOTONIC_RAW */
 #ifdef CLOCK_BOOTTIME
-  /* Count time in suspend on Linux so it's real monotonic, */
+  /* Counts time in suspend on Linux so it's real monotonic, */
   /* but can be slower value-getting than other clocks */
   if (0 == clock_gettime (CLOCK_BOOTTIME,
                           &ts))
@@ -307,11 +334,7 @@ mhd_monotonic_msec_counter_init (void)
   }
   else
 #endif /* HAVE_GETHRTIME */
-  if (0) /* Prevent compiler error if all macros above are not defined */
-  {
-    (void) 0; /* Mute possible compiler warning */
-  }
-  else
+  if (! 0)
   {
     /* no suitable clock source was found */
     mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
@@ -328,8 +351,8 @@ mhd_monotonic_msec_counter_init (void)
   }
 #else
   (void) mono_clock_source; /* avoid compiler warning */
-#endif /* HAVE_CLOCK_GET_TIME */
 
+  /* Initialise start values for fallbacks */
 #ifdef HAVE_TIMESPEC_GET
   if (1)
   {
