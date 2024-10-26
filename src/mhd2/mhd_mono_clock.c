@@ -482,10 +482,10 @@ mhd_monotonic_msec_counter (void)
     LARGE_INTEGER perf_counter;
     uint_fast64_t num_ticks;
 
-    QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
+    (void) QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
     num_ticks = (uint_fast64_t) (perf_counter.QuadPart - perf_start);
     return ((num_ticks / perf_freq) * 1000)
-           + ((num_ticks % perf_freq) / (perf_freq / 1000));
+           + (((num_ticks % perf_freq) * 1000) / perf_freq);
   }
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
