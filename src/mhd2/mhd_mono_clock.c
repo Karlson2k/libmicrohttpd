@@ -102,6 +102,7 @@ static uint64_t perf_start;     /* 'uint64_t' is available on W32 always */
 #if defined(HAVE_TIMESPEC_GET) || defined(HAVE_GETTIMEOFDAY)
 /* The start value shared for timespec_get() and gettimeofday () */
 static time_t gettime_start;
+#define mhd_HAVE_GETTIME_START_VAR      1
 #endif /* HAVE_TIMESPEC_GET || HAVE_GETTIMEOFDAY */
 static time_t sys_clock_start;
 
@@ -424,7 +425,12 @@ mhd_monotonic_msec_counter_init (void)
       gettime_start = 0;
   }
 #endif /* HAVE_GETTIMEOFDAY */
+
   sys_clock_start = time (NULL);
+#ifdef mhd_HAVE_GETTIME_START_VAR
+  if (((time_t) -1) == sys_clock_start)
+    sys_clock_start = gettime_start;
+#endif /* mhd_HAVE_GETTIME_START_VAR */
 }
 
 
@@ -511,5 +517,16 @@ mhd_monotonic_msec_counter (void)
 #endif /* HAVE_GETTIMEOFDAY */
 
   /* The last resort fallback with very low resolution */
-  return (uint_fast64_t) (time (NULL) - sys_clock_start) * 1000;
+#ifdef mhd_HAVE_GETTIME_START_VAR
+  if (1)
+  {
+    time_t time_now;
+    time_now = time (NULL);
+    if (((time_t) -1) != time_now)
+      return ((uint_fast64_t) (time_now - sys_clock_start)) * 1000;
+  }
+  return 0; /* No time source, should not really happen */
+#else  /* ! mhd_HAVE_GETTIME_START_VAR */
+  return ((uint_fast64_t) (time (NULL) - sys_clock_start)) * 1000;
+#endif
 }
