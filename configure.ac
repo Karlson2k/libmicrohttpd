@@ -3188,7 +3188,7 @@ AS_VAR_IF([[os_is_native_w32]], [["yes"]],[],
 )
 
 AC_CHECK_DECLS([AF_UNIX,AF_LOCAL,SOMAXCONN,IPV6_V6ONLY,SO_REUSEADDR,SO_REUSEPORT,\
-                TCP_NODELAY,TCP_FASTOPEN],[],[],
+TCP_NODELAY,TCP_FASTOPEN],[],[],
   [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
