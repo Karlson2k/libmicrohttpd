@@ -147,12 +147,10 @@ clock_darwin_init (mach_timespec_t *cur_time)
 static void
 clock_darwin_deinit (void)
 {
-  if (mhd_CLOCK_SERV_INVALID != mono_clock_service)
-  {
-    (void) mach_port_deallocate (mach_task_self (),
-                                 mono_clock_service);
-    mono_clock_service = mhd_CLOCK_SERV_INVALID;
-  }
+  mhd_assert (mhd_CLOCK_SERV_INVALID != mono_clock_service);
+  (void) mach_port_deallocate (mach_task_self (),
+                               mono_clock_service);
+  mono_clock_service = mhd_CLOCK_SERV_INVALID;
 }
 
 
@@ -168,34 +166,55 @@ clock_darwin_deinit (void)
 enum mhd_mono_clock_source
 {
   /**
-   * No monotonic clock
+   * No monotonic clock source.
    */
-  mhd_MCLOCK_SOUCE_NO_SOURCE = 0,
+  mhd_MCLOCK_SOUCE_NO_SOURCE = 0
 
+#ifdef HAVE_CLOCK_GETTIME
+  ,
   /**
-   * clock_gettime() with specific clock
+   * clock_gettime() with specific clock.
+   * Generic standard source.
    */
-  mhd_MCLOCK_SOUCE_GETTIME,
+  mhd_MCLOCK_SOUCE_GETTIME
+#endif /* HAVE_CLOCK_GETTIME */
 
+#ifdef HAVE_CLOCK_GET_TIME
+  ,
   /**
-   * clock_get_time() with specific clock service
+   * clock_get_time() with specific clock service.
+   * Darwin-specific clock source.
    */
-  mhd_MCLOCK_SOUCE_GET_TIME,
+  mhd_MCLOCK_SOUCE_GET_TIME
+#endif /* HAVE_CLOCK_GET_TIME */
 
+#ifdef HAVE_GETHRTIME
+  ,
   /**
-   * gethrtime() / 1000000000
+   * gethrtime() / 1000000
+   * HP-UX and Solaris monotonic clock source.
    */
-  mhd_MCLOCK_SOUCE_GETHRTIME,
+  mhd_MCLOCK_SOUCE_GETHRTIME
+#endif /* HAVE_GETHRTIME */
 
+#ifdef _WIN32
+#if _WIN32_WINNT >= 0x0600
+  ,
   /**
-   * GetTickCount64() / 1000
+   * GetTickCount64()
+   * W32 tick counter source.
    */
-  mhd_MCLOCK_SOUCE_GETTICKCOUNT64,
+  mhd_MCLOCK_SOUCE_GETTICKCOUNT64
+#else  /* _WIN32_WINNT < 0x0600 */
 
+  ,
   /**
    * QueryPerformanceCounter() / QueryPerformanceFrequency()
+   * Older W32 monotonic time source.
    */
   mhd_MCLOCK_SOUCE_PERFCOUNTER
+#endif /* _WIN32_WINNT < 0x0600 */
+#endif /* _WIN32 */
 };
 
 /**
@@ -224,6 +243,35 @@ mhd_monotonic_msec_counter_init (void)
 
   mono_clock_source = mhd_MCLOCK_SOUCE_NO_SOURCE;
 
+  /* Try specialised fast sources */
+#ifdef _WIN32
+#if _WIN32_WINNT >= 0x0600
+  /* W32 Vista or later specific monotonic clock */
+  /* Available since Vista, ~15ms accuracy */
+  if (1)
+  {
+    tick_start = GetTickCount64 ();
+    mono_clock_source = mhd_MCLOCK_SOUCE_GETTICKCOUNT64;
+  }
+  else
+#else  /* _WIN32_WINNT < 0x0600 */
+  /* W32 specific monotonic clock */
+  /* Available on Windows 2000 and later */
+  if (1)
+  {
+    LARGE_INTEGER freq;
+    LARGE_INTEGER perf_counter;
+
+    (void) QueryPerformanceFrequency (&freq);       /* never fail on XP and later */
+    (void) QueryPerformanceCounter (&perf_counter); /* never fail on XP and later */
+    perf_freq = (uint64_t) freq.QuadPart;
+    perf_start = (uint64_t) perf_counter.QuadPart;
+    mono_clock_source = mhd_MCLOCK_SOUCE_PERFCOUNTER;
+  }
+  else
+#endif /* _WIN32_WINNT < 0x0600 */
+#endif /* _WIN32 */
+  /* Try universally available sources */
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_MONOTONIC_COARSE
   /* Linux-specific fast value-getting clock */
@@ -342,7 +390,7 @@ mhd_monotonic_msec_counter_init (void)
 #endif /* CLOCK_BOOTTIME */
 #endif /* HAVE_CLOCK_GETTIME */
 #ifdef HAVE_CLOCK_GET_TIME
-  /* Darwin-specific monotonic clock */
+  /* Darwin-specific monotonic clock source */
   /* Should be monotonic as clock_set_time function always unconditionally */
   /* failed on modern kernels */
   if (mclock_init_clock_get_time (&cur_time))
@@ -352,33 +400,6 @@ mhd_monotonic_msec_counter_init (void)
   }
   else
 #endif /* HAVE_CLOCK_GET_TIME */
-#ifdef _WIN32
-#if _WIN32_WINNT >= 0x0600
-  /* W32 Vista or later specific monotonic clock */
-  /* Available since Vista, ~15ms accuracy */
-  if (1)
-  {
-    tick_start = GetTickCount64 ();
-    mono_clock_source = mhd_MCLOCK_SOUCE_GETTICKCOUNT64;
-  }
-  else
-#else  /* _WIN32_WINNT < 0x0600 */
-  /* W32 specific monotonic clock */
-  /* Available on Windows 2000 and later */
-  if (1)
-  {
-    LARGE_INTEGER freq;
-    LARGE_INTEGER perf_counter;
-
-    (void) QueryPerformanceFrequency (&freq);       /* never fail on XP and later */
-    (void) QueryPerformanceCounter (&perf_counter); /* never fail on XP and later */
-    perf_freq = (uint64_t) freq.QuadPart;
-    perf_start = (uint64_t) perf_counter.QuadPart;
-    mono_clock_source = mhd_MCLOCK_SOUCE_PERFCOUNTER;
-  }
-  else
-#endif /* _WIN32_WINNT < 0x0600 */
-#endif /* _WIN32 */
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_HIGHRES
   /* Solaris-specific monotonic high-resolution clock */
@@ -440,7 +461,10 @@ mhd_monotonic_msec_counter_init (void)
 MHD_INTERNAL void
 mhd_monotonic_msec_counter_finish (void)
 {
-  clock_darwin_deinit ();
+#ifdef HAVE_CLOCK_GET_TIME
+  if (mhd_MCLOCK_SOUCE_GET_TIME == mono_clock_source)
+    clock_darwin_deinit ();
+#endif
 }
 
 
@@ -454,57 +478,94 @@ mhd_monotonic_msec_counter_finish (void)
 MHD_INTERNAL uint_fast64_t
 mhd_monotonic_msec_counter (void)
 {
-#if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_TIMESPEC_GET)
-  struct timespec ts;
-#endif /* HAVE_CLOCK_GETTIME || HAVE_TIMESPEC_GET */
+  enum mhd_mono_clock_source source_to_use;
 
+  /* Optimise binary if the source is fixed */
+#if defined(_WIN32) && _WIN32_WINNT >= 0x0600
+  if (1)
+    source_to_use = mhd_MCLOCK_SOUCE_GETTICKCOUNT64;
+  else
+#endif /* _WIN32 && _WIN32_WINNT >= 0x0600 */
+  source_to_use = mono_clock_source;
+
+  mhd_assert (mono_clock_source == source_to_use);
+
+  switch (source_to_use)
+  {
+  case mhd_MCLOCK_SOUCE_NO_SOURCE:
+    break; /* Use fallbacks */
 #ifdef HAVE_CLOCK_GETTIME
-  if ( (mhd_CLOCK_ID_UNWANTED != mono_clock_id) &&
-       (0 == clock_gettime (mono_clock_id,
-                            &ts)) )
-    return (uint_fast64_t)
-           (((uint_fast64_t) (ts.tv_sec - mono_clock_start)) * 1000
-            + (uint_fast64_t) (ts.tv_nsec / 1000000));
+  case mhd_MCLOCK_SOUCE_GETTIME:
+    mhd_assert (mhd_CLOCK_ID_UNWANTED != mono_clock_id);
+    if (1)
+    {
+      struct timespec ts;
+      if (0 == clock_gettime (mono_clock_id,
+                              &ts))
+        return (uint_fast64_t)
+               (((uint_fast64_t) (ts.tv_sec - mono_clock_start)) * 1000
+                + (uint_fast64_t) (ts.tv_nsec / 1000000));
+    }
+    break;
 #endif /* HAVE_CLOCK_GETTIME */
+
 #ifdef HAVE_CLOCK_GET_TIME
-  if (mhd_CLOCK_SERV_INVALID != mono_clock_service)
-  {
-    mach_timespec_t cur_time;
+  case mhd_MCLOCK_SOUCE_GET_TIME:
+    mhd_assert (mhd_CLOCK_SERV_INVALID != mono_clock_service);
+    if (1)
+    {
+      mach_timespec_t cur_time;
 
-    if (KERN_SUCCESS == clock_get_time (mono_clock_service,
-                                        &cur_time))
-      return (uint_fast64_t)
-             (((uint_fast64_t) (cur_time.tv_sec - mono_clock_start)) * 1000
-              + (uint_fast64_t) (cur_time.tv_nsec / 1000000));
-  }
+      if (KERN_SUCCESS == clock_get_time (mono_clock_service,
+                                          &cur_time))
+        return (uint_fast64_t)
+               (((uint_fast64_t) (cur_time.tv_sec - mono_clock_start)) * 1000
+                + (uint_fast64_t) (cur_time.tv_nsec / 1000000));
+    }
+    break;
 #endif /* HAVE_CLOCK_GET_TIME */
-#if defined(_WIN32)
-#if _WIN32_WINNT >= 0x0600
-  if (1)
-    return (uint_fast64_t) (GetTickCount64 () - tick_start);
-#else  /* _WIN32_WINNT < 0x0600 */
-  if (0 != perf_freq)
-  {
-    LARGE_INTEGER perf_counter;
-    uint_fast64_t num_ticks;
 
-    (void) QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
-    num_ticks = (uint_fast64_t) (perf_counter.QuadPart - perf_start);
-    return ((num_ticks / perf_freq) * 1000)
-           + (((num_ticks % perf_freq) * 1000) / perf_freq);
-  }
-#endif /* _WIN32_WINNT < 0x0600 */
-#endif /* _WIN32 */
 #ifdef HAVE_GETHRTIME
-  if (1)
+  case mhd_MCLOCK_SOUCE_GETHRTIME:
     return ((uint_fast64_t) (gethrtime () - hrtime_start)) / 1000000;
 #endif /* HAVE_GETHRTIME */
 
+#ifdef _WIN32
+#if _WIN32_WINNT >= 0x0600
+  case mhd_MCLOCK_SOUCE_GETTICKCOUNT64:
+    return (uint_fast64_t) (GetTickCount64 () - tick_start);
+#else  /* _WIN32_WINNT < 0x0600 */
+  case mhd_MCLOCK_SOUCE_PERFCOUNTER:
+    mhd_assert (0 != perf_freq);
+    if (1)
+    {
+      LARGE_INTEGER perf_counter;
+      uint_fast64_t num_ticks;
+
+      (void) QueryPerformanceCounter (&perf_counter);   /* never fail on XP and later */
+      num_ticks = (uint_fast64_t) (perf_counter.QuadPart - perf_start);
+      return ((num_ticks / perf_freq) * 1000)
+             + (((num_ticks % perf_freq) * 1000) / perf_freq);
+    }
+    break;
+#endif /* _WIN32_WINNT < 0x0600 */
+#endif /* _WIN32 */
+  default:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    break;
+  }
+
   /* Fallbacks, affected by system time change */
 #ifdef HAVE_TIMESPEC_GET
-  if (TIME_UTC == timespec_get (&ts, TIME_UTC))
-    return (uint_fast64_t) (((uint_fast64_t) (ts.tv_sec - gettime_start)) * 1000
-                            + (uint_fast64_t) (ts.tv_nsec / 1000000));
+  if (1)
+  {
+    struct timespec ts;
+    if (TIME_UTC == timespec_get (&ts, TIME_UTC))
+      return (uint_fast64_t)
+             (((uint_fast64_t) (ts.tv_sec - gettime_start)) * 1000
+              + (uint_fast64_t) (ts.tv_nsec / 1000000));
+  }
 #elif defined(HAVE_GETTIMEOFDAY)
   if (1)
   {
