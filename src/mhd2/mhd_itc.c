@@ -36,8 +36,8 @@
 MHD_INTERNAL bool
 mhd_itc_nonblocking (struct mhd_itc *pitc)
 {
-  return mhd_socket_nonblocking ((MHD_Socket) pitc->sk[0]) &&
-         mhd_socket_nonblocking ((MHD_Socket) pitc->sk[1]);
+  return mhd_socket_nonblocking ((MHD_Socket) pitc->fd[0]) &&
+         mhd_socket_nonblocking ((MHD_Socket) pitc->fd[1]);
 }
 
 
