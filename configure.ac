@@ -3718,6 +3718,34 @@ MHD_FIND_LIB([clock_gettime],[[#include <time.h>]],
   [MHD_LIBDEPS]
 )
 
+MHD_CHECK_FUNC([mach_continuous_approximate_time],
+  [[
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+  ]],
+  [[
+    struct mach_timebase_info mtb_info;
+    i][f (KERN_SUCCESS != mach_timebase_info(&mtb_info))
+      return 2;
+    i][f (0 == mach_continuous_approximate_time() * mtb_info.numer / mtb_info.denom)
+      return 3;
+  ]], [], [
+    MHD_CHECK_FUNC([mach_approximate_time],
+      [[
+#include <mach/mach.h>
+#include <mach/mach_time.h>
+      ]],
+      [[
+        struct mach_timebase_info mtb_info;
+        i][f (KERN_SUCCESS != mach_timebase_info(&mtb_info))
+          return 2;
+        i][f (0 == mach_approximate_time() * mtb_info.numer / mtb_info.denom)
+          return 3;
+      ]]
+    )
+  ]
+)
+
 MHD_CHECK_FUNC([clock_get_time],
   [[
 #include <mach/mach.h>

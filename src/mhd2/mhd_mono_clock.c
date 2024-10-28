@@ -39,6 +39,12 @@
 #  endif /* HAVE_GETTIMEOFDAY */
 #endif /* _WIN32 && ! __CYGWIN__ */
 
+#if defined(HAVE_MACH_CONTINUOUS_APPROXIMATE_TIME) || \
+  defined(HAVE_MACH_APPROXIMATE_TIME)
+/* Use mach_*_time() functions family */
+#  define mhd_USE_MACH_TIME     1
+#endif
+
 #ifdef HAVE_TIME_H
 #  include <time.h>
 #endif /* HAVE_TIME_H */
@@ -46,12 +52,21 @@
 #  include <sys/time.h>
 #endif /* HAVE_SYS_TIME_H */
 
-#ifdef HAVE_CLOCK_GET_TIME
-#  include <mach/mach.h>
+#if defined(HAVE_CLOCK_GET_TIME) || \
+  defined(mhd_USE_MACH_TIME)
 /* for host_get_clock_service(), mach_host_self(), mach_task_self() */
-#  include <mach/clock.h>
+/* also for compatibility with old headers structure */
+#  include <mach/mach.h>
+#endif
+
+#ifdef HAVE_CLOCK_GET_TIME
 /* for clock_get_time() */
+#  include <mach/clock.h>
 #endif /* HAVE_CLOCK_GET_TIME */
+
+#if defined(mhd_USE_MACH_TIME)
+#  include <mach/mach_time.h>
+#endif
 
 #ifdef _WIN32
 #  include <windows.h>
@@ -85,6 +100,16 @@ static time_t mono_clock_start;
 static clock_serv_t mono_clock_service = mhd_CLOCK_SERV_INVALID;
 #endif /* HAVE_CLOCK_GET_TIME */
 
+#if defined(mhd_USE_MACH_TIME)
+
+/* The numerator to calculate milliseconds */
+static uint_fast32_t mach_time_mls_numer = 0;
+/* The denominator to calculate milliseconds */
+static uint_fast64_t mach_time_mls_denom = 0;
+/* The starting value. Used to lower chance of the final value wrap. */
+static uint64_t mach_time_start; /* uint64_t is always available with mach */
+#endif
+
 #ifdef HAVE_GETHRTIME
 static hrtime_t hrtime_start;
 #endif /* HAVE_GETHRTIME */
@@ -116,7 +141,7 @@ static time_t sys_clock_start;
  *         'false' if failed
  */
 static MHD_FN_PAR_OUT_ (1) MHD_FN_MUST_CHECK_RESULT_ bool
-clock_darwin_init (mach_timespec_t *cur_time)
+mclock_init_clock_get_time (mach_timespec_t *cur_time)
 {
   mhd_assert (mhd_CLOCK_SERV_INVALID == mono_clock_service);
 
@@ -145,7 +170,7 @@ clock_darwin_init (mach_timespec_t *cur_time)
  * De-initialise Darwin-specific resources for 'clock_get_time()'
  */
 static void
-clock_darwin_deinit (void)
+mclock_deinit_clock_get_time (void)
 {
   mhd_assert (mhd_CLOCK_SERV_INVALID != mono_clock_service);
   (void) mach_port_deallocate (mach_task_self (),
@@ -156,9 +181,70 @@ clock_darwin_deinit (void)
 
 #else  /* HAVE_CLOCK_GET_TIME */
 /* No-op implementation */
-#  define clock_darwin_init(ptr) ((void) ptr, false)
-#  define clock_darwin_deinit() ((void) 0)
+#  define mclock_init_clock_get_time(ptr) ((void) ptr, false)
+#  define mclock_deinit_clock_get_time() ((void) 0)
 #endif /* HAVE_CLOCK_GET_TIME */
+
+#if defined(mhd_USE_MACH_TIME)
+
+/**
+ * Calculate greatest common divisor.
+ * Based on Euclidean algorithm as it is fast enough and more compact then
+ * binary GCD algorithm.
+ * @param a the first value
+ * @param b the second value
+ * @return the greatest common divisor,
+ *         if either of the input values ​​is zero, the other input value returned
+ */
+MHD_static_inline_ uint_fast32_t
+mclock_gcd (uint_fast32_t a, uint_fast32_t b)
+{
+  if (0 == b)
+    return a;
+
+  while (1)
+  {
+    a %= b;
+    if (0 == a)
+      return b;
+    b %= a;
+    if (0 == b)
+      break;
+  }
+  return a;
+}
+
+
+/**
+ * Initialise data for mach_time functions
+ * @return 'true' if succeed,
+ *         'false' if failed
+ */
+static bool
+mclock_init_mach_time (void)
+{
+  struct mach_timebase_info mach_tb_info;
+  uint_fast32_t comm_div;
+  static const uint_fast32_t nanosec_in_milisec = 1000u * 1000u;
+
+  mhd_assert ((0 != mach_time_mls_denom) || (0 == mach_time_mls_numer));
+
+  if (KERN_SUCCESS != mach_timebase_info (&mach_tb_info))
+    return false;
+
+  mhd_assert (0 != mach_tb_info.numer); /* Help code analysers */
+  mhd_assert (0 != mach_tb_info.denom); /* Help code analysers */
+
+  comm_div = mclock_gcd (mach_tb_info.numer, nanosec_in_milisec);
+  mach_time_mls_numer = mach_tb_info.numer / comm_div;
+  mach_time_mls_denom =
+    ((uint_fast64_t) mach_tb_info.denom) * (nanosec_in_milisec / comm_div);
+
+  return true;
+}
+#else  /* ! mhd_USE_MACH_TIME */
+#  define mclock_init_mach_time()     (true)
+#endif /* ! mhd_USE_MACH_TIME */
 
 /**
  * Type of monotonic clock source
@@ -178,6 +264,16 @@ enum mhd_mono_clock_source
    */
   mhd_MCLOCK_SOUCE_GETTIME
 #endif /* HAVE_CLOCK_GETTIME */
+
+#if defined(mhd_USE_MACH_TIME)
+  ,
+  /**
+   * mach_continuous_approximate_time() or mach_approximate_time()
+   * with coefficient.
+   * Darwin-specific clock source.
+   */
+  mhd_MCLOCK_SOUCE_MACH_TIME
+#endif /* mhd_USE_MACH_TIME */
 
 #ifdef HAVE_CLOCK_GET_TIME
   ,
@@ -271,6 +367,24 @@ mhd_monotonic_msec_counter_init (void)
   else
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
+#if defined(mhd_USE_MACH_TIME)
+  /* Mach (Darwin) specific monotonic clock */
+  /* mach_continuous_approximate_time() counts time in suspend,
+     mach_approximate_time() does not count time in suspend.
+     Both function are fast and used as a basis for universal portable functions
+     on Darwin. */
+  if (mclock_init_mach_time ())
+  {
+#  ifdef HAVE_MACH_CONTINUOUS_APPROXIMATE_TIME
+    mach_time_start = mach_continuous_approximate_time ();
+#  else  /* HAVE_MACH_APPROXIMATE_TIME */
+    mach_time_start = mach_approximate_time ();
+#  endif
+    mono_clock_source = mhd_MCLOCK_SOUCE_MACH_TIME;
+  }
+  else
+#endif /* mhd_USE_MACH_TIME */
+
   /* Try universally available sources */
 #ifdef HAVE_CLOCK_GETTIME
 #ifdef CLOCK_MONOTONIC_COARSE
@@ -463,7 +577,7 @@ mhd_monotonic_msec_counter_finish (void)
 {
 #ifdef HAVE_CLOCK_GET_TIME
   if (mhd_MCLOCK_SOUCE_GET_TIME == mono_clock_source)
-    clock_darwin_deinit ();
+    mclock_deinit_clock_get_time ();
 #endif
 }
 
@@ -508,6 +622,33 @@ mhd_monotonic_msec_counter (void)
     }
     break;
 #endif /* HAVE_CLOCK_GETTIME */
+
+#if defined(mhd_USE_MACH_TIME)
+  case mhd_MCLOCK_SOUCE_MACH_TIME:
+    mhd_assert (0 != mach_time_mls_numer);
+    mhd_assert (0 != mach_time_mls_denom);
+    if (1)
+    {
+      uint64_t t;
+#  ifdef HAVE_MACH_CONTINUOUS_APPROXIMATE_TIME
+      t = mach_continuous_approximate_time () - mach_time_start;
+#  else  /* HAVE_MACH_APPROXIMATE_TIME */
+      t = mach_approximate_time () - mach_time_start;
+#  endif
+#  ifndef MHD_FAVOR_SMALL_CODE
+      if (1 == mach_time_mls_numer) /* Shortcut for the most common situation */
+        return (uint_fast64_t) t / mach_time_mls_denom;
+#  endif /* MHD_FAVOR_SMALL_CODE */
+
+      /* Avoid float point arithmetic as it lower precision on higher values.
+         Two stages calculations to avoid overflow of integer values and keep
+         precision high enough. */
+      return (((uint_fast64_t) t) / mach_time_mls_denom) * mach_time_mls_numer
+             + ((((uint_fast64_t) t) % mach_time_mls_denom)
+                * mach_time_mls_numer) / mach_time_mls_denom;
+    }
+    break;
+#endif /* mhd_USE_MACH_TIME */
 
 #ifdef HAVE_CLOCK_GET_TIME
   case mhd_MCLOCK_SOUCE_GET_TIME:
