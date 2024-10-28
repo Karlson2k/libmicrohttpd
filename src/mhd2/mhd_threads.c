@@ -24,6 +24,8 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_sys_options.h"
+
 #include "mhd_threads.h"
 #include "sys_null_macro.h"
 #ifdef mhd_THREADS_KIND_W32

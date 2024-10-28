@@ -23,6 +23,8 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_sys_options.h"
+
 #include "mhd_str.h"
 
 #include <string.h>

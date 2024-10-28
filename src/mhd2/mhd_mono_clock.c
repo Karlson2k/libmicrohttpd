@@ -25,6 +25,8 @@
  * TODO: update code style
  */
 
+#include "mhd_sys_options.h"
+
 #include "mhd_mono_clock.h"
 
 #if defined(_WIN32) && ! defined(__CYGWIN__)

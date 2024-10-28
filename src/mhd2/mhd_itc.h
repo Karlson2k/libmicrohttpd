@@ -32,6 +32,8 @@
  */
 #ifndef MHD_ITC_H
 #define MHD_ITC_H 1
+#include "mhd_sys_options.h"
+
 #include "mhd_itc_types.h"
 
 #include "mhd_panic.h"

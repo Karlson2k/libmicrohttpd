@@ -25,6 +25,8 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_sys_options.h"
+
 #include "mhd_itc.h"
 #if defined(MHD_ITC_PIPE_)
 #  ifdef MHD_HAVE_MHD_ITC_NONBLOCKING

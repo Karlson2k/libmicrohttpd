@@ -23,6 +23,7 @@
  * @brief  The implementation of the calloc() replacement
  * @author Karlson2k (Evgeny Grin)
  */
+#include "mhd_sys_options.h"
 
 #include "compat_calloc.h"
 #ifndef HAVE_CALLOC

@@ -24,6 +24,8 @@
  * @author Karlson2k (Evgeny Grin)
  */
 
+#include "mhd_sys_options.h"
+
 #include "conn_data_recv.h"
 
 #include "mhd_sys_options.h"

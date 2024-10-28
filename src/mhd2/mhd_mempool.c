@@ -27,6 +27,8 @@
  * + Update code style
  * + Detect mmap() in configure (it is purely optional!)
  */
+#include "mhd_sys_options.h"
+
 #include "mhd_mempool.h"
 #ifdef HAVE_STDLIB_H
 #  include <stdlib.h>
