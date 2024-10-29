@@ -27,8 +27,6 @@
 
 #include "mhd_mono_clock.h"
 
-#include "sys_bool_type.h"
-
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 /* Prefer native clock source over wrappers */
 #  ifdef HAVE_CLOCK_GETTIME
@@ -579,6 +577,23 @@ mhd_monotonic_msec_counter_finish (void)
   if (mhd_MCLOCK_SOUCE_GET_TIME == mono_clock_source)
     mclock_deinit_clock_get_time ();
 #endif
+}
+
+
+MHD_INTERNAL bool
+mhd_monotonic_msec_counter_re_init (void)
+{
+#ifdef HAVE_CLOCK_GET_TIME
+  if (mhd_MCLOCK_SOUCE_GET_TIME == mono_clock_source)
+  {
+    if (! mclock_init_clock_get_time ())
+    {
+      /* Fallback to full initialisation */
+      return mhd_monotonic_msec_counter_init ();
+    }
+  }
+#endif
+  return true;
 }
 
 

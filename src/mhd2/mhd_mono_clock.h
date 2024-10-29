@@ -28,6 +28,7 @@
 #include "mhd_sys_options.h"
 
 #include "sys_base_types.h"
+#include "sys_bool_type.h"
 
 /**
  * Initialise milliseconds counters.
@@ -41,6 +42,12 @@ mhd_monotonic_msec_counter_init (void);
  */
 MHD_INTERNAL void
 mhd_monotonic_msec_counter_finish (void);
+
+/**
+ * Re-initialise monotonic clocks are de-initialisaion has been performed
+ */
+MHD_INTERNAL bool
+mhd_monotonic_msec_counter_re_init (void);
 
 
 /**
