@@ -29,7 +29,17 @@
 #define MHD_LIB_INIT_AUTO_H 1
 #include "mhd_sys_options.h"
 
-#define AUTOINIT_FUNCS_NO_WARNINGS_SUNPRO_C 1 /* The compiler is supported directly */
+#if (defined(__MINGW32__) || defined(__MINGW64__)) \
+  || (defined(_WIN32) && defined(_MT) && defined(_DLL))
+#  define mhd_INIT_USE_MHD_DLLMAIN      1
+#endif
+
+#ifdef mhd_INIT_USE_MHD_DLLMAIN
+#  define AUTOINIT_FUNCS_CALL_USR_DLLMAIN 1 /* Call of additional DLL init functions on W32 */
+#  define AUTOINIT_FUNCS_USR_DLLMAIN_NAME mhd_DllMain /* The name of additional DLL init function on W32 */
+#  define AUTOINIT_FUNCS_DECLARE_USR_DLLMAIN 1 /* Automatically declare this function */
+#endif
+#define AUTOINIT_FUNCS_NO_WARNINGS_SUNPRO_C 1 /* This compiler is supported directly */
 #include "autoinit_funcs.h"
 
 #ifdef AIF_AUTOINIT_FUNCS_ARE_SUPPORTED

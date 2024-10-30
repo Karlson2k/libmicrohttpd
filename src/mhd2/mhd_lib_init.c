@@ -50,6 +50,9 @@
 #include "mhd_lib_init.h"
 #include "mhd_lib_init_auto.h"
 
+#ifdef AIF_W32_USR_DLLMAIN_NAME
+#  include <windows.h> /* For DisableThreadLibraryCalls() */
+#endif
 
 #if defined(mhd_AUTOINIT_FUNCS_USE)
 /**
@@ -250,6 +253,36 @@ mhd_lib_global_deinit_auto (void)
   mhd_lib_global_lazy_deinit ();
 }
 
+
+#  ifdef AIF_W32_USR_DLLMAIN_NAME
+
+AIF_DECL_USR_DLLMAIN /* Declare the function */
+
+/* MHD is used on W32 as DLL library with DLL runtime lib */
+/**
+ * Special automatically called function for DLL initialisation on W32.
+ * @param hinst the DLL module handle
+ * @param reason the code of the call reason
+ * @param pReserved NULL is statically loaded, non-NULL is loaded dynamically
+ * @return TRUE if succeed (always),
+ *         FALSE if failed
+ */
+BOOL WINAPI
+AUTOINIT_FUNCS_USR_DLLMAIN_NAME (HINSTANCE hinst,
+                                 DWORD reason,
+                                 LPVOID pReserved)
+{
+  (void) pReserved; /* Not used */
+
+  /* Disable calls with DLL_THREAD_ATTACH and DLL_THREAD_DETACH messages */
+  if (AIF_W32_DLL_PROCESS_ATTACH == reason)
+    (void) DisableThreadLibraryCalls ((HMODULE) hinst);
+
+  return TRUE;
+}
+
+
+#  endif /* AIF_W32_USR_DLLMAIN_NAME */
 
 #endif /* mhd_AUTOINIT_FUNCS_USE */
 
