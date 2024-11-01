@@ -4849,321 +4849,199 @@ AM_CONDITIONAL([HAVE_POST_PARSER], [test "x$enable_postparser" != "xno"])
 AC_MSG_RESULT([[$enable_postparser]])
 
 have_gnutls=no
-have_gnutls_sni=no
-have_gcrypt=no
-AS_UNSET([GNUTLS_CPPFLAGS])
-AS_UNSET([GNUTLS_LDFLAGS])
 
-# optional: HTTPS support.  Enabled by default
+# optional: HTTPS support.  Enabled if GnuTLS is available.
 AC_ARG_ENABLE([https],
    [AS_HELP_STRING([--enable-https],
                [enable HTTPS support (yes, no, auto)[auto]])],
    [enable_https=${enableval}])
-AS_IF([test "x$enable_https" != "xno"],[
-#
-# Next block is large unindented block
-#
-
-# gnutls
-have_gnutls_pkgcfg=no
-AC_MSG_CHECKING([[how to find GnuTLS library]])
-AC_ARG_WITH([[gnutls]],
-   [AS_HELP_STRING([[--with-gnutls[=PFX]]],[use GnuTLS for HTTPS support, optional PFX overrides pkg-config data for GnuTLS headers (PFX/include) and libs (PFX/lib)])],
-   [
-    AS_CASE([$with_gnutls],
-     [no],[
-        AC_MSG_RESULT([[GnuTLS disabled]])
-        AS_UNSET([GNUTLS_CPPFLAGS])
-        AS_UNSET([GNUTLS_CFLAGS])
-        AS_UNSET([GNUTLS_LDFLAGS])
-        AS_UNSET([GNUTLS_LIBS])
-      ],
-      [yes],[
-        AC_MSG_RESULT([[automatically, forced]])
-      ],
-      [
-        AC_MSG_RESULT([[-I$with_gnutls/include -L$with_gnutls/lib -lgnutls]])
-        SAVE_LIBS="$LIBS"
-        LDFLAGS="${LDFLAGS_ac} -L$with_gnutls/lib ${user_LDFLAGS}"
-        CPPFLAGS="${CPPFLAGS_ac} -I$with_gnutls/include ${user_CPPFLAGS}"
-        have_gnutls_pkgcfg=no
-        MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
-          [
-           if(!gnutls_check_version("2.0.0"))
-             return 3;
-          ],
-          [
-            GNUTLS_CPPFLAGS="-I$with_gnutls/include"
-            GNUTLS_LDFLAGS="-L$with_gnutls/lib"
-            GNUTLS_LIBS="-lgnutls"
-            have_gnutls=yes
-          ],
-          [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])],
-          [-lgnutls]
-        )
-        CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-        CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-        LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
-        LIBS="$SAVE_LIBS"
-      ])
-   ],
-   [AC_MSG_RESULT([[automatically]])
-   ])
-
-AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
+AS_IF([test "x$enable_https" != "xno"],
   [
-    PKG_CHECK_MODULES(GNUTLS, [[gnutls]],
+    have_gnutls_pkgcfg=no
+    AC_MSG_CHECKING([[how to find GnuTLS library]])
+    AC_ARG_WITH([[gnutls]],
       [
-       have_gnutls_pkgcfg='yes'
-       SAVE_LIBS="$LIBS"
-       CFLAGS="${CFLAGS_ac} $GNUTLS_CFLAGS ${user_CFLAGS}"
-       LIBS="$GNUTLS_LIBS $LIBS"
-       AC_MSG_CHECKING([[whether GnuTLS is usable]])
-       AC_LINK_IFELSE([
-         AC_LANG_PROGRAM([[
-#include <gnutls/gnutls.h>
-          ]], [[
-                gnutls_session_t session;
-                gnutls_priority_t priorities;
-                gnutls_global_init();
-                gnutls_priority_init(&priorities, "NORMAL", NULL);
-                gnutls_init(&session, GNUTLS_SERVER);
-                gnutls_priority_set(session, priorities);
-          ]])],
-          [
-           AC_MSG_RESULT([[yes]])
-           have_gnutls=yes
-           # GNUTLS_CFLAGS is actually CPPFLAGS
-           GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
-           # GNUTLS_LDFLAGS is a combination of LDFLAGS and LIBS
-           GNUTLS_LDFLAGS="$GNUTLS_LIBS"
+        AS_HELP_STRING([[--with-gnutls[=PRFX]]],
+          [use GnuTLS for HTTPS support, optional PRFX overrides pkg-config data for GnuTLS headers (PRFX/include) and libs (PRFX/lib)])
+      ],
+      [
+        AS_CASE([$with_gnutls],
+          [no],[
+            AC_MSG_RESULT([[GnuTLS disabled]])
+            AS_UNSET([GNUTLS_CPPFLAGS])
+            AS_UNSET([GNUTLS_CFLAGS])
+            AS_UNSET([GNUTLS_LDFLAGS])
+            AS_UNSET([GNUTLS_LIBS])
+          ],
+          [yes],[
+            AC_MSG_RESULT([[automatically, forced]])
           ],
           [
-           AC_MSG_RESULT([[no]])
-           have_gnutls=no
+            AC_MSG_RESULT([[-I$with_gnutls/include -L$with_gnutls/lib -lgnutls]])
+            LDFLAGS="${LDFLAGS_ac} -L$with_gnutls/lib ${user_LDFLAGS}"
+            CPPFLAGS="${CPPFLAGS_ac} -I$with_gnutls/include ${user_CPPFLAGS}"
+            have_gnutls_pkgcfg=no
+            # A simple check for the working header and the library
+            MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+              [
+               if(!gnutls_check_version("3.0.0"))
+                 return 3;
+              ],
+              [
+                have_gnutls=yes
+                GNUTLS_CPPFLAGS="-I$with_gnutls/include"
+                AS_UNSET([GNUTLS_CFLAGS])
+                GNUTLS_LDFLAGS="-L$with_gnutls/lib"
+                GNUTLS_LIBS="-lgnutls"
+              ],
+              [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])],
+              [-lgnutls]
+            )
+            CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+            CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+            LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
           ])
+       ],
+       [AC_MSG_RESULT([[automatically]])]
+    )
 
-       AS_IF([test "x$have_gnutls" != "xyes"],
-         [
-          AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS can't be used])
-          AS_UNSET([GNUTLS_CPPFLAGS])
-          AS_UNSET([GNUTLS_CFLAGS])
-          AS_UNSET([GNUTLS_LDFLAGS])
-          AS_UNSET([GNUTLS_LIBS])
-         ]
-       )
-       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-       CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-       LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
-       LIBS="$SAVE_LIBS"
-      ],
+    AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
       [
-       # check for GnuTLS at default paths
-       have_gnutls_pkgcfg='no'
-       AC_CHECK_HEADERS([gnutls/gnutls.h],
-        [AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+        PKG_CHECK_MODULES([GNUTLS], [[gnutls]],
           [
-            GNUTLS_LIBS="-lgnutls"
-            have_gnutls=yes
-          ])], [], [AC_INCLUDES_DEFAULT])
-      ])
-  ])
-
-have_gcrypt='unknown'
-AS_IF([test "x$with_gnutls" != "xno" && test "x$have_gnutls" != "xyes"],
-  [
-   AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
-   AS_IF([[test "x$have_gcrypt" = "xyes"]],
-     [
-       SAVE_LIBS="$LIBS"
-       CFLAGS="${CFLAGS_ac} $LIBGCRYPT_CFLAGS ${user_CFLAGS}"
-       # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
-       CPPFLAGS="${CPPFLAGS_ac} $LIBGCRYPT_CFLAGS ${user_CPPFLAGS}"
-       AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
-       # Check for GnuTLS with gcrypt flags
-       LDFLAGS="${LDFLAGS_ac} ${LIBGCRYPT_LIBS} ${user_LDFLAGS}"
-       # A bit of hack: unset cache variable to force recheck
-       AS_UNSET([ac_cv_header_gnutls_gnutls_h])
-       AC_CHECK_HEADERS([gnutls/gnutls.h],
-        [AS_UNSET([ac_cv_lib_gnutls_gnutls_priority_set]) # A bit of hack: unset cache variable to force recheck
-         AC_CHECK_LIB([gnutls], [gnutls_priority_set],
+            have_gnutls_pkgcfg='yes'
+            CPPFLAGS="${CPPFLAGS_ac} $GNUTLS_CFLAGS ${user_CPPFLAGS}"
+            # A simple check for the working header and the library
+            MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+              [
+               if(!gnutls_check_version("3.0.0"))
+                 return 3;
+              ],
+              [
+                have_gnutls=yes
+                # GNUTLS_CFLAGS is actually CPPFLAGS
+                GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
+                AS_UNSET([GNUTLS_CFLAGS])
+                # GNUTLS_LIBS is a combination of LDFLAGS and LIBS
+                AS_UNSET([GNUTLS_LDFLAGS])
+              ],
+              [
+                AS_VAR_IF([with_gnutls],["yes"],
+                  [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])]
+                )
+                AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS can't be used])
+                AS_UNSET([GNUTLS_CPPFLAGS])
+                AS_UNSET([GNUTLS_CFLAGS])
+                AS_UNSET([GNUTLS_LDFLAGS])
+                AS_UNSET([GNUTLS_LIBS])
+              ],
+              [$GNUTLS_LIBS]
+            )
+          ],
           [
-            GNUTLS_CPPFLAGS="$LIBGCRYPT_CFLAGS"
-            GNUTLS_CFLAGS="$LIBGCRYPT_CFLAGS"
-            GNUTLS_LDFLAGS="$LIBGCRYPT_LIBS"
-            GNUTLS_LIBS="-lgnutls"
-            have_gnutls=yes
-          ])], [], [AC_INCLUDES_DEFAULT])
-       CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-       CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-       LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
-       LIBS="$SAVE_LIBS"
-     ]
-   )
-  ]
-)
-AS_IF([test "x$have_gnutls" != "xyes" && test "x$with_gnutls" = "xyes"],
-      [AC_MSG_ERROR([[can't find usable libgnutls]])])
-
-  AS_IF([test "x$have_gnutls" = "xyes"],
-    [
-     SAVE_LIBS="$LIBS"
-     CPPFLAGS="${CPPFLAGS_ac} ${GNUTLS_CPPFLAGS} ${user_CPPFLAGS}"
-     CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
-     LDFLAGS="${LDFLAGS_ac} ${GNUTLS_LDFLAGS} ${user_LDFLAGS}"
-     LIBS="$GNUTLS_LIBS $LIBS"
-     AC_MSG_CHECKING([[for gnutls_privkey_import_x509_raw()]])
-     AC_LINK_IFELSE([
-       AC_LANG_PROGRAM([[
+            # check for GnuTLS at default paths
+            have_gnutls_pkgcfg='no'
+            # A simple check for the working header and the library
+            MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+              [
+               if(!gnutls_check_version("3.0.0"))
+                 return 3;
+              ],
+              [
+                have_gnutls=yes
+                AS_UNSET([GNUTLS_CPPFLAGS])
+                AS_UNSET([GNUTLS_CFLAGS])
+                AS_UNSET([GNUTLS_LDFLAGS])
+                GNUTLS_LIBS="-lgnutls"
+              ],
+              [
+                AS_VAR_IF([with_gnutls],["yes"],
+                  [AC_MSG_ERROR([can't find usable libgnutls])]
+                )
+                AS_UNSET([GNUTLS_CPPFLAGS])
+                AS_UNSET([GNUTLS_CFLAGS])
+                AS_UNSET([GNUTLS_LDFLAGS])
+                AS_UNSET([GNUTLS_LIBS])
+              ],
+              [-lgnutls]
+            )
+          ]
+        )
+      ]
+    )
+    AS_VAR_IF([have_gnutls],["yes"],
+      [
+        AC_CACHE_CHECK([[whether GnuTLS is modern enough]], [mhd_cv_gnutls_ver_ok],
+          [
+            SAVE_LIBS="$LIBS"
+            CPPFLAGS="${CPPFLAGS_ac} ${GNUTLS_CPPFLAGS} ${user_CPPFLAGS}"
+            LDFLAGS="${LDFLAGS_ac} ${GNUTLS_LDFLAGS} ${user_LDFLAGS}"
+            LIBS="$GNUTLS_LIBS $LIBS"
+            AC_COMPILE_IFELSE(
+              [
+                AC_LANG_PROGRAM(
+                  [[
 #include <gnutls/gnutls.h>
-#include <gnutls/abstract.h>
-          ]], [[
-            gnutls_datum_t data;
-            gnutls_privkey_t key = 0;
-#ifndef gnutls_load_file
-            (void)gnutls_load_file; /* Check for declaration. */
-#endif
-#ifndef gnutls_privkey_import_x509_raw
-            (void)gnutls_privkey_import_x509_raw; /* Check for declaration. */
-#endif
-            gnutls_load_file("key.pem", &data);
-            gnutls_privkey_import_x509_raw(key, &data, GNUTLS_X509_FMT_PEM, NULL, 0);
-            gnutls_free(data.data);
-          ]])], [[have_gnutls_sni=yes]], [[have_gnutls_sni=no]])
-     AC_MSG_RESULT([[$have_gnutls_sni]])
-     AC_CACHE_CHECK([[whether GnuTLS require libgcrypt initialisation]], [mhd_cv_gcrypt_required],
-       [
-        AC_COMPILE_IFELSE(
-          [
-           AC_LANG_PROGRAM(
-             [
-#include <gnutls/gnutls.h>
-             ],
-             [
+                  ]],
+                  [[
 #if !defined(GNUTLS_VERSION_NUMBER) || GNUTLS_VERSION_NUMBER+0 <= 0x020c14
-#error Old versions of GnuTLS require libgcript initialisation
+#error Too old versions of GnuTLS that require libgcript initialisation
 choke me now
 #endif
-             ]
-           )
-          ],
-          [[mhd_cv_gcrypt_required='no']], [[mhd_cv_gcrypt_required='yes']]
+                  ]]
+                )
+              ],
+              [[mhd_cv_gnutls_ver_ok='yes']], [[mhd_cv_gnutls_ver_ok='no']]
+            )
+            LIBS="$SAVE_LIBS"
+            LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+            CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+          ]
         )
-       ]
-     )
-     CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-     CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-     LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
-     LIBS="$SAVE_LIBS"
-    ],
-    [
-     AS_UNSET([GNUTLS_CPPFLAGS])
-     AS_UNSET([GNUTLS_LDFLAGS])
-    ]
-  )
+        AS_VAR_IF([mhd_cv_gnutls_ver_ok],["yes"],[:],[have_gnutls="no"])
+      ]
+    )
 
-  AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes" && test "x$have_gcrypt" = "xunknown"]],
-    [
-     AM_PATH_LIBGCRYPT([1.2.2], [have_gcrypt=yes], [have_gcrypt=no])
-     AS_IF([[test "x$have_gcrypt" = "xyes"]],
-       [
-         CFLAGS="${CFLAGS_ac} ${LIBGCRYPT_CFLAGS} ${user_CFLAGS}"
-         # LIBGCRYPT_CFLAGS can be actually a CPPFLAGS, so check them both
-         CPPFLAGS="${CPPFLAGS_ac} ${LIBGCRYPT_CFLAGS} ${user_CPPFLAGS}"
-         AC_CHECK_HEADERS([gcrypt.h], [], [have_gcrypt=no], [AC_INCLUDES_DEFAULT])
-         CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
-         CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
-       ]
-     )
-    ]
-  )
-
-  AS_UNSET([[crypt_missing]])
-  AS_IF([[test "x$have_gnutls" = "xyes"]],
-    [
-     AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes" && test "x$have_gcrypt" != "xyes"]],
-       [
-        crypt_missing="required libgcrypt"
-        AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
-        enable_https=no
-        MSG_HTTPS="no (lacking $crypt_missing)"
-        AS_UNSET([LIBGCRYPT_CFLAGS])
-        AS_UNSET([LIBGCRYPT_LIBS])
+    AS_VAR_IF([have_gnutls],["yes"],
+      [:],
+      [
         AS_UNSET([GNUTLS_CPPFLAGS])
         AS_UNSET([GNUTLS_CFLAGS])
         AS_UNSET([GNUTLS_LDFLAGS])
         AS_UNSET([GNUTLS_LIBS])
-       ],
-         [
-          AC_DEFINE([[HTTPS_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTPS support.])
-          enable_https=yes
-          AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes"]],
-            [
-             MSG_HTTPS="yes (using libgnutls and libgcrypt)"
-	         MHD_TLS_LIB_CPPFLAGS="$LIBGCRYPT_CFLAGS $GNUTLS_CPPFLAGS"
-             MHD_TLS_LIB_CFLAGS="$LIBGCRYPT_CFLAGS $GNUTLS_CFLAGS"
-             MHD_TLS_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
-             MHD_TLS_LIBDEPS="$GNUTLS_LIBS $LIBGCRYPT_LIBS"
-             AC_DEFINE([[MHD_HTTPS_REQUIRE_GCRYPT]], [[1]], [Define to `1' if HTTPS require initialisation of libgcrypt])
-            ],
-            [
-             MSG_HTTPS="yes (using libgnutls)"
-             AS_UNSET([LIBGCRYPT_CFLAGS])
-             AS_UNSET([LIBGCRYPT_LIBS])
-             MHD_TLS_LIB_CPPFLAGS="$GNUTLS_CPPFLAGS"
-             MHD_TLS_LIB_CFLAGS="$GNUTLS_CFLAGS"
-             MHD_TLS_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
-             MHD_TLS_LIBDEPS="$GNUTLS_LIBS"
-            ]
-          )
-          AS_IF([[ test "x$have_gnutls_pkgcfg" = "xyes" ]],
-            [ # remove GnuTLS from private libs in .pc file as it defined in Requires.private
-              MHD_REQ_PRIVATE='gnutls'
-              AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes"]],
-                [[MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"]]
-              )
-            ],
-            [
-              MHD_REQ_PRIVATE=''
-              AS_IF([[test "x$mhd_cv_gcrypt_required" = "xyes"]],
-                [[MHD_LIBDEPS_PKGCFG="$LIBGCRYPT_LIBS $MHD_LIBDEPS_PKGCFG"]]
-              )
-              MHD_LIBDEPS_PKGCFG="$GNUTLS_LIBS $MHD_LIBDEPS_PKGCFG"
-          ])
-         ]
-     )
-    ],
-    [
-     crypt_missing="libgnutls"
-     AS_IF([[test "x$enable_https" = "xyes" ]], [AC_MSG_ERROR([[HTTPS support cannot be enabled without $crypt_missing.]])])
-     enable_https=no
-     MSG_HTTPS="no (lacking $crypt_missing)"
-     AS_UNSET([LIBGCRYPT_CFLAGS])
-     AS_UNSET([LIBGCRYPT_LIBS])
-     AS_UNSET([GNUTLS_CPPFLAGS])
-     AS_UNSET([GNUTLS_CFLAGS])
-     AS_UNSET([GNUTLS_LDFLAGS])
-     AS_UNSET([GNUTLS_LIBS])
-    ]
-  )
-],[
-  MSG_HTTPS="no (disabled)"
-])
+      ]
+    )
 
-#
-# End of large unindented block
-#
+
+    AS_VAR_IF([have_gnutls],["yes"],
+      [
+        enable_https="yes"
+        MSG_HTTPS="yes (using libgnutls)"
+
+        AC_DEFINE([MHD_ENABLE_HTTPS],[1],[Define to '1' i][f HTTPS protocol should be enabled])
+        AC_DEFINE([MHD_USE_GNUTLS],[1],[Define to '1' i][f GnuTLS library should be used])
+        MHD_TLS_LIB_CPPFLAGS="$GNUTLS_CPPFLAGS"
+        MHD_TLS_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
+        MHD_TLS_LIBDEPS="$GNUTLS_LIBS"
+      ],
+      [
+        AS_VAR_IF([enable_https],["yes"],
+          [AC_MSG_ERROR([GniTLS library not found, HTTPS cannot be enabled])]
+        )
+        MSG_HTTPS="no (lacking libgnutls)"
+      ]
+    )
+  ],
+  [MSG_HTTPS="no (disabled)"]
+)
 
 
 AC_MSG_CHECKING(whether to support HTTPS)
 AC_MSG_RESULT([$MSG_HTTPS])
 
-AM_CONDITIONAL([HAVE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
-AM_CONDITIONAL([HAVE_GNUTLS_SNI], [[test "x$have_gnutls_sni" = "xyes"]])
-AM_CONDITIONAL([ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
-AM_CONDITIONAL([HTTPS_REQUIRE_GCRYPT], [[test "x$enable_https" = "xyes" && test "x$mhd_cv_gcrypt_required" = "xyes"]])
+AM_CONDITIONAL([MHD_ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
+AM_CONDITIONAL([MHD_USE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
 AC_SUBST([GNUTLS_CPPFLAGS])
-AC_SUBST([GNUTLS_CFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
 AC_SUBST([GNUTLS_LIBS])
 
@@ -5380,9 +5258,8 @@ AS_CASE([${enable_md5}],[yes|tlslib],
           [
             AC_CACHE_CHECK([whether GnuTLS supports MD5 hashing],[mhd_cv_gnutls_md5],
               [
-                CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
                 CPPFLAGS="${CPPFLAGS_ac} ${MHD_TLS_LIB_CPPFLAGS} ${user_CPPFLAGS}"
-                CFLAGS="${CFLAGS_ac} ${MHD_TLS_LIB_CFLAGS} ${user_CFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
                 LDFLAGS="${LDFLAGS_ac} ${MHD_TLS_LIB_LDFLAGS} ${user_LDFLAGS}"
                 save_LIBS="$LIBS"
                 LIBS="${MHD_TLS_LIBDEPS} ${LIBS}"
@@ -5503,9 +5380,8 @@ AS_CASE([${enable_sha256}],[yes|tlslib],
           [
             AC_CACHE_CHECK([whether GnuTLS supports sha256 hashing],[mhd_cv_gnutls_sha256],
               [
-                CFLAGS="${CFLAGS_ac} ${GNUTLS_CFLAGS} ${user_CFLAGS}"
                 CPPFLAGS="${CPPFLAGS_ac} ${MHD_TLS_LIB_CPPFLAGS} ${user_CPPFLAGS}"
-                CFLAGS="${CFLAGS_ac} ${MHD_TLS_LIB_CFLAGS} ${user_CFLAGS}"
+                CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
                 LDFLAGS="${LDFLAGS_ac} ${MHD_TLS_LIB_LDFLAGS} ${user_LDFLAGS}"
                 save_LIBS="$LIBS"
                 LIBS="${MHD_TLS_LIBDEPS} ${LIBS}"
@@ -7132,7 +7008,6 @@ AC_SUBST(MHD_LIB_CFLAGS)
 AC_SUBST(MHD_LIB_LDFLAGS)
 AC_SUBST(MHD_LIBDEPS)
 AC_SUBST(MHD_TLS_LIB_CPPFLAGS)
-AC_SUBST(MHD_TLS_LIB_CFLAGS)
 AC_SUBST(MHD_TLS_LIB_LDFLAGS)
 AC_SUBST(MHD_TLS_LIBDEPS)
 
@@ -7213,7 +7088,6 @@ src/examples/Makefile
 src/examples2/Makefile
 src/tools/Makefile
 src/testcurl/Makefile
-src/testcurl/https/Makefile
 src/testzzuf/Makefile])
 AC_OUTPUT
 

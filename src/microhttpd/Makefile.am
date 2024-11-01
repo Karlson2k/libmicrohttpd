@@ -113,7 +113,7 @@ libmicrohttpd_la_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_LIB_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS) \
   -DBUILDING_MHD_LIB=1
 libmicrohttpd_la_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_LIB_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(AM_CFLAGS) $(MHD_LIB_CFLAGS)
 libmicrohttpd_la_LDFLAGS = \
   $(AM_LDFLAGS) $(MHD_LIB_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS) \
   $(W32_MHD_LIB_LDFLAGS) \
@@ -208,7 +208,7 @@ libmicrohttpd_la_SOURCES += \
   basicauth.c basicauth.h
 endif
 
-if ENABLE_HTTPS
+if MHD_ENABLE_HTTPS
 libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
 endif
@@ -258,10 +258,10 @@ check_PROGRAMS += \
 endif
 
 if HAVE_POSIX_THREADS
-if ENABLE_UPGRADE
+if MHD_UPGRADE_SUPPORT
 if USE_THREADS
 check_PROGRAMS += test_upgrade test_upgrade_large test_upgrade_vlarge
-if ENABLE_HTTPS
+if MHD_ENABLE_HTTPS
 if USE_UPGRADE_TLS_TESTS
 check_PROGRAMS += test_upgrade_tls test_upgrade_large_tls test_upgrade_vlarge_tls
 endif
@@ -353,7 +353,7 @@ test_upgrade_SOURCES = \
 test_upgrade_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_upgrade_CFLAGS = \
-  $(AM_CFLAGS) $(PTHREAD_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(AM_CFLAGS) $(PTHREAD_CFLAGS)
 test_upgrade_LDFLAGS = \
   $(MHD_TLS_LIB_LDFLAGS)
 test_upgrade_LDADD = \
@@ -421,7 +421,7 @@ test_postprocessor_SOURCES = \
 test_postprocessor_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_postprocessor_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(AM_CFLAGS)
 test_postprocessor_LDADD = \
   $(builddir)/libmicrohttpd.la
 
@@ -430,7 +430,7 @@ test_postprocessor_amp_SOURCES = \
 test_postprocessor_amp_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_postprocessor_amp_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(AM_CFLAGS)
 test_postprocessor_amp_LDADD = \
   $(builddir)/libmicrohttpd.la
 
@@ -439,7 +439,7 @@ test_postprocessor_large_SOURCES = \
 test_postprocessor_large_CPPFLAGS = \
   $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
 test_postprocessor_large_CFLAGS = \
-  $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+  $(AM_CFLAGS)
 test_postprocessor_large_LDADD = \
   $(builddir)/libmicrohttpd.la
 
@@ -529,7 +529,7 @@ else
 test_md5_SOURCES += \
   md5_ext.c md5_ext.h
 test_md5_CPPFLAGS = $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
-test_md5_CFLAGS = $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+test_md5_CFLAGS = $(AM_CFLAGS)
 test_md5_LDFLAGS = $(AM_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS)
 test_md5_LDADD = $(MHD_TLS_LIBDEPS) $(LDADD)
 endif
@@ -547,7 +547,7 @@ else
 test_sha256_SOURCES += \
   sha256_ext.c sha256_ext.h
 test_sha256_CPPFLAGS = $(AM_CPPFLAGS) $(MHD_TLS_LIB_CPPFLAGS)
-test_sha256_CFLAGS = $(AM_CFLAGS) $(MHD_TLS_LIB_CFLAGS)
+test_sha256_CFLAGS = $(AM_CFLAGS)
 test_sha256_LDFLAGS = $(AM_LDFLAGS) $(MHD_TLS_LIB_LDFLAGS)
 test_sha256_LDADD = $(MHD_TLS_LIBDEPS) $(LDADD)
 endif

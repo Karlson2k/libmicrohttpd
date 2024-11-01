@@ -28,7 +28,7 @@ noinst_PROGRAMS = \
 if ENABLE_BAUTH
 noinst_PROGRAMS += \
   basicauthentication
-if ENABLE_HTTPS
+if MHD_ENABLE_HTTPS
 noinst_PROGRAMS += \
   tlsauthentication
 endif
