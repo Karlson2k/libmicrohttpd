@@ -21,8 +21,8 @@ lib_LTLIBRARIES = \
 noinst_DATA =
 MOSTLYCLEANFILES =
 
+nodist_libmicrohttpd2_la_SOURCES = $(CONFIG_HEADER)
 libmicrohttpd2_la_SOURCES = \
-  $(CONFIG_HEADER) \
   autoinit_funcs.h \
   sys_offsetof.h \
   sys_null_macro.h          sys_base_types.h          sys_bool_type.h \

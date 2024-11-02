@@ -69,10 +69,15 @@
 
 #if defined(mhd_INIT_LAZY_BY_FUNC) || defined(mhd_INIT_LAZY_BY_STATIC)
 /**
- * Global lazy initialisation is automatic
+ * Global lazy initialisation is automatic (either by automatic functions or
+ * by static initialisation)
  */
 #  define mhd_INIT_LAZY_AUTOMATIC       1
 #endif
+
+/*
+ * *** Minimal (lazy) initialisation section ***
+ */
 
 /**
  * The magic value to determine the library initialisation status
@@ -214,7 +219,10 @@ mhd_lib_global_lazy_deinit (void)
 
 #endif /* mhd_AUTOINIT_FUNCS_USE */
 
-/* The automatically called functions */
+
+/*
+ * *** The automatically called functions section ***
+ */
 
 #ifdef mhd_AUTOINIT_FUNCS_USE
 
@@ -285,6 +293,11 @@ AUTOINIT_FUNCS_USR_DLLMAIN_NAME (HINSTANCE hinst,
 #  endif /* AIF_W32_USR_DLLMAIN_NAME */
 
 #endif /* mhd_AUTOINIT_FUNCS_USE */
+
+
+/*
+ * *** Full global initialisation, deinitialisation and re-initialisaion ***
+ */
 
 #if defined(MHD_SOCKETS_KIND_WINSOCK)
 /**
@@ -377,6 +390,10 @@ mhd_lib_global_full_re_init (void)
   return true;
 }
 
+
+/*
+ * *** Automatic global initialisation and deinitialisation for daemons ***
+ */
 
 MHD_INTERNAL bool
 mhd_lib_init_global_if_needed (void)
