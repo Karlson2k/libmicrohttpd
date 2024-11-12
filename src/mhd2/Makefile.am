@@ -106,12 +106,28 @@ upgrade_files = \
   upgrade_proc.c             upgrade_proc.h \
   upgraded_net.c
 
+tls_common_files = \
+  mhd_tls_choice.h \
+  mhd_tls_funcs.h \
+  tls_dh_params.h
+
+tls_gnu_files = \
+  tls_gnu_funcs.c           tls_gnu_funcs.h
+
 if HAVE_POST_PARSER
   libmicrohttpd2_la_SOURCES += $(post_parser_files)
 endif
 
 if MHD_UPGRADE_SUPPORT
   libmicrohttpd2_la_SOURCES += $(upgrade_files)
+endif
+
+if MHD_ENABLE_HTTPS
+  libmicrohttpd2_la_SOURCES += $(tls_common_files)
+
+if MHD_USE_GNUTLS
+  libmicrohttpd2_la_SOURCES += $(tls_gnu_files)
+endif
 endif
 
 libmicrohttpd2_la_CPPFLAGS = \

@@ -46,6 +46,7 @@
 
 #include "mhd_mono_clock.h"
 #include "mhd_send.h"
+#include "mhd_tls_funcs.h"
 
 #include "mhd_lib_init.h"
 #include "mhd_lib_init_auto.h"
@@ -353,6 +354,7 @@ mhd_lib_global_full_init_once (void)
     return false;
   mhd_mclock_init_once ();
   mhd_send_init_once ();
+  mhd_tls_global_init_once ();
 
   mhd_lib_fully_inited_once = true;
 
@@ -367,6 +369,7 @@ mhd_lib_global_full_init_once (void)
 static void
 mhd_lib_global_full_deinit (void)
 {
+  mhd_tls_global_deinit ();
   mhd_mclock_deinit ();
   mhd_lib_sockets_deinit_w32 ();
 }
@@ -386,6 +389,7 @@ mhd_lib_global_full_re_init (void)
   if (! mhd_lib_sockets_init_w32 ())
     return false;
   mhd_mclock_re_init ();
+  mhd_tls_global_re_init ();
 
   return true;
 }
