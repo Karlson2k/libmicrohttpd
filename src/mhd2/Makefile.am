@@ -102,8 +102,8 @@ post_parser_files = \
 
 upgrade_files = \
   mhd_upgrade.h \
-  upgrade_prep.c             upgrade_prep.h \
-  upgrade_proc.c             upgrade_proc.h \
+  upgrade_prep.c            upgrade_prep.h \
+  upgrade_proc.c            upgrade_proc.h \
   upgraded_net.c
 
 tls_common_files = \
