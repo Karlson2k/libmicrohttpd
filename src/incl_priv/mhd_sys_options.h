@@ -398,7 +398,7 @@
 #  ifndef DEBUG /* Used by some toolchains */
 #    define NDEBUG 1 /* Use NDEBUG by default */
 #  else  /* DEBUG */
-#    define _DEBUG 1 /* Non-standart macro */
+#    define _DEBUG 1 /* Non-standard macro */
 #  endif /* DEBUG */
 #endif /* !_DEBUG && !NDEBUG */
 
