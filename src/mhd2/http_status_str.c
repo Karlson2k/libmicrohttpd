@@ -32,6 +32,7 @@
 #include "sys_base_types.h"
 #include "mhd_public_api.h"
 #include "mhd_str_macros.h"
+#include "mhd_arr_num_elems.h"
 
 #define UNUSED_STATUS {0, NULL}
 
@@ -165,7 +166,7 @@ struct mhd_HttpStatusesBlock
   const struct MHD_String *const data;
 };
 
-#define STATUSES_BLOCK(m) { (sizeof(m) / sizeof(m[0])), m}
+#define STATUSES_BLOCK(m) { mhd_ARR_NUM_ELEMS (m), m}
 
 static const struct mhd_HttpStatusesBlock statuses[] = {
   STATUSES_BLOCK (invalid_hundred),

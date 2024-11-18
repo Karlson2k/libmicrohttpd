@@ -33,7 +33,7 @@ libmicrohttpd2_la_SOURCES = \
   compat_calloc.h \
   sys_w32_ver.h \
   mhd_assert.h \
-  mhd_cntnr_ptr.h \
+  mhd_cntnr_ptr.h           mhd_arr_num_elems.h \
   mhd_tristate.h \
   mhd_socket_type.h         mhd_sockets_macros.h \
   mhd_sockets_funcs.c       mhd_sockets_funcs.h \
