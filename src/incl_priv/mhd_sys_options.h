@@ -341,6 +341,8 @@
  */
 #ifdef HAVE_UINTPTR_T
 #  define mhd_DROP_CONST(ptr)  ((void *) ((uintptr_t) ((const void *) (ptr))))
+#elif defined(HAVE_INTPTR_T)
+#  define mhd_DROP_CONST(ptr)  ((void *) ((intptr_t) ((const void *) (ptr))))
 #else
 #  define mhd_DROP_CONST(ptr)  ((void *) ((const void *) (ptr)))
 #endif
