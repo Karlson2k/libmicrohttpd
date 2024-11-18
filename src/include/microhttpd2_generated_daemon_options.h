@@ -108,7 +108,7 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
    * Provide TLS key and certificate data in-memory.
    * Works only if TLS mode is enabled.
    */
-  MHD_D_O_TLS_KEY_CERT = 121
+  MHD_D_O_TLS_CERT_KEY = 121
   ,
 
   /**
@@ -424,19 +424,21 @@ struct MHD_DaemonOptionValueTFO
 };
 
 /**
- * Data for #MHD_D_O_TLS_KEY_CERT
+ * Data for #MHD_D_O_TLS_CERT_KEY
  */
 struct MHD_DaemonOptionValueTlsCert
 {
   /**
-   * the private key loaded into memory (not a filename)
+   * The X.509 certificates chain in PEM format loaded into memory (not a filename).
+   * The first certificate must be the server certificate, following by the chain of signing
+   * certificates up to (but not including) CA root certificate.
    */
-  const char *v_mem_key;
+  /* const */ char *v_mem_cert;
 
   /**
-   * the certificate loaded into memory (not a filename)
+   * the private key in PEM format loaded into memory (not a filename)
    */
-  const char *v_mem_cert;
+  const char *v_mem_key;
 
   /**
    * the option passphrase phrase to decrypt the private key,
@@ -656,10 +658,12 @@ union MHD_DaemonOptionValue
   enum MHD_TlsBackend tls;
 
   /**
-   * Value for #MHD_D_O_TLS_KEY_CERT.
-   * the private key loaded into memory (not a filename)
+   * Value for #MHD_D_O_TLS_CERT_KEY.
+   * The X.509 certificates chain in PEM format loaded into memory (not a filename).
+   * The first certificate must be the server certificate, following by the chain of signing
+   * certificates up to (but not including) CA root certificate.
    */
-  struct MHD_DaemonOptionValueTlsCert tls_key_cert;
+  struct MHD_DaemonOptionValueTlsCert tls_cert_key;
 
   /**
    * Value for #MHD_D_O_TLS_CLIENT_CA.
@@ -1023,20 +1027,22 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
 /**
  * Provide TLS key and certificate data in-memory.
  * Works only if TLS mode is enabled.
- * @param mem_key the private key loaded into memory (not a filename)
- * @param mem_cert the certificate loaded into memory (not a filename)
+ * @param mem_cert The X.509 certificates chain in PEM format loaded into memory (not a filename).
+ *   The first certificate must be the server certificate, following by the chain of signing
+ *   certificates up to (but not including) CA root certificate.
+ * @param mem_key the private key in PEM format loaded into memory (not a filename)
  * @param mem_pass the option passphrase phrase to decrypt the private key,
  *   could be NULL is private does not need a password
  * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_TLS_KEY_CERT(mem_key,mem_cert,mem_pass) \
+#  define MHD_D_OPTION_TLS_CERT_KEY(mem_cert,mem_key,mem_pass) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
-          .opt = MHD_D_O_TLS_KEY_CERT,  \
-          .val.tls_key_cert.v_mem_key = (mem_key), \
-          .val.tls_key_cert.v_mem_cert = (mem_cert), \
-          .val.tls_key_cert.v_mem_pass = (mem_pass) \
+          .opt = MHD_D_O_TLS_CERT_KEY,  \
+          .val.tls_cert_key.v_mem_cert = (mem_cert), \
+          .val.tls_cert_key.v_mem_key = (mem_key), \
+          .val.tls_cert_key.v_mem_pass = (mem_pass) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1740,25 +1746,27 @@ MHD_D_OPTION_TLS (
 /**
  * Provide TLS key and certificate data in-memory.
  * Works only if TLS mode is enabled.
- * @param mem_key the private key loaded into memory (not a filename)
- * @param mem_cert the certificate loaded into memory (not a filename)
+ * @param mem_cert The X.509 certificates chain in PEM format loaded into memory (not a filename).
+ *   The first certificate must be the server certificate, following by the chain of signing
+ *   certificates up to (but not including) CA root certificate.
+ * @param mem_key the private key in PEM format loaded into memory (not a filename)
  * @param mem_pass the option passphrase phrase to decrypt the private key,
  *   could be NULL is private does not need a password
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_TLS_KEY_CERT (
+MHD_D_OPTION_TLS_CERT_KEY (
+  /* const */ char *mem_cert,
   const char *mem_key,
-  const char *mem_cert,
   const char *mem_pass
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = MHD_D_O_TLS_KEY_CERT;
-  opt_val.val.tls_key_cert.v_mem_key = mem_key;
-  opt_val.val.tls_key_cert.v_mem_cert = mem_cert;
-  opt_val.val.tls_key_cert.v_mem_pass = mem_pass;
+  opt_val.opt = MHD_D_O_TLS_CERT_KEY;
+  opt_val.val.tls_cert_key.v_mem_cert = mem_cert;
+  opt_val.val.tls_cert_key.v_mem_key = mem_key;
+  opt_val.val.tls_cert_key.v_mem_pass = mem_pass;
 
   return opt_val;
 }

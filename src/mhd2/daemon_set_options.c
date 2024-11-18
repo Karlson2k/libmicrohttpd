@@ -86,10 +86,53 @@ MHD_daemon_set_options (
     case MHD_D_O_TLS:
       settings->tls = option->val.tls;
       continue;
-    case MHD_D_O_TLS_KEY_CERT:
-      settings->tls_key_cert.v_mem_key = option->val.tls_key_cert.v_mem_key;
-      settings->tls_key_cert.v_mem_cert = option->val.tls_key_cert.v_mem_cert;
-      settings->tls_key_cert.v_mem_pass = option->val.tls_key_cert.v_mem_pass;
+    case MHD_D_O_TLS_CERT_KEY:
+      /* custom setter */
+      if ((NULL == option->val.tls_cert_key.v_mem_cert)
+          || (NULL == option->val.tls_cert_key.v_mem_key))
+        return MHD_SC_TLS_CONF_BAD_CERT;
+      else
+      {
+        size_t cert_size;
+        size_t key_size;
+        size_t pass_size;
+        cert_size = strlen (option->val.tls_cert_key.v_mem_cert);
+        key_size = strlen (option->val.tls_cert_key.v_mem_key);
+        if ((0 == cert_size)
+            || (0 == key_size))
+          return MHD_SC_TLS_CONF_BAD_CERT;
+        ++cert_size; /* Space for zero-termination */
+        ++key_size;  /* Space for zero-termination */
+        if (NULL != option->val.tls_cert_key.v_mem_pass)
+          pass_size = strlen (option->val.tls_cert_key.v_mem_cert);
+        else
+          pass_size = 0;
+        if (0 != pass_size)
+          ++pass_size; /* Space for zero-termination */
+        if (NULL != settings->tls_cert_key.v_mem_cert)
+          free (settings->tls_cert_key.v_mem_cert); // TODO: Support multiple certificates!!
+        settings->tls_cert_key.v_mem_cert = malloc (cert_size + key_size + pass_size);
+        if (NULL == settings->tls_cert_key.v_mem_cert)
+          return MHD_SC_DAEMON_MALLOC_FAILURE;
+        memcpy (settings->tls_cert_key.v_mem_cert,
+                option->val.tls_cert_key.v_mem_cert,
+                cert_size);
+        memcpy (settings->tls_cert_key.v_mem_cert + cert_size,
+                option->val.tls_cert_key.v_mem_key,
+                key_size);
+        settings->tls_cert_key.v_mem_key =
+          settings->tls_cert_key.v_mem_cert + cert_size;
+        if (0 != pass_size)
+        {
+          memcpy (settings->tls_cert_key.v_mem_cert + cert_size + key_size,
+                  option->val.tls_cert_key.v_mem_pass,
+                  pass_size);
+          settings->tls_cert_key.v_mem_pass =
+            settings->tls_cert_key.v_mem_cert + cert_size + key_size;
+        }
+        else
+          settings->tls_cert_key.v_mem_pass = NULL;
+      }
       continue;
     case MHD_D_O_TLS_CLIENT_CA:
       settings->tls_client_ca = option->val.tls_client_ca;

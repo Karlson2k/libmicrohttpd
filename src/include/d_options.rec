@@ -149,18 +149,67 @@ Argument1: enum MHD_TlsBackend backend
 Description1: the TLS backend to use,
 + #MHD_TLS_BACKEND_NONE for non-TLS (plain TCP) connections
 
-Name: tls_key_cert
+Name: tls_cert_key
 Value: 121
 Comment: Provide TLS key and certificate data in-memory.
 + Works only if TLS mode is enabled.
 Type: struct MHD_DaemonOptionValueTlsCert
-Argument1: const char *mem_key
-Description1: the private key loaded into memory (not a filename)
-Argument2: const char *mem_cert
-Description2: the certificate loaded into memory (not a filename)
+Argument1: /* const */ char *mem_cert
+Description1: The X.509 certificates chain in PEM format loaded into memory (not a filename).
++ The first certificate must be the server certificate, following by the chain of signing
++ certificates up to (but not including) CA root certificate.
+Argument2: const char *mem_key
+Description2: the private key in PEM format loaded into memory (not a filename)
 Argument3: const char *mem_pass
 Description3: the option passphrase phrase to decrypt the private key,
 + could be NULL is private does not need a password
+CustomSetter: /* custom setter */
++ if ((NULL == option->val.tls_cert_key.v_mem_cert)
++     || (NULL == option->val.tls_cert_key.v_mem_key))
++   return MHD_SC_TLS_CONF_BAD_CERT;
++ else
++ {
++   size_t cert_size;
++   size_t key_size;
++   size_t pass_size;
++   cert_size = strlen (option->val.tls_cert_key.v_mem_cert);
++   key_size = strlen (option->val.tls_cert_key.v_mem_key);
++   if ((0 == cert_size) 
++       || (0 == key_size))
++     return MHD_SC_TLS_CONF_BAD_CERT;
++   ++cert_size; /* Space for zero-termination */
++   ++key_size;  /* Space for zero-termination */
++   if (NULL != option->val.tls_cert_key.v_mem_pass)
++     pass_size = strlen (option->val.tls_cert_key.v_mem_cert);
++   else
++     pass_size = 0;
++   if (0 != pass_size)
++     ++pass_size; /* Space for zero-termination */
++   if (NULL != settings->tls_cert_key.v_mem_cert)
++     free (settings->tls_cert_key.v_mem_cert); // TODO: Support multiple certificates!!
++   settings->tls_cert_key.v_mem_cert = malloc (cert_size + key_size + pass_size);
++   if (NULL == settings->tls_cert_key.v_mem_cert)
++     return MHD_SC_DAEMON_MALLOC_FAILURE;
++   memcpy (settings->tls_cert_key.v_mem_cert,
++           option->val.tls_cert_key.v_mem_cert,
++           cert_size);
++   memcpy (settings->tls_cert_key.v_mem_cert + cert_size,
++           option->val.tls_cert_key.v_mem_key,
++           key_size);
++   settings->tls_cert_key.v_mem_key =
++     settings->tls_cert_key.v_mem_cert + cert_size;
++   if (0 != pass_size)
++   {
++     memcpy (settings->tls_cert_key.v_mem_cert + cert_size + key_size,
++             option->val.tls_cert_key.v_mem_pass,
++             pass_size);
++     settings->tls_cert_key.v_mem_pass =
++       settings->tls_cert_key.v_mem_cert + cert_size + key_size;
++   }
++   else
++     settings->tls_cert_key.v_mem_pass = NULL;
++ }
+
 
 Name: tls_client_ca
 Value: 122

@@ -81,9 +81,9 @@ MHD_daemon_create (MHD_RequestCallback req_cb,
   /* Any floating point and pointer members must be initialised manually here */
 #ifndef HAVE_NULL_PTR_ALL_ZEROS
   s->bind_sa.v_sa = NULL;
-  s->tls_key_cert.v_mem_key = NULL;
-  s->tls_key_cert.v_mem_cert = NULL;
-  s->tls_key_cert.v_mem_pass = NULL;
+  s->tls_cert_key.v_mem_key = NULL;
+  s->tls_cert_key.v_mem_cert = NULL;
+  s->tls_cert_key.v_mem_pass = NULL;
   s->tls_client_ca = NULL;
   s->tls_psk_callback.v_psk_cb = NULL;
   s->tls_psk_callback.v_psk_cb_cls = NULL;
@@ -98,6 +98,9 @@ MHD_daemon_create (MHD_RequestCallback req_cb,
   s->notify_stream.v_nsc = NULL;
   s->notify_stream.v_cls = NULL;
   s->random_entropy.v_buf = NULL;
+  s->tls_cert_key.v_mem_cert = NULL;
+  s->tls_cert_key.v_mem_key = NULL;
+  s->tls_cert_key.v_mem_pass = NULL;
 
   d->log_params.v_log_cb = NULL; /* optional */
 #endif /* !HAVE_NULL_PTR_ALL_ZEROS */

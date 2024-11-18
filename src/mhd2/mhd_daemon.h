@@ -35,6 +35,10 @@
 
 #include "mhd_public_api.h"
 
+#ifdef MHD_ENABLE_HTTPS
+#  include "mhd_tls_choice.h"
+#endif
+
 #ifdef MHD_USE_THREADS
 #  include "mhd_threads.h"
 #  include "mhd_itc_types.h"
@@ -873,6 +877,7 @@ struct mhd_daemon_debug
 {
   bool net_inited;
   bool net_deinited;
+  bool tls_inited;
   bool events_allocated;
   unsigned int num_events_elements;
   bool events_fully_inited;
@@ -912,6 +917,15 @@ struct MHD_Daemon
    * The daemon network/sockets data
    */
   struct mhd_DaemonNetwork net;
+
+#ifdef MHD_ENABLE_HTTPS
+  /**
+   * The pointer to the daemon TLS data.
+   * If set to non-NULL then HTTPS protocol is used, if set to NULL then
+   * plain HTTP protocol used.
+   */
+  struct mhd_DaemonTlsData *tls;
+#endif
 
 #ifdef MHD_USE_THREADS
   /* Threading data */
@@ -1001,5 +1015,12 @@ struct MHD_Daemon
 #define mhd_D_IS_USING_EDGE_TRIG(d) \
         (mhd_D_IS_USING_EPOLL (d) || \
          (mhd_WM_INT_EXTERNAL_EVENTS_EDGE ==((d)->wmode_int)))
+
+#ifdef MHD_ENABLE_HTTPS
+#  define mhd_D_HAS_TLS(d) ((d->tls) ? (! 0) : (0))
+#else
+#  define mhd_D_HAS_TLS(d) (0)
+#endif
+
 
 #endif /* ! MHD_DAEMON_H */

@@ -459,6 +459,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   ,
   /**
    * Failed to allocate memory for the daemon resources.
+   * TODO: combine similar error codes for daemon
    */
   MHD_SC_DAEMON_MALLOC_FAILURE = 30081
   ,
@@ -712,12 +713,6 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * requested TLS.
    */
   MHD_SC_TLS_DISABLED = 50000
-  ,
-  /**
-   * The application attempted to setup TLS parameters before
-   * enabling TLS.
-   */
-  MHD_SC_TLS_BACKEND_UNINITIALIZED = 50003
   ,
   /**
    * The selected TLS backend does not yet support this operation.
@@ -1287,6 +1282,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_LIB_INIT_GLOBAL_FAILED = 51000
   ,
   /**
+   * Failed to initialise TLS context for the daemon
+   */
+  MHD_SC_DAEMON_TLS_INIT_FAILED = 51200
+  ,
+  /**
    * Something wrong in the internal MHD logic.
    * This error should be never returned if MHD works as expected.
    * If this code is ever returned, please report to MHD maintainers.
@@ -1308,17 +1308,6 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * and threads are used.
    */
   MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60001
-  ,
-  /**
-   * The application requested an unsupported TLS backend to be used.
-   */
-  MHD_SC_TLS_BACKEND_UNSUPPORTED = 60003
-  ,
-  /**
-   * The application requested a TLS cipher suite which is not
-   * supported by the selected backend.
-   */
-  MHD_SC_TLS_CIPHERS_INVALID = 60004
   ,
   /**
    * MHD is closing a connection because the application
@@ -1389,6 +1378,34 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * configuration
    */
   MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60016
+  ,
+  /**
+   * The application requested an unsupported TLS backend to be used.
+   */
+  MHD_SC_TLS_BACKEND_UNSUPPORTED = 60020
+  ,
+  /**
+   * The application attempted to setup TLS parameters before
+   * enabling TLS.
+   */
+  MHD_SC_TLS_BACKEND_UNINITIALIZED = 60021
+  ,
+  /**
+   * The application requested a TLS backend which cannot be used due
+   * to missing TLS dynamic library or backend initialisation problem.
+   */
+  MHD_SC_TLS_BACKEND_UNAVAILABLE = 60022
+  ,
+  /**
+   * Provided TLS certificate and/or private key are incorrect
+   */
+  MHD_SC_TLS_CONF_BAD_CERT = 60023
+  ,
+  /**
+   * The application requested a TLS cipher suite which is not
+   * supported by the selected backend.
+   */
+  MHD_SC_TLS_CIPHERS_INVALID = 60024
   ,
   /**
    * The response header name has forbidden characters or token
@@ -3954,16 +3971,18 @@ MHD_D_OPTION_TLS (
 /**
  * Provide TLS key and certificate data in-memory.
  * Works only if TLS mode is enabled.
- * @param mem_key the private key loaded into memory (not a filename)
- * @param mem_cert the certificate loaded into memory (not a filename)
+ * @param mem_cert The X.509 certificates chain in PEM format loaded into memory (not a filename).
+ *   The first certificate must be the server certificate, following by the chain of signing
+ *   certificates up to (but not including) CA root certificate.
+ * @param mem_key the private key in PEM format loaded into memory (not a filename)
  * @param mem_pass the option passphrase phrase to decrypt the private key,
  *   could be NULL is private does not need a password
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_TLS_KEY_CERT (
+MHD_D_OPTION_TLS_CERT_KEY (
+  /* const */ char *mem_cert,
   const char *mem_key,
-  const char *mem_cert,
   const char *mem_pass
   );
 

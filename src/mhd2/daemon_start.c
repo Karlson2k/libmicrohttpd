@@ -72,6 +72,10 @@
 #include "mhd_lib_init.h"
 #include "daemon_logger.h"
 
+#ifdef MHD_ENABLE_HTTPS
+#  include "mhd_tls_funcs.h"
+#endif
+
 #ifdef MHD_USE_THREADS
 #  include "mhd_itc.h"
 #  include "mhd_threads.h"
@@ -101,6 +105,8 @@ dsettings_release (struct DaemonOptions *s)
     mhd_socket_close (s->listen_socket);
   if (NULL != s->bind_sa.v_sa)
     free (s->bind_sa.v_sa);
+  if (NULL != s->tls_cert_key.v_mem_cert)
+    free (s->tls_cert_key.v_mem_cert);
   free (s);
 }
 
@@ -1436,6 +1442,88 @@ dauth_init (struct MHD_Daemon *restrict d,
 
 
 #endif
+
+
+/**
+ * Initialise daemon TLS data
+ * @param d the daemon object
+ * @param s the user settings
+ * @return #MHD_SC_OK on success,
+ *         the error code otherwise
+ */
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
+  MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
+daemon_init_tls (struct MHD_Daemon *restrict d,
+                 struct DaemonOptions *restrict s)
+{
+  mhd_StatusCodeInt ret;
+
+  mhd_assert (! d->dbg.tls_inited);
+#ifdef MHD_ENABLE_HTTPS
+  d->tls = NULL;
+#endif
+
+  if (MHD_TLS_BACKEND_NONE == s->tls)
+  {
+#ifndef NDEBUG
+    d->dbg.tls_inited = true;
+#endif
+    return MHD_SC_OK;
+  }
+#ifndef MHD_ENABLE_HTTPS
+  mhd_LOG_MSG (d, \
+               MHD_SC_TLS_DISABLED, \
+               "HTTPS is not supported by this MHD build");
+  return MHD_SC_TLS_DISABLED;
+#else  /* MHD_ENABLE_HTTPS */
+  if (1)
+  {
+    enum mhd_TlsBackendAvailable tls_avail;
+
+    tls_avail = mhd_tls_is_backend_available (s);
+    if (mhd_TLS_BACKEND_AVAIL_NOT_SUPPORTED == tls_avail)
+    {
+      mhd_LOG_MSG (d, \
+                   MHD_SC_TLS_BACKEND_UNSUPPORTED, \
+                   "The requested TLS backend is not supported " \
+                   "by this MHD build");
+      return MHD_SC_TLS_BACKEND_UNSUPPORTED;
+    }
+    else if (mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE == tls_avail)
+    {
+      mhd_LOG_MSG (d, \
+                   MHD_SC_TLS_BACKEND_UNAVAILABLE, \
+                   "The requested TLS backend is not available");
+      return MHD_SC_TLS_BACKEND_UNAVAILABLE;
+    }
+  }
+  ret = mhd_tls_daemon_init (d,
+                             &(d->tls),
+                             s);
+  mhd_assert ((MHD_SC_OK == ret) || (NULL == d->tls));
+  mhd_assert ((MHD_SC_OK != ret) || (NULL != d->tls));
+#ifndef NDEBUG
+  d->dbg.tls_inited = (MHD_SC_OK == ret);
+#endif
+  return (enum MHD_StatusCode) ret;
+#endif /* MHD_ENABLE_HTTPS */
+}
+
+
+/**
+ * Deinitialise daemon TLS data
+ * @param d the daemon object
+ */
+MHD_FN_PAR_NONNULL_ (1) static void
+daemon_deinit_tls (struct MHD_Daemon *restrict d)
+{
+  mhd_assert (d->dbg.tls_inited);
+#ifdef MHD_ENABLE_HTTPS
+  if (NULL != d->tls)
+    mhd_tls_daemon_deinit (d->tls);
+#endif
+}
+
 
 /**
  * Initialise large buffer tracking.
@@ -2828,31 +2916,34 @@ daemon_start_internal (struct MHD_Daemon *restrict d,
   if (MHD_SC_OK != res)
     return res;
 
+  mhd_assert (d->dbg.net_inited);
+  res = daemon_init_tls (d, s);
 
-  // TODO: Other init
-
-  res = daemon_init_threading_and_conn (d, s);
   if (MHD_SC_OK == res)
   {
-    mhd_assert (d->dbg.net_inited);
-    mhd_assert (d->dbg.threading_inited);
-    mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
-
-    res = daemon_init_large_buf (d, s);
+    mhd_assert (d->dbg.tls_inited);
+    res = daemon_init_threading_and_conn (d, s);
     if (MHD_SC_OK == res)
     {
-      res = daemon_start_threads (d);
+      mhd_assert (d->dbg.threading_inited);
+      mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
+
+      res = daemon_init_large_buf (d, s);
       if (MHD_SC_OK == res)
       {
-        return MHD_SC_OK;
+        res = daemon_start_threads (d);
+        if (MHD_SC_OK == res)
+        {
+          return MHD_SC_OK;
+        }
+
+        /* Below is a clean-up path */
+        daemon_deinit_large_buf (d);
       }
-
-      /* Below is a clean-up path */
-      daemon_deinit_large_buf (d);
+      daemon_deinit_threading_and_conn (d);
     }
-    daemon_deinit_threading_and_conn (d);
+    daemon_deinit_tls (d);
   }
-
 
   daemon_deinit_net (d);
   mhd_assert (MHD_SC_OK != res);
@@ -2910,6 +3001,8 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
     daemon_deinit_threading_and_conn (daemon);
 
     daemon_deinit_large_buf (daemon);
+
+    daemon_deinit_tls (daemon);
 
     daemon_deinit_net (daemon);
   }

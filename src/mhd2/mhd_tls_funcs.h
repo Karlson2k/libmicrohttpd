@@ -30,6 +30,8 @@
 
 #include "mhd_sys_options.h"
 
+#include "sys_bool_type.h"
+
 #include "mhd_tls_choice.h"
 #ifndef MHD_ENABLE_HTTPS
 #error This header should be used only if HTTPS is enabled
@@ -38,6 +40,12 @@
 #ifdef MHD_USE_GNUTLS
 #  include "tls_gnu_funcs.h"
 #endif
+
+#ifndef MHD_USE_GNUTLS
+#  define mhd_tls_gnu_is_inited_fine()   (0)
+#endif
+
+/* ** Global initialisation ** */
 
 /**
  * Perform one-time global initialisation of TLS backend
@@ -57,5 +65,60 @@
 #define mhd_tls_global_re_init()          \
         mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_global_re_init)()
 
+/* ** Daemon initialisation ** */
+
+/**
+ * Set daemon TLS parameters
+ * @param d the daemon handle
+ * @param p_d_tls the pointer to variable to set the pointer to
+ *                the daemon's TLS settings (allocated by this function)
+ * @param s the daemon settings
+ * @return #MHD_SC_OK on success (p_d_tls set to the allocated settings),
+ *         error code otherwise
+ */
+#define mhd_tls_daemon_init(d,p_d_tls,s)        \
+        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_daemon_init)( \
+          (d),(p_d_tls),(s))
+
+/**
+ * De-initialise daemon TLS parameters (and free memory allocated for TLS
+ * settings)
+ * @param d_tls the pointer to  the daemon's TLS settings
+ */
+#define mhd_tls_daemon_deinit(d_tls)    \
+        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_daemon_deinit)( \
+          (d_tls))
+
+
+/**
+ * Result of TLS backend availablility check
+ */
+enum mhd_TlsBackendAvailable
+{
+  /**
+   * The TLS backend is available and can be used
+   */
+  mhd_TLS_BACKEND_AVAIL_OK = 0
+  ,
+  /**
+   * The TLS backend support is not enabled in this MHD build
+   */
+  mhd_TLS_BACKEND_AVAIL_NOT_SUPPORTED
+  ,
+  /**
+   * The TLS backend supported, but not available
+   */
+  mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE
+};
+
+/**
+ * Check whether the requested TLS backend is available
+ * @param s the daemon settings
+ * @return 'mhd_TLS_BACKEND_AVAIL_OK' if requested backend is available,
+ *         error code otherwise
+ */
+MHD_INTERNAL enum mhd_TlsBackendAvailable
+mhd_tls_is_backend_available (struct DaemonOptions *s)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
 
 #endif /* ! MHD_TLS_FUNCS_H */

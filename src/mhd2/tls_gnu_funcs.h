@@ -33,6 +33,8 @@
 #error This header can be used only if GnuTLS is enabled
 #endif
 
+#include "mhd_status_code_int.h"
+
 /**
  * The structure with daemon-specific GnuTLS data
  */
@@ -63,5 +65,41 @@ mhd_tls_gnu_global_init (void);
  */
 MHD_INTERNAL void
 mhd_tls_gnu_global_deinit (void);
+
+/**
+ * Check whether GnuTLS backend was successfully initialised globally
+ */
+MHD_INTERNAL bool
+mhd_tls_gnu_is_inited_fine (void);
+
+
+/* ** Daemon initialisation ** */
+
+struct MHD_Daemon;      /* Forward declaration */
+struct DaemonOptions;   /* Forward declaration */
+
+/**
+ * Set daemon TLS parameters
+ * @param d the daemon handle
+ * @param p_d_tls the pointer to variable to set the pointer to
+ *                the daemon's TLS settings (allocated by this function)
+ * @param s the daemon settings
+ * @return #MHD_SC_OK on success (p_d_tls set to the allocated settings),
+ *         error code otherwise
+ */
+MHD_INTERNAL mhd_StatusCodeInt
+mhd_tls_gnu_daemon_init (struct MHD_Daemon *restrict d,
+                         struct mhd_DaemonTlsGnuData **restrict p_d_tls,
+                         struct DaemonOptions *restrict s)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
+
+/**
+ * De-initialise daemon TLS parameters (and free memory allocated for TLS
+ * settings)
+ * @param d_tls the pointer to  the daemon's TLS settings
+ */
+MHD_INTERNAL void
+mhd_tls_gnu_daemon_deinit (struct mhd_DaemonTlsGnuData *restrict d_tls)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
 
 #endif /* ! MHD_TLS_GNU_FUNCS_H */

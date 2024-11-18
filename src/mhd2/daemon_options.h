@@ -94,10 +94,12 @@ struct DaemonOptions
 
 
   /**
-   * Value for #MHD_D_O_TLS_KEY_CERT.
-   * the private key loaded into memory (not a filename)
+   * Value for #MHD_D_O_TLS_CERT_KEY.
+   * The X.509 certificates chain in PEM format loaded into memory (not a filename).
+   * The first certificate must be the server certificate, following by the chain of signing
+   * certificates up to (but not including) CA root certificate.
    */
-  struct MHD_DaemonOptionValueTlsCert tls_key_cert;
+  struct MHD_DaemonOptionValueTlsCert tls_cert_key;
 
 
   /**
