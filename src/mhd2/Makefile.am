@@ -34,7 +34,7 @@ libmicrohttpd2_la_SOURCES = \
   sys_w32_ver.h \
   mhd_assert.h \
   mhd_cntnr_ptr.h           mhd_arr_num_elems.h \
-  mhd_tristate.h \
+  mhd_tristate.h            mhd_status_code_int.h \
   mhd_socket_type.h         mhd_sockets_macros.h \
   mhd_sockets_funcs.c       mhd_sockets_funcs.h \
   mhd_socket_error.c        mhd_socket_error.h \
