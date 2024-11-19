@@ -136,7 +136,7 @@ get_conn_reuse (struct MHD_Connection *c)
     return mhd_CONN_MUST_CLOSE;
 
   mhd_assert ( (! c->stop_with_error) || (c->discard_request));
-  if ((c->sk_rmt_shut_wr) || (c->discard_request))
+  if ((c->sk.state.rmt_shut_wr) || (c->discard_request))
     return mhd_CONN_MUST_CLOSE;
 
   if (rp->cfg.close_forced)

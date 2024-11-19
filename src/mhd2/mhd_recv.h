@@ -36,7 +36,7 @@ struct MHD_Connection; /* forward declaration */
 
 /**
  * Receive the data from the network socket.
- * Clear #mhd_SOCKET_NET_STATE_RECV_READY in sk_ready if necessary.
+ * Clear #mhd_SOCKET_NET_STATE_RECV_READY in sk.ready if necessary.
  *
  * @param c the connection to use
  * @param buf_size the size of the @a buf buffer

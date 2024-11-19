@@ -101,10 +101,10 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
   if (err_state)
     sk_state = (enum mhd_SocketNetState)
                (sk_state | (unsigned int) mhd_SOCKET_NET_STATE_ERROR_READY);
-  c->sk_ready = sk_state;
+  c->sk.ready = sk_state;
 
   if ((0 !=
-       (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
+       (((unsigned int) c->sk.ready) & ((unsigned int) c->event_loop_info)
         & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND)))
       || err_state)
     mhd_conn_mark_ready (c, d);
@@ -470,16 +470,16 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
       continue;
 
     if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_RECV))
-      fd_set_wrap (c->socket_fd,
+      fd_set_wrap (c->sk.fd,
                    rfds,
                    &ret,
                    d);
     if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_SEND))
-      fd_set_wrap (c->socket_fd,
+      fd_set_wrap (c->sk.fd,
                    wfds,
                    &ret,
                    d);
-    fd_set_wrap (c->socket_fd,
+    fd_set_wrap (c->sk.fd,
                  efds,
                  &ret,
                  d);
@@ -575,7 +575,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
     if (is_conn_excluded_from_http_comm (c))
       continue;
 
-    sk = c->socket_fd;
+    sk = c->sk.fd;
     recv_ready = FD_ISSET (sk, rfds);
     send_ready = FD_ISSET (sk, wfds);
     err_state = FD_ISSET (sk, efds);
@@ -737,7 +737,7 @@ poll_update_fds (struct MHD_Daemon *restrict d,
     mhd_assert (i_c < d->dbg.num_events_elements);
     mhd_assert (MHD_CONNECTION_CLOSED != c->state);
 
-    d->events.data.poll.fds[i_c].fd = c->socket_fd;
+    d->events.data.poll.fds[i_c].fd = c->sk.fd;
     d->events.data.poll.rel[i_c].connection = c;
     events = 0;
     if (0 != (c->event_loop_info & MHD_EVENT_LOOP_INFO_RECV))
@@ -846,7 +846,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
 
     c = d->events.data.poll.rel[i_c].connection;
     mhd_assert (! is_conn_excluded_from_http_comm (c));
-    mhd_assert (c->socket_fd == d->events.data.poll.fds[i_c].fd);
+    mhd_assert (c->sk.fd == d->events.data.poll.fds[i_c].fd);
     revents = d->events.data.poll.fds[i_c].revents;
     recv_ready = (0 != (revents & (MHD_POLL_IN | POLLIN)));
     send_ready = (0 != (revents & (MHD_POLL_OUT | POLLOUT)));

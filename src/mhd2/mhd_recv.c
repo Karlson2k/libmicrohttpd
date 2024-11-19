@@ -52,13 +52,13 @@ mhd_plain_recv (struct MHD_Connection *restrict c,
   if (MHD_SCKT_SEND_MAX_SIZE_ < buf_size)
     buf_size = MHD_SCKT_SEND_MAX_SIZE_;
 
-  res = mhd_sys_recv (c->socket_fd, buf, buf_size);
+  res = mhd_sys_recv (c->sk.fd, buf, buf_size);
   if (0 <= res)
   {
     *received = (size_t) res;
     if (buf_size > (size_t) res)
-      c->sk_ready = (enum mhd_SocketNetState) /* Clear 'recv-ready' */
-                    (((unsigned int) c->sk_ready)
+      c->sk.ready = (enum mhd_SocketNetState) /* Clear 'recv-ready' */
+                    (((unsigned int) c->sk.ready)
                      & (~(enum mhd_SocketNetState)
                         mhd_SOCKET_NET_STATE_RECV_READY));
     return mhd_SOCKET_ERR_NO_ERROR; /* Success exit point */
@@ -67,8 +67,8 @@ mhd_plain_recv (struct MHD_Connection *restrict c,
   err = mhd_socket_error_get_from_sys_err (mhd_SCKT_GET_LERR ());
 
   if (mhd_SOCKET_ERR_AGAIN == err)
-    c->sk_ready = (enum mhd_SocketNetState) /* Clear 'recv-ready' */
-                  (((unsigned int) c->sk_ready)
+    c->sk.ready = (enum mhd_SocketNetState) /* Clear 'recv-ready' */
+                  (((unsigned int) c->sk.ready)
                    & (~(enum mhd_SocketNetState)
                       mhd_SOCKET_NET_STATE_RECV_READY));
 
@@ -83,7 +83,7 @@ mhd_recv (struct MHD_Connection *restrict c,
           char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
           size_t *restrict received)
 {
-  mhd_assert (MHD_INVALID_SOCKET != c->socket_fd);
+  mhd_assert (MHD_INVALID_SOCKET != c->sk.fd);
   mhd_assert (MHD_CONNECTION_CLOSED != c->state);
 
   // TODO: implement TLS support

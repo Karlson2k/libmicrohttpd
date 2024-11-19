@@ -57,7 +57,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
     ((mhd_D_IS_USING_EDGE_TRIG (c->daemon)) ||
      (0 != (MHD_EVENT_LOOP_INFO_SEND & c->event_loop_info)));
   const bool has_sock_err =
-    (0 != (mhd_SOCKET_NET_STATE_ERROR_READY & c->sk_ready));
+    (0 != (mhd_SOCKET_NET_STATE_ERROR_READY & c->sk.ready));
   bool data_processed;
 
   data_processed = false;
@@ -65,9 +65,9 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
   if (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info))
   {
     bool use_recv;
-    use_recv = (0 != (mhd_SOCKET_NET_STATE_RECV_READY & c->sk_ready));
+    use_recv = (0 != (mhd_SOCKET_NET_STATE_RECV_READY & c->sk.ready));
     use_recv = use_recv ||
-               (has_sock_err && c->sk_nonblck);
+               (has_sock_err && c->sk.props.is_nonblck);
 
     if (use_recv)
     {
@@ -89,11 +89,12 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
     /* Assuming that after finishing receiving phase, connection send system
        buffers should have some space as sending was performed before receiving
        or has not been performed yet. */
-    use_send = (0 != (mhd_SOCKET_NET_STATE_SEND_READY & c->sk_ready));
+    use_send = (0 != (mhd_SOCKET_NET_STATE_SEND_READY & c->sk.ready));
     use_send = use_send ||
-               (data_processed && (! send_ready_state_known) && c->sk_nonblck);
+               (data_processed && (! send_ready_state_known)
+                && c->sk.props.is_nonblck);
     use_send = use_send ||
-               (has_sock_err && c->sk_nonblck);
+               (has_sock_err && c->sk.props.is_nonblck);
 
     if (use_send)
     {
@@ -142,7 +143,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
      only for non-blocking sockets. */
   /* No need to check 'ret' as connection is always in
    * MHD_CONNECTION_CLOSED state if 'ret' is equal 'MHD_NO'. */
-  else if (on_fasttrack && c->sk_nonblck)
+  else if (on_fasttrack && c->sk.props.is_nonblck)
   {
     if (MHD_CONNECTION_HEADERS_SENDING == c->state)
     {

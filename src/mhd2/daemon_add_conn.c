@@ -168,18 +168,18 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
 
   if (! external_add)
   {
-    connection->sk_corked = mhd_T_NO;
-    connection->sk_nodelay = mhd_T_NO;
+    connection->sk.state.corked = mhd_T_NO;
+    connection->sk.state.nodelay = mhd_T_NO;
   }
   else
   {
-    connection->sk_corked = mhd_T_MAYBE;
-    connection->sk_nodelay = mhd_T_MAYBE;
+    connection->sk.state.corked = mhd_T_MAYBE;
+    connection->sk.state.nodelay = mhd_T_MAYBE;
   }
 
   if (0 < addrlen)
   {
-    if (NULL == (connection->addr = malloc (addrlen)))
+    if (NULL == (connection->sk.addr.data = malloc (addrlen)))
     {
       mhd_LOG_MSG (daemon, MHD_SC_CONNECTION_MALLOC_FAILURE,
                    "Failed to allocate memory for the new connection");
@@ -187,17 +187,17 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
       free (connection);
       return MHD_SC_CONNECTION_MALLOC_FAILURE;
     }
-    memcpy (connection->addr,
+    memcpy (connection->sk.addr.data,
             addr,
             addrlen);
   }
   else
-    connection->addr = NULL;
-  connection->addr_len = addrlen;
-  connection->socket_fd = client_socket;
-  connection->sk_nonblck = non_blck;
-  connection->is_nonip = sk_is_nonip;
-  connection->sk_spipe_suppress = sk_spipe_supprs;
+    connection->sk.addr.data = NULL;
+  connection->sk.addr.size = addrlen;
+  connection->sk.fd = client_socket;
+  connection->sk.props.is_nonblck = non_blck;
+  connection->sk.props.is_nonip = sk_is_nonip;
+  connection->sk.props.has_spipe_supp = sk_spipe_supprs;
 #ifdef MHD_USE_THREADS
   mhd_thread_handle_ID_set_invalid (&connection->tid);
 #endif /* MHD_USE_THREADS */
@@ -317,7 +317,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
           event.data.ptr = connection;
           if (0 != epoll_ctl (daemon->events.data.epoll.e_fd,
                               EPOLL_CTL_ADD,
-                              connection->socket_fd,
+                              connection->sk.fd,
                               &event))
           {
             mhd_LOG_MSG (daemon, MHD_SC_EPOLL_CTL_ADD_FAILED,
@@ -328,7 +328,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
           {
             if (0) // TODO: implement turbo
             {
-              connection->sk_ready = mhd_SOCKET_NET_STATE_RECV_READY
+              connection->sk.ready = mhd_SOCKET_NET_STATE_RECV_READY
                                      | mhd_SOCKET_NET_STATE_SEND_READY;
               mhd_conn_mark_ready (connection, daemon);
             }
@@ -360,9 +360,9 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
 
   // TODO: per IP limit
 
-  if (NULL != connection->addr)
-    free (connection->addr);
-  (void) mhd_socket_close (connection->socket_fd);
+  if (NULL != connection->sk.addr.data)
+    free (connection->sk.addr.data);
+  (void) mhd_socket_close (connection->sk.fd);
   free (connection);
   mhd_assert (MHD_SC_OK != res);
   return res;  /* *** Function failure exit point *** */
@@ -543,8 +543,8 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
       }
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-      if ((0 != addr->sa_len) &&
-          (sizeof(struct sockaddr_in) > (size_t) addr->sa_len) )
+      if ((0 != sk.addr.data->sa_len) &&
+          (sizeof(struct sockaddr_in) > (size_t) sk.addr.data->sa_len) )
       {
         mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
@@ -567,8 +567,8 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
         return MHD_SC_CONFIGURATION_WRONG_SA_SIZE;
       }
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-      if ((0 != addr->sa_len) &&
-          (sizeof(struct sockaddr_in6) > (size_t) addr->sa_len) )
+      if ((0 != sk.addr.data->sa_len) &&
+          (sizeof(struct sockaddr_in6) > (size_t) sk.addr.data->sa_len) )
       {
         mhd_LOG_MSG (daemon, MHD_SC_CONFIGURATION_WRONG_SA_SIZE, \
                      "MHD_add_connection() has been called with " \
@@ -580,9 +580,9 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
     }
 #ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-    if ((0 != addr->sa_len) &&
-        (addrlen > (size_t) addr->sa_len))
-      addrlen = (size_t) addr->sa_len;   /* Use safest value */
+    if ((0 != sk.addr.data->sa_len) &&
+        (addrlen > (size_t) sk.addr.data->sa_len))
+      addrlen = (size_t) sk.addr.data->sa_len;   /* Use safest value */
 #endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
 #endif /* HAVE_INET6 */
   }
@@ -975,9 +975,9 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->conns), all_conn));
   mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(c->daemon->conns), all_conn));
 
-  if (NULL != c->addr)
-    free (c->addr);
-  mhd_socket_close (c->socket_fd);
+  if (NULL != c->sk.addr.data)
+    free (c->sk.addr.data);
+  mhd_socket_close (c->sk.fd);
 
   free (c);
 }

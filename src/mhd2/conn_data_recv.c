@@ -53,8 +53,8 @@ mhd_conn_data_recv (struct MHD_Connection *restrict c,
   mhd_assert (NULL != c->read_buffer);
   mhd_assert (c->read_buffer_size > c->read_buffer_offset);
   mhd_assert (! has_err || \
-              (0 != (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY)));
-  mhd_assert ((0 == (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY)) || \
+              (0 != (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY)));
+  mhd_assert ((0 == (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY)) || \
               has_err);
 
   // TODO: TLS support: handshake/transport layer
@@ -69,10 +69,10 @@ mhd_conn_data_recv (struct MHD_Connection *restrict c,
     /* Handle errors */
     if ((mhd_SOCKET_ERR_NO_ERROR == res) && (0 == received))
     {
-      c->sk_rmt_shut_wr = true;
+      c->sk.state.rmt_shut_wr = true;
       res = mhd_SOCKET_ERR_REMT_DISCONN;
     }
-    if (has_err && ! mhd_SOCKET_ERR_IS_HARD (res) && c->sk_nonblck)
+    if (has_err && ! mhd_SOCKET_ERR_IS_HARD (res) && c->sk.props.is_nonblck)
     {
       /* Re-try last time to detect the error */
       uint_fast64_t dummy_buf;
@@ -80,16 +80,16 @@ mhd_conn_data_recv (struct MHD_Connection *restrict c,
     }
     if (mhd_SOCKET_ERR_IS_HARD (res))
     {
-      c->sk_discnt_err = res;
-      c->sk_ready =
-        (enum mhd_SocketNetState) (((unsigned int) c->sk_ready)
+      c->sk.state.discnt_err = res;
+      c->sk.ready =
+        (enum mhd_SocketNetState) (((unsigned int) c->sk.ready)
                                    | mhd_SOCKET_NET_STATE_ERROR_READY);
     }
     return;
   }
 
   if (0 == received)
-    c->sk_rmt_shut_wr = true;
+    c->sk.state.rmt_shut_wr = true;
 
   c->read_buffer_offset += received;
   mhd_stream_update_activity_mark (c); // TODO: centralise activity update
@@ -132,7 +132,7 @@ if ((bytes_read < 0) || socket_error)
 #if 0 // TODO: handle remote shut WR
 if (0 == bytes_read)
 { /* Remote side closed c. */   // FIXME: Actually NOT!
-  c->sk_rmt_shut_wr = true;
+  c->sk.state.rmt_shut_wr = true;
   if ( (MHD_CONNECTION_INIT < c->state) &&
        (MHD_CONNECTION_FULL_REQ_RECEIVED > c->state) )
   {

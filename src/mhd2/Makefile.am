@@ -49,7 +49,7 @@ libmicrohttpd2_la_SOURCES = \
   mhd_lib_init.c            mhd_lib_init_impl.h       mhd_lib_init.h \
   mhd_lib_init_auto.h \
   mhd_dlinked_list.h \
-  mhd_connection.h \
+  mhd_conn_socket.h         mhd_connection.h \
   mhd_locks.h \
   mhd_itc.c                 mhd_itc.h                 mhd_itc_types.h \
   mhd_threads.c             mhd_threads.h             sys_thread_entry_type.h \

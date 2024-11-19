@@ -37,7 +37,8 @@
 
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
-#include "mhd_socket_type.h"
+
+#include "mhd_conn_socket.h"
 
 #include "mhd_threads.h"
 
@@ -114,81 +115,53 @@ enum MHD_FIXED_FLAGS_ENUM_ MHD_ConnectionEventLoopInfo
 
 
 /**
- * The network states for connected sockets
- * An internal version of #MHD_FdState. Keep in sync!
+ * The reason for the connection closure
  */
-enum MHD_FIXED_FLAGS_ENUM_ mhd_SocketNetState
-{
-  /**
-   * No active states of the socket
-   */
-  mhd_SOCKET_NET_STATE_NOTHING = 0
-  ,
-  /**
-   * The socket is ready for receiving
-   */
-  mhd_SOCKET_NET_STATE_RECV_READY = 1 << 0
-  ,
-  /**
-   * The socket is ready for sending
-   */
-  mhd_SOCKET_NET_STATE_SEND_READY = 1 << 1
-  ,
-  /**
-   * The socket has some unrecoverable error
-   */
-  mhd_SOCKET_NET_STATE_ERROR_READY = 1 << 2
-};
-
-
-/**
- * The reason for the socket closure
- */
-enum mhd_SocketClosureReason
+enum mhd_ConnClosureReason
 {
   /**
    * The socket is not closed / closing.
    */
-  mhd_SCOKET_CLOSURE_REASON_NO_CLOSURE = 0
+  mhd_CONN_CLOSURE_REASON_NO_CLOSURE = 0
   ,
   /**
    * Socket has to be closed because HTTP protocol successfully finished data
    * exchange.
    */
-  mhd_SCOKET_CLOSURE_REASON_PROTOCOL_SUCCESS
+  mhd_CONN_CLOSURE_REASON_PROTOCOL_SUCCESS
   ,
   /**
    * Socket has to be closed because remote side violated some HTTP
    * specification requirements or request processed with an error.
    * The HTTP error response should be sent.
    */
-  mhd_SCOKET_CLOSURE_REASON_PROTOCOL_FAILURE_SOFT
+  mhd_CONN_CLOSURE_REASON_PROTOCOL_FAILURE_SOFT
   ,
   /**
    * Timeout expired
    */
-  mhd_SCOKET_CLOSURE_REASON_TIMEOUT
+  mhd_CONN_CLOSURE_REASON_TIMEOUT
   ,
   /**
    * Socket has to be closed because received data cannot be interpreted as
    * valid HTTP data.
    */
-  mhd_SCOKET_CLOSURE_REASON_PROTOCOL_FAILURE_HARD
+  mhd_CONN_CLOSURE_REASON_PROTOCOL_FAILURE_HARD
   ,
   /**
    * Unrecoverable TLS error
    */
-  mhd_SCOKET_CLOSURE_REASON_TLS_ERROR
+  mhd_CONN_CLOSURE_REASON_TLS_ERROR
   ,
   /**
    * The remote side closed connection in abortive way
    */
-  mhd_SCOKET_CLOSURE_REASON_REMOTE_HARD_DISCONN
+  mhd_CONN_CLOSURE_REASON_REMOTE_HARD_DISCONN
   ,
   /**
    * The connection has been broken for some reason
    */
-  mhd_SCOKET_CLOSURE_REASON_CONN_BROKEN
+  mhd_CONN_CLOSURE_REASON_CONN_BROKEN
 };
 
 /**
@@ -423,20 +396,9 @@ struct MHD_Connection
   mhd_DLNKDL_LINKS (MHD_Connection,all_conn);
 
   /**
-   * The state of the connected socket
+   * The connection socket data
    */
-  enum mhd_SocketNetState sk_ready;
-
-  /**
-   * The type of the error when disconnected early
-   */
-  enum mhd_SocketError sk_discnt_err;
-
-  /**
-   * Set to 'true' when the client shut down write/send and
-   * __the last byte from the remote has been read__.
-   */
-  bool sk_rmt_shut_wr;
+  struct mhd_ConnSocket sk;
 
   /**
    * 'true' if connection is in 'process ready' list,
@@ -530,12 +492,6 @@ struct MHD_Connection
    */
   char *write_buffer;
 
-  /**
-   * Foreign address (of length @e addr_len).  MALLOCED (not
-   * in pool!).
-   */
-  struct sockaddr_storage *addr;
-
 #if defined(MHD_USE_THREADS)
   /**
    * Thread handle for this connection (if we are using
@@ -580,11 +536,6 @@ struct MHD_Connection
   size_t continue_message_write_offset;
 
   /**
-   * Length of the foreign address.
-   */
-  size_t addr_len;
-
-  /**
    * Last time this connection had any activity
    * (reading or writing).
    */
@@ -596,40 +547,6 @@ struct MHD_Connection
    * Zero for no timeout.
    */
   uint_fast64_t connection_timeout_ms;
-
-  /**
-   * Socket for this connection.  Set to #MHD_INVALID_SOCKET if
-   * this connection has died (daemon should clean
-   * up in that case).
-   */
-  MHD_Socket socket_fd;
-
-  /**
-   * The type of the socket: TCP/IP or non TCP/IP (a UNIX domain socket, a pipe)
-   */
-  enum mhd_Tristate is_nonip;
-
-  /**
-   * true if @a socket_fd is non-blocking, false otherwise.
-   */
-  bool sk_nonblck;
-
-  /**
-   * true if connection socket has set SIGPIPE suppression
-   */
-  bool sk_spipe_suppress;
-
-// #ifndef MHD_SOCKETS_KIND_WINSOCK // TODO: conditionally use in the code
-  /**
-   * Tracks TCP_CORK / TCP_NOPUSH of the connection socket.
-   */
-  enum mhd_Tristate sk_corked;
-// #endif
-
-  /**
-   * Tracks TCP_NODELAY state of the connection socket.
-   */
-  enum mhd_Tristate sk_nodelay;
 
   /**
    * Some error happens during processing the connection therefore this

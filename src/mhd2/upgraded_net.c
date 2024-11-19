@@ -110,7 +110,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
 {
   struct MHD_Connection *restrict c = urh->c;
 #if defined(MHD_USE_POLL) || defined(MHD_USE_SELECT)
-  const MHD_Socket socket_fd = c->socket_fd;
+  const MHD_Socket socket_fd = c->sk.fd;
 #endif /* MHD_USE_POLL || MHD_USE_SELECT */
   char *restrict buf_char = (char *) recv_buf;
   size_t last_block_size;
@@ -167,7 +167,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
   if (mhd_SOCKET_ERR_NO_ERROR == res)
   {
     if (0 == last_block_size)
-      c->sk_rmt_shut_wr = true;
+      c->sk.state.rmt_shut_wr = true;
     *received_size += last_block_size;
     return MHD_SC_OK;
   }
@@ -220,7 +220,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
 #  if defined(MHD_USE_SELECT)
       bool use_select;
 #    ifdef MHD_SOCKETS_KIND_POSIX
-      use_select = (socket_fd < FD_SETSIZE);
+      use_select = (sk.fd < FD_SETSIZE);
 #    else  /* MHD_SOCKETS_KIND_WINSOCK */
       use_select = true;
 #    endif /* MHD_SOCKETS_KIND_WINSOCK */
@@ -245,9 +245,9 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
         else
           tmvl.tv_usec = (int) (max_wait_millisec % 1000);
         FD_ZERO (&rfds);
-        FD_SET (socket_fd, &rfds);
+        FD_SET (sk.fd, &rfds);
 
-        sel_res = select (c->socket_fd + 1,
+        sel_res = select (c->sk.fd + 1,
                           &rfds,
                           NULL,
                           NULL,
@@ -295,7 +295,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
       if (mhd_SOCKET_ERR_NO_ERROR == res)
       {
         if (0 == last_block_size)
-          c->sk_rmt_shut_wr = true;
+          c->sk.state.rmt_shut_wr = true;
         *received_size += last_block_size;
         return MHD_SC_OK;
       }
@@ -327,7 +327,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
 {
   struct MHD_Connection *restrict c = urh->c;
 #if defined(MHD_USE_POLL) || defined(MHD_USE_SELECT)
-  const MHD_Socket socket_fd = c->socket_fd;
+  const MHD_Socket socket_fd = c->sk.fd;
 #endif /* MHD_USE_POLL || MHD_USE_SELECT */
   const char *restrict buf_char = (const char *) send_buf;
   const bool push_data = (MHD_NO == more_data_to_come);
@@ -452,7 +452,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
 #else /* ! MHD_USE_POLL */
 #  if defined(MHD_USE_SELECT)
 #    ifdef MHD_SOCKETS_KIND_POSIX
-    use_select = (socket_fd < FD_SETSIZE);
+    use_select = (sk.fd < FD_SETSIZE);
 #    else  /* MHD_SOCKETS_KIND_WINSOCK */
     use_select = true;
 #    endif /* MHD_SOCKETS_KIND_WINSOCK */
@@ -488,9 +488,9 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
           tmvl.tv_usec = (int) (max_wait_millisec % 1000);
       }
       FD_ZERO (&wfds);
-      FD_SET (socket_fd, &wfds);
+      FD_SET (sk.fd, &wfds);
 
-      sel_res = select (c->socket_fd + 1,
+      sel_res = select (c->sk.fd + 1,
                         NULL,
                         &wfds,
                         NULL,

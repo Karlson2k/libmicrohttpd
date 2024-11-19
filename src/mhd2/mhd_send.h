@@ -144,7 +144,7 @@ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (4);
 /**
  * Set required TCP_NODELAY state for connection socket
  *
- * The function automatically updates sk_nodelay state.
+ * The function automatically updates sk.nodelay state.
  * @param connection the connection to manipulate
  * @param nodelay_state the requested new state of socket
  * @return true if succeed, false if failed or not supported
@@ -159,7 +159,7 @@ MHD_FN_PAR_NONNULL_ALL_;
 /**
  * Set required cork state for connection socket
  *
- * The function automatically updates sk_corked state.
+ * The function automatically updates sk.corked state.
  *
  * @param connection the connection to manipulate
  * @param cork_state the requested new state of socket

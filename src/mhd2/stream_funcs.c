@@ -726,7 +726,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     break;
   case mhd_CONN_CLOSE_SOCKET_ERR:
     close_hard = true;
-    switch (c->sk_discnt_err)
+    switch (c->sk.state.discnt_err)
     {
     case mhd_SOCKET_ERR_NOMEM:
       end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
@@ -816,13 +816,13 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
   if (close_hard)
   {
     /* Use abortive closing, send RST to remote to indicate a problem */
-    (void) mhd_socket_set_hard_close (c->socket_fd);
+    (void) mhd_socket_set_hard_close (c->sk.fd);
     c->state = MHD_CONNECTION_PRE_CLOSING;
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   }
   else
   {
-    if (mhd_socket_shut_wr (c->socket_fd) && (! c->sk_rmt_shut_wr))
+    if (mhd_socket_shut_wr (c->sk.fd) && (! c->sk.state.rmt_shut_wr))
     {
       (void) 0; // TODO: start local lingering phase
       c->state = MHD_CONNECTION_PRE_CLOSING; // TODO: start local lingering phase
@@ -893,7 +893,7 @@ mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
     event.data.ptr = NULL;
     if (0 != epoll_ctl (c->daemon->events.data.epoll.e_fd,
                         EPOLL_CTL_DEL,
-                        c->socket_fd,
+                        c->sk.fd,
                         &event))
     {
       mhd_LOG_MSG (c->daemon, MHD_SC_EPOLL_CTL_REMOVE_FAILED,

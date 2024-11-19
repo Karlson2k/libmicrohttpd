@@ -66,7 +66,7 @@ update_active_state (struct MHD_Connection *restrict c)
   /* Do not update states of suspended connection */
   mhd_assert (! c->suspended);
 
-  if (0 != (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY))
+  if (0 != (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY))
   {
     mhd_assert (0 && "Should be handled earlier");
     mhd_conn_start_closing_skt_err (c);
@@ -208,10 +208,10 @@ update_active_state (struct MHD_Connection *restrict c)
   mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS != c->event_loop_info);
 
   /* Sockets errors must be already handled */
-  mhd_assert (0 == (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY));
+  mhd_assert (0 == (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY));
 
   if (0 !=
-      (((unsigned int) c->sk_ready) & ((unsigned int) c->event_loop_info)
+      (((unsigned int) c->sk.ready) & ((unsigned int) c->event_loop_info)
        & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND)))
     mhd_conn_mark_ready (c, c->daemon);
   else
@@ -230,7 +230,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
   (void) d; /* Mute compiler warning */
 
-  if ((c->sk_rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
+  if ((c->sk.state.rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
   {
     if (0 == c->read_buffer_offset)
     { /* Read buffer is empty, connection state is actual */
@@ -251,14 +251,14 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     (void) 0;
   }
 
-  if ((mhd_SOCKET_ERR_NO_ERROR != c->sk_discnt_err) ||
-      (0 != (c->sk_ready & mhd_SOCKET_NET_STATE_ERROR_READY)))
+  if ((mhd_SOCKET_ERR_NO_ERROR != c->sk.state.discnt_err) ||
+      (0 != (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY)))
   {
-    mhd_assert ((mhd_SOCKET_ERR_NO_ERROR == c->sk_discnt_err) || \
-                mhd_SOCKET_ERR_IS_HARD (c->sk_discnt_err));
-    if ((mhd_SOCKET_ERR_NO_ERROR == c->sk_discnt_err) ||
-        (mhd_SOCKET_ERR_NOT_CHECKED == c->sk_discnt_err))
-      c->sk_discnt_err = mhd_socket_error_get_from_socket (c->socket_fd);
+    mhd_assert ((mhd_SOCKET_ERR_NO_ERROR == c->sk.state.discnt_err) || \
+                mhd_SOCKET_ERR_IS_HARD (c->sk.state.discnt_err));
+    if ((mhd_SOCKET_ERR_NO_ERROR == c->sk.state.discnt_err) ||
+        (mhd_SOCKET_ERR_NOT_CHECKED == c->sk.state.discnt_err))
+      c->sk.state.discnt_err = mhd_socket_error_get_from_socket (c->sk.fd);
     mhd_conn_start_closing_skt_err (c);
     return false;
   }
@@ -459,7 +459,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         c,
         mhd_CONN_KEEPALIVE_POSSIBLE == c->conn_reuse
         && ! c->discard_request
-        && ! c->sk_rmt_shut_wr);
+        && ! c->sk.state.rmt_shut_wr);
       continue;
 #ifdef MHD_UPGRADE_SUPPORT
     case MHD_CONNECTION_UPGRADING:
@@ -506,7 +506,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     return true;
   }
 
-  if ((c->sk_rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
+  if ((c->sk.state.rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
   {
     mhd_conn_start_closing (c,
                             (MHD_CONNECTION_INIT == c->state) ?

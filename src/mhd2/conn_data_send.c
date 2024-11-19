@@ -343,9 +343,9 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
   }
   else if (mhd_SOCKET_ERR_IS_HARD (res))
   {
-    c->sk_discnt_err = res;
-    c->sk_ready =
-      (enum mhd_SocketNetState) (((unsigned int) c->sk_ready)
+    c->sk.state.discnt_err = res;
+    c->sk.ready =
+      (enum mhd_SocketNetState) (((unsigned int) c->sk.ready)
                                  | mhd_SOCKET_NET_STATE_ERROR_READY);
   }
 }
