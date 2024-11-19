@@ -4882,7 +4882,11 @@ AS_IF([test "x$enable_https" != "xno"],
             CPPFLAGS="${CPPFLAGS_ac} -I$with_gnutls/include ${user_CPPFLAGS}"
             have_gnutls_pkgcfg=no
             # A simple check for the working header and the library
-            MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+            MHD_CHECK_FUNC([gnutls_check_version],
+              [[
+]AC_INCLUDES_DEFAULT[
+#include <gnutls/gnutls.h>
+              ]],
               [
                if(!gnutls_check_version("3.0.0"))
                  return 3;
@@ -4912,7 +4916,11 @@ AS_IF([test "x$enable_https" != "xno"],
             have_gnutls_pkgcfg='yes'
             CPPFLAGS="${CPPFLAGS_ac} $GNUTLS_CFLAGS ${user_CPPFLAGS}"
             # A simple check for the working header and the library
-            MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+            MHD_CHECK_FUNC([gnutls_check_version],
+              [[
+]AC_INCLUDES_DEFAULT[
+#include <gnutls/gnutls.h>
+              ]],
               [
                if(!gnutls_check_version("3.0.0"))
                  return 3;
@@ -4942,7 +4950,11 @@ AS_IF([test "x$enable_https" != "xno"],
             # check for GnuTLS at default paths
             have_gnutls_pkgcfg='no'
             # A simple check for the working header and the library
-            MHD_CHECK_FUNC([gnutls_check_version],[[#include <gnutls/gnutls.h>]],
+            MHD_CHECK_FUNC([gnutls_check_version],
+              [[
+]AC_INCLUDES_DEFAULT[
+#include <gnutls/gnutls.h>
+              ]],
               [
                if(!gnutls_check_version("3.0.0"))
                  return 3;
@@ -4981,11 +4993,12 @@ AS_IF([test "x$enable_https" != "xno"],
               [
                 AC_LANG_PROGRAM(
                   [[
+]AC_INCLUDES_DEFAULT[
 #include <gnutls/gnutls.h>
                   ]],
                   [[
 #if !defined(GNUTLS_VERSION_NUMBER) || GNUTLS_VERSION_NUMBER+0 <= 0x020c14
-#error Too old versions of GnuTLS that require libgcript initialisation
+#error Too old version of GnuTLS that requires libgcript initialisation
 choke me now
 #endif
                   ]]
@@ -5028,11 +5041,15 @@ choke me now
         AS_VAR_IF([enable_https],["yes"],
           [AC_MSG_ERROR([GniTLS library not found, HTTPS cannot be enabled])]
         )
+        enable_https="no"
         MSG_HTTPS="no (lacking libgnutls)"
       ]
     )
   ],
-  [MSG_HTTPS="no (disabled)"]
+  [
+    enable_https="no"
+    MSG_HTTPS="no (disabled)"
+  ]
 )
 
 
