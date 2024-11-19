@@ -49,7 +49,7 @@ struct MHD_Connection; /* forward declaration */
 MHD_INTERNAL enum mhd_SocketError
 mhd_recv (struct MHD_Connection *restrict c,
           size_t buf_size,
-          char buffer[MHD_FN_PAR_DYN_ARR_SIZE_(buf_size)],
+          char buffer[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
           size_t *restrict received)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_(3,2) MHD_FN_PAR_OUT_ (4);
 
