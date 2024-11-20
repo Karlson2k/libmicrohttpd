@@ -303,6 +303,11 @@ struct MHDT_Phase
    * 0 to run just one client.
    */
   unsigned int num_clients;
+
+  /**
+   * Set to true if clients should setup the connection to use TLS.
+   */
+  bool use_tls;
 };
 
 
@@ -556,6 +561,18 @@ typedef const char *
 const char *
 MHDT_server_setup_minimal (const void *cls,
                            struct MHD_Daemon *d);
+
+
+/**
+ * Initialize MHD daemon with TLS support, binding to any free port.
+ *
+ * @param cls closure
+ * @param[in,out] d daemon to initialize
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_server_setup_tls (const void *cls,
+                       struct MHD_Daemon *d);
 
 
 /**

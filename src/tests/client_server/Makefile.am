@@ -28,6 +28,11 @@ check_PROGRAMS = \
   test_client_server \
   test_postprocessor
 
+if MHD_ENABLE_HTTPS
+check_PROGRAMS += \
+  test_tls
+endif
+
 TESTS = $(check_PROGRAMS)
 
 
@@ -47,10 +52,15 @@ libmhdt_la_LIBADD = \
 test_client_server_SOURCES = \
   test_client_server.c
 test_client_server_LDADD = \
-  libmhdt.la 
+  libmhdt.la
+
+test_tls_SOURCES = \
+  test_tls.c
+test_tls_LDADD = \
+  libmhdt.la
 
 
 test_postprocessor_SOURCES = \
   test_postprocessor.c
 test_postprocessor_LDADD = \
-  libmhdt.la 
+  libmhdt.la

@@ -226,6 +226,47 @@ check_status (CURL *c,
 }
 
 
+/**
+ * Set the @a base_url for the @a c handle.
+ *
+ * @param[in,out] c curl handle to manipulate
+ * @param base_url base URL to set
+ * @return true on success, false on failure (@a c will be cleaned up in this case)
+ */
+static bool
+set_url (CURL *c,
+         const char *base_url)
+{
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_URL,
+                        base_url))
+  {
+    curl_easy_cleanup (c);
+    return false;
+  }
+  if (0 == strncasecmp (base_url,
+                        "https://",
+                        strlen ("https://")))
+  {
+    /* disable certificate checking */
+    if ( (CURLE_OK !=
+          curl_easy_setopt (c,
+                            CURLOPT_SSL_VERIFYPEER,
+                            0L)) ||
+         (CURLE_OK !=
+          curl_easy_setopt (c,
+                            CURLOPT_SSL_VERIFYHOST,
+                            0L)) )
+    {
+      curl_easy_cleanup (c);
+      return false;
+    }
+  }
+  return true;
+}
+
+
 const char *
 MHDT_client_get_root (
   const void *cls,
@@ -238,14 +279,9 @@ MHDT_client_get_root (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (CURLE_OK !=
-      curl_easy_setopt (c,
-                        CURLOPT_URL,
-                        pc->base_url))
-  {
-    curl_easy_cleanup (c);
+  if (! set_url (c,
+                 pc->base_url))
     return "Failed to set URL for curl request";
-  }
   SETUP_WB (c);
   PERFORM_REQUEST (c);
   CHECK_STATUS (c, MHD_HTTP_STATUS_OK);
@@ -276,15 +312,9 @@ MHDT_client_get_with_query (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-
-  if (CURLE_OK !=
-      curl_easy_setopt (c,
-                        CURLOPT_URL,
-                        u))
-  {
-    curl_easy_cleanup (c);
+  if (! set_url (c,
+                 u))
     return "Failed to set URL for curl request";
-  }
   PERFORM_REQUEST (c);
   CHECK_STATUS (c,
                 MHD_HTTP_STATUS_NO_CONTENT);
@@ -306,14 +336,9 @@ MHDT_client_set_header (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (CURLE_OK !=
-      curl_easy_setopt (c,
-                        CURLOPT_URL,
-                        pc->base_url))
-  {
-    curl_easy_cleanup (c);
+  if (! set_url (c,
+                 pc->base_url))
     return "Failed to set URL for curl request";
-  }
   slist = curl_slist_append (NULL,
                              hdr);
   if (CURLE_OK !=
@@ -362,14 +387,9 @@ MHDT_client_expect_header (const void *cls,
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (CURLE_OK !=
-      curl_easy_setopt (c,
-                        CURLOPT_URL,
-                        pc->base_url))
-  {
-    curl_easy_cleanup (c);
+  if (! set_url (c,
+                 pc->base_url))
     return "Failed to set URL for curl request";
-  }
   PERFORM_REQUEST (c);
   CHECK_STATUS (c,
                 MHD_HTTP_STATUS_NO_CONTENT);
@@ -483,14 +503,9 @@ MHDT_client_put_data (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (CURLE_OK !=
-      curl_easy_setopt (c,
-                        CURLOPT_URL,
-                        pc->base_url))
-  {
-    curl_easy_cleanup (c);
+  if (! set_url (c,
+                 pc->base_url))
     return "Failed to set URL for curl request";
-  }
   if (CURLE_OK !=
       curl_easy_setopt (c,
                         CURLOPT_UPLOAD,
@@ -547,14 +562,9 @@ MHDT_client_chunk_data (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (CURLE_OK !=
-      curl_easy_setopt (c,
-                        CURLOPT_URL,
-                        pc->base_url))
-  {
-    curl_easy_cleanup (c);
+  if (! set_url (c,
+                 pc->base_url))
     return "Failed to set URL for curl request";
-  }
   if (CURLE_OK !=
       curl_easy_setopt (c,
                         CURLOPT_UPLOAD,
@@ -608,14 +618,9 @@ MHDT_client_do_post (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (CURLE_OK !=
-      curl_easy_setopt (c,
-                        CURLOPT_URL,
-                        pc->base_url))
-  {
-    curl_easy_cleanup (c);
+  if (! set_url (c,
+                 pc->base_url))
     return "Failed to set URL for curl request";
-  }
   if (CURLE_OK !=
       curl_easy_setopt (c,
                         CURLOPT_POST,
