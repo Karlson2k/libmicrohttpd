@@ -87,6 +87,37 @@
         mhd_TLS_FUNC (_daemon_deinit)((d_tls))
 
 
+/* ** Connection initialisation / de-initialisation ** */
+
+/**
+ * Get size size of the connection's TLS settings
+ */
+#define mhd_tls_conn_get_tls_size()     \
+        mhd_TLS_FUNC (_conn_get_tls_size)()
+
+/**
+ * Initialise connection TLS settings
+ * @param d_tls the daemon TLS settings
+ * @param sk data about the socket for the connection
+ * @param[out] c_tls the pointer to the allocated space for
+ *                   the connection TLS settings
+ * @return 'true' on success,
+ *         'false' otherwise
+ */
+#define mhd_tls_conn_init(d_tls,sk,c_tls)       \
+        mhd_TLS_FUNC (_conn_init)((d_tls),(sk),(c_tls))
+
+/**
+ * De-initialise connection TLS settings.
+ * The provided pointer is not freed/deallocated.
+ * @param c_tls the initialised connection TLS settings
+ */
+#define mhd_tls_conn_deinit(c_tls)       \
+        mhd_TLS_FUNC (_conn_deinit)((c_tls))
+
+
+/* ** General information function ** */
+
 /**
  * Result of TLS backend availability check
  */

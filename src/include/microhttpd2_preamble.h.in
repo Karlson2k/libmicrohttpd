@@ -1284,7 +1284,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * Failed to initialise TLS context for the daemon
    */
-  MHD_SC_DAEMON_TLS_INIT_FAILED = 51200
+  MHD_SC_TLS_DAEMON_INIT_FAILED = 51200
+  ,
+  /**
+   * Failed to initialise TLS context for the new connection
+   */
+  MHD_SC_TLS_CONNECTION_INIT_FAILED = 51201
   ,
   /**
    * Something wrong in the internal MHD logic.

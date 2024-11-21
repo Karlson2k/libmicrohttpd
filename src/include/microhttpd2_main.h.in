@@ -259,8 +259,8 @@ MHD_FN_PAR_NONNULL_ (1);
  * @param addrlen number of bytes in @a addr
  * @param connection_cntx meta data the application wants to
  *        associate with the new connection object
- * @return #MHD_SC_OK on success
- *         error on failure
+ * @return #MHD_SC_OK on success,
+ *         error on failure (the @a client_socket is closed)
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode

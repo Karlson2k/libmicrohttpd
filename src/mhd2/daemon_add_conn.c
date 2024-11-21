@@ -67,6 +67,10 @@
 #include "response_destroy.h"
 #include "conn_mark_ready.h"
 
+#ifdef MHD_ENABLE_HTTPS
+#  include "mhd_tls_funcs.h"
+#endif
+
 #include "mhd_public_api.h"
 
 
@@ -139,12 +143,14 @@ notify_app_conn (struct MHD_Daemon *restrict daemon,
  * @param sk_spipe_supprs indicate that the @a client_socket has
  *                         set SIGPIPE suppression
  * @param sk_is_nonip _MHD_YES if this is not a TCP/IP socket
- * @return pointer to the connection on success, NULL if this daemon could
- *        not handle the connection (i.e. malloc failed, etc).
- *        The socket will be closed in case of error; 'errno' is
- *        set to indicate further details about the error.
+ * @param[out] conn_out the pointer to variable to be set to the address
+ *                      of newly allocated connection structure
+ * @return #MHD_SC_OK on success,
+ *         error on failure (the @a client_socket is closed)
  */
-static enum MHD_StatusCode
+static MHD_FN_MUST_CHECK_RESULT_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (9) MHD_FN_PAR_OUT_ (9) enum MHD_StatusCode
 new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
                          MHD_Socket client_socket,
                          const struct sockaddr_storage *restrict addr,
@@ -155,62 +161,117 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
                          enum mhd_Tristate sk_is_nonip,
                          struct MHD_Connection **restrict conn_out)
 {
-  struct MHD_Connection *connection;
+  struct MHD_Connection *c;
+  enum MHD_StatusCode ret;
+  size_t tls_data_size;
+
+  ret = MHD_SC_OK;
   *conn_out = NULL;
 
-  if (NULL == (connection = mhd_calloc (1, sizeof (struct MHD_Connection))))
+  tls_data_size = 0;
+#ifdef MHD_ENABLE_HTTPS
+  if (mhd_D_HAS_TLS (daemon))
+    tls_data_size = mhd_tls_conn_get_tls_size ();
+#endif
+
+  c = mhd_calloc (1, sizeof (struct MHD_Connection) + tls_data_size);
+  if (NULL == c)
   {
-    mhd_LOG_MSG (daemon, MHD_SC_CONNECTION_MALLOC_FAILURE,
+    mhd_LOG_MSG (daemon, \
+                 MHD_SC_CONNECTION_MALLOC_FAILURE, \
                  "Failed to allocate memory for the new connection");
-    mhd_socket_close (client_socket);
-    return MHD_SC_CONNECTION_MALLOC_FAILURE;
-  }
-
-  if (! external_add)
-  {
-    connection->sk.state.corked = mhd_T_NO;
-    connection->sk.state.nodelay = mhd_T_NO;
+    ret = MHD_SC_CONNECTION_MALLOC_FAILURE;
   }
   else
   {
-    connection->sk.state.corked = mhd_T_MAYBE;
-    connection->sk.state.nodelay = mhd_T_MAYBE;
-  }
+#ifdef MHD_ENABLE_HTTPS
+    if (0 != tls_data_size)
+      c->tls = (struct mhd_TlsConnData *) (c + 1);
+#  ifndef HAVE_NULL_PTR_ALL_ZEROS
+    else
+      c->tls = NULL;
+#  endif
+#endif
 
-  if (0 < addrlen)
-  {
-    if (NULL == (connection->sk.addr.data = malloc (addrlen)))
+    if (! external_add)
     {
-      mhd_LOG_MSG (daemon, MHD_SC_CONNECTION_MALLOC_FAILURE,
-                   "Failed to allocate memory for the new connection");
-      mhd_socket_close (client_socket);
-      free (connection);
-      return MHD_SC_CONNECTION_MALLOC_FAILURE;
+      c->sk.state.corked = mhd_T_NO;
+      c->sk.state.nodelay = mhd_T_NO;
     }
-    memcpy (connection->sk.addr.data,
-            addr,
-            addrlen);
-  }
-  else
-    connection->sk.addr.data = NULL;
-  connection->sk.addr.size = addrlen;
-  connection->sk.fd = client_socket;
-  connection->sk.props.is_nonblck = non_blck;
-  connection->sk.props.is_nonip = sk_is_nonip;
-  connection->sk.props.has_spipe_supp = sk_spipe_supprs;
+    else
+    {
+      c->sk.state.corked = mhd_T_MAYBE;
+      c->sk.state.nodelay = mhd_T_MAYBE;
+    }
+
+    if (0 < addrlen)
+    {
+      c->sk.addr.data = (struct sockaddr_storage *) malloc (addrlen);
+      if (NULL == c->sk.addr.data)
+      {
+        mhd_LOG_MSG (daemon, \
+                     MHD_SC_CONNECTION_MALLOC_FAILURE, \
+                     "Failed to allocate memory for the new connection");
+        ret = MHD_SC_CONNECTION_MALLOC_FAILURE;
+      }
+      else
+        memcpy (c->sk.addr.data,
+                addr,
+                addrlen);
+    }
+    else
+      c->sk.addr.data = NULL;
+
+    if (MHD_SC_OK == ret)
+    {
+      c->sk.addr.size = addrlen;
+      c->sk.fd = client_socket;
+      c->sk.props.is_nonblck = non_blck;
+      c->sk.props.is_nonip = sk_is_nonip;
+      c->sk.props.has_spipe_supp = sk_spipe_supprs;
 #ifdef MHD_USE_THREADS
-  mhd_thread_handle_ID_set_invalid (&connection->tid);
+      mhd_thread_handle_ID_set_invalid (&c->tid);
 #endif /* MHD_USE_THREADS */
-  connection->daemon = daemon;
-  connection->connection_timeout_ms = daemon->conns.cfg.timeout;
-  connection->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
-  if (0 != connection->connection_timeout_ms)
-    connection->last_activity = mhd_monotonic_msec_counter ();
+      c->daemon = daemon;
+      c->connection_timeout_ms = daemon->conns.cfg.timeout;
+      c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
 
-  // TODO: init TLS
-  *conn_out = connection;
+      if (0 != tls_data_size)
+      {
+        if (! mhd_tls_conn_init (daemon->tls,
+                                 &(c->sk),
+                                 c->tls))
+        {
+          mhd_LOG_MSG (daemon, \
+                       MHD_SC_TLS_CONNECTION_INIT_FAILED, \
+                       "Failed to initialise TLS context for " \
+                       "the new connection");
+          ret = MHD_SC_TLS_CONNECTION_INIT_FAILED;
+        }
+#ifndef NDEBUG
+        else
+          c->dbg.tls_inited = true;
+#endif
+      }
 
-  return MHD_SC_OK;
+      if (MHD_SC_OK == ret)
+      {
+        if (0 != c->connection_timeout_ms)
+          c->last_activity = mhd_monotonic_msec_counter ();
+        *conn_out = c;
+
+        return MHD_SC_OK; /* Success exit point */
+      }
+
+      /* Below is a cleanup path */
+      if (NULL != c->sk.addr.data)
+        free (c->sk.addr.data);
+    }
+    free (c);
+  }
+  mhd_socket_close (client_socket);
+  mhd_assert (MHD_SC_OK != ret);
+  return ret; /* Failure exit point */
 }
 
 
@@ -356,7 +417,10 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
   }
   /* Free resources allocated before the call of this functions */
 
-  // TODO: TLS support
+#ifdef MHD_ENABLE_HTTPS
+  if (mhd_C_HAS_TLS (connection))
+    mhd_tls_conn_deinit (connection->tls);
+#endif
 
   // TODO: per IP limit
 
@@ -385,10 +449,8 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
  * @param sk_spipe_supprs indicate that the @a client_socket has
  *                         set SIGPIPE suppression
  * @param sk_is_nonip _MHD_YES if this is not a TCP/IP socket
- * @return #MHD_YES on success, #MHD_NO if this daemon could
- *        not handle the connection (i.e. malloc failed, etc).
- *        The socket will be closed in any case; 'errno' is
- *        set to indicate further details about the error.
+ * @return #MHD_SC_OK on success,
+ *         error on failure (the @a client_socket is closed)
  */
 static enum MHD_StatusCode
 internal_add_connection (struct MHD_Daemon *daemon,
@@ -974,6 +1036,22 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, all_conn));
   mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->conns), all_conn));
   mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(c->daemon->conns), all_conn));
+
+#ifdef MHD_ENABLE_HTTPS
+  if (mhd_C_HAS_TLS (c))
+  {
+    mhd_assert (mhd_D_HAS_TLS (c->daemon));
+    mhd_assert (c->dbg.tls_inited);
+    mhd_tls_conn_deinit (c->tls);
+  }
+#  ifndef NDEBUG
+  else
+  {
+    mhd_assert (! mhd_D_HAS_TLS (c->daemon));
+    mhd_assert (! c->dbg.tls_inited);
+  }
+#  endif
+#endif
 
   if (NULL != c->sk.addr.data)
     free (c->sk.addr.data);

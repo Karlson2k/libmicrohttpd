@@ -31,7 +31,9 @@
 
 #include <string.h>
 
+#include "mhd_socket_type.h"
 #include "mhd_str_types.h"
+
 #include "mhd_str_macros.h"
 #include "mhd_arr_num_elems.h"
 
@@ -39,9 +41,12 @@
 #include "sys_malloc.h"
 #include "mhd_assert.h"
 
+#include "mhd_conn_socket.h"
+
 #include "tls_gnu_tls_lib.h"
 
 #include "tls_gnu_daemon_data.h"
+#include "tls_gnu_conn_data.h"
 #include "tls_gnu_funcs.h"
 
 #include "daemon_options.h"
@@ -207,9 +212,9 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
   if (GNUTLS_E_SUCCESS !=
       gnutls_certificate_allocate_credentials (&(d_tls->cred)))
   {
-    mhd_LOG_MSG (d, MHD_SC_DAEMON_TLS_INIT_FAILED, \
+    mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
                  "Failed to initialise TLS credentials for the daemon");
-    return MHD_SC_DAEMON_TLS_INIT_FAILED;
+    return MHD_SC_TLS_DAEMON_INIT_FAILED;
   }
 
   // TODO: Support multiple certificates
@@ -247,10 +252,10 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
     {
       if (! daemon_init_dh_data (d_tls))
       {
-        mhd_LOG_MSG (d, MHD_SC_DAEMON_TLS_INIT_FAILED, \
+        mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
                      "Failed to initialise Diffie-Hellman parameters " \
                      "for the daemon");
-        ret = MHD_SC_DAEMON_TLS_INIT_FAILED;
+        ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
       }
       else
         return MHD_SC_OK;
@@ -337,9 +342,9 @@ daemon_init_priorities_cache (struct MHD_Daemon *restrict d,
   if (i < mhd_ARR_NUM_ELEMS (tlsgnulib_base_priorities))
     return MHD_SC_OK; /* Success exit point */
 
-  mhd_LOG_MSG (d, MHD_SC_DAEMON_TLS_INIT_FAILED, \
+  mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
                "Failed to initialise TLS priorities cache");
-  return MHD_SC_DAEMON_TLS_INIT_FAILED;
+  return MHD_SC_TLS_DAEMON_INIT_FAILED;
 }
 
 
@@ -408,4 +413,126 @@ mhd_tls_gnu_daemon_deinit (struct mhd_TlsGnuDaemonData *restrict d_tls)
   daemon_deinit_priorities_cache (d_tls);
   daemon_deinit_credentials (d_tls);
   free (d_tls);
+}
+
+
+/* ** Connection initialisation ** */
+
+MHD_INTERNAL size_t
+mhd_tls_gnu_conn_get_tls_size (void)
+{
+  return sizeof (struct mhd_TlsGnuConnData);
+}
+
+
+MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (3) bool
+mhd_tls_gnu_conn_init (const struct mhd_TlsGnuDaemonData *restrict d_tls,
+                       const struct mhd_ConnSocket *sk,
+                       struct mhd_TlsGnuConnData *restrict c_tls)
+{
+  unsigned int c_flags;
+  int res;
+
+  c_flags = GNUTLS_SERVER;
+#if GNUTLS_VERSION_NUMBER >= 0x030000
+  /* Note: the proper support for the blocking sockets may require use of
+     gnutls_handshake_set_timeout() and
+     gnutls_transport_set_pull_timeout_function() (the latter is not actually
+     required for the modern GnuTLS versions at least) */
+  if (sk->props.is_nonblck)
+    c_flags |= GNUTLS_NONBLOCK;
+#endif
+#ifdef mhd_TLS_GNU_HAS_NO_SIGNAL
+  c_flags |= GNUTLS_NO_SIGNAL;
+#endif
+
+  if (GNUTLS_E_SUCCESS !=
+      gnutls_init (&(c_tls->sess),
+                   c_flags))
+    return false;
+
+#if GNUTLS_VERSION_NUMBER >= 0x030100
+  if (! sk->props.is_nonblck)
+    gnutls_handshake_set_timeout (c_tls->sess,
+                                  GNUTLS_DEFAULT_HANDSHAKE_TIMEOUT);
+#endif
+#if ! defined(mhd_TLS_GNU_NULL_PRIO_CACHE_MEANS_DEF_PRIORITY)
+  mhd_assert (NULL != d_tls->pri_cache);
+#else
+  if (NULL == d_tls->pri_cache)
+    res = gnutls_set_default_priority (c_tls->sess);
+  else
+#endif
+  res = gnutls_priority_set (c_tls->sess,
+                             d_tls->pri_cache);
+
+  if (GNUTLS_E_SUCCESS == res)
+  {
+    if (GNUTLS_E_SUCCESS ==
+        gnutls_credentials_set (c_tls->sess,
+                                GNUTLS_CRD_CERTIFICATE,
+                                d_tls->cred))
+    {
+#ifdef mhd_TLS_GNU_HAS_TRANSP_SET_INT
+      if (sizeof(int) == sizeof(MHD_Socket))
+        gnutls_transport_set_int (c_tls->sess,
+                                  (int) sk->fd);
+#endif /* mhd_TLS_GNU_HAS_TRANSP_SET_INT */
+      gnutls_transport_set_ptr (c_tls->sess,
+                                (void *) sk->fd);
+
+      /* The basic TLS session properties has been set.
+         The rest is optional settings. */
+#ifdef mhd_TLS_GNU_HAS_ALPN
+      if (1)
+      {
+        static const char alpn_http_1_0[] = "http/1.0"; /* Registered value for HTTP/1.0 */
+        static const char alpn_http_1_1[] = "http/1.1"; /* Registered value for HTTP/1.1 */
+#  if 0 /* Disabled code */
+        static const char alpn_http_2[] = "h2"; /* Registered value for HTTP/2 over TLS */
+        static const char alpn_http_3[] = "h3"; /* Registered value for HTTP/3 */
+#  endif
+        gnutls_datum_t prots[] = {
+          { mhd_DROP_CONST (alpn_http_1_1), mhd_SSTR_LEN (alpn_http_1_1) }
+          ,
+          { mhd_DROP_CONST (alpn_http_1_0), mhd_SSTR_LEN (alpn_http_1_0) }
+        };
+        unsigned int alpn_flags;
+        int alpn_res;
+
+        alpn_flags = 0;
+#  if 0
+        alpn_flags |= GNUTLS_ALPN_SERVER_PRECEDENCE;
+#  endif
+
+        alpn_res =
+          gnutls_alpn_set_protocols (c_tls->sess,
+                                     prots,
+                                     (unsigned int) mhd_ARR_NUM_ELEMS (prots),
+                                     alpn_flags);
+        (void) alpn_res; /* Ignore any possible ALPN set errors */
+      }
+#endif /* mhd_TLS_GNU_HAS_ALPN */
+
+      return true; /* Success exit point */
+    }
+    /* Below is a clean-up code path */
+  }
+
+  gnutls_deinit (c_tls->sess);
+  return false; /* Failure exit point */
+}
+
+
+/**
+ * De-initialise connection TLS settings.
+ * The provided pointer is not freed/deallocated.
+ * @param c_tls the initialised connection TLS settings
+ */
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_tls_gnu_conn_deinit (struct mhd_TlsGnuConnData *restrict c_tls)
+{
+  mhd_assert (NULL != c_tls->sess);
+  gnutls_deinit (c_tls->sess);
 }

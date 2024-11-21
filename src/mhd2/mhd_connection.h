@@ -56,6 +56,10 @@
 
 #include "mhd_public_api.h"
 
+#ifdef MHD_ENABLE_HTTPS
+#  include "mhd_tls_choice.h" /* For the TLS struct forward declaration */
+#endif
+
 /**
  * Minimum reasonable size by which MHD tries to increment read/write buffers.
  * We usually begin with half the available pool space for the
@@ -356,6 +360,7 @@ struct mhd_ConnDebugData
   bool closing_started;
   bool pre_cleaned;
   bool removed_from_daemon;
+  bool tls_inited;
 };
 
 /**
@@ -399,6 +404,16 @@ struct MHD_Connection
    * The connection socket data
    */
   struct mhd_ConnSocket sk;
+
+#ifdef MHD_ENABLE_HTTPS
+  /**
+   * Connection-specific TLS data.
+   * NULL if TLS is not used (plain HTTP connection).
+   * Allocated (and freed) together with struct MHD_Connection, cannot be
+   * deallocated separately.
+   */
+  struct mhd_TlsConnData *tls;
+#endif
 
   /**
    * 'true' if connection is in 'process ready' list,
@@ -596,5 +611,16 @@ struct MHD_Connection
 #endif
 };
 
+#ifdef MHD_ENABLE_HTTPS
+/**
+ * Returns non-zero if connection has TLS enabled or zero otherwise
+ */
+#  define mhd_C_HAS_TLS(c) (((c)->tls) ? (! 0) : (0))
+#else
+/**
+ * Returns non-zero if connection has TLS enabled or zero otherwise
+ */
+#  define mhd_C_HAS_TLS(c) (0)
+#endif
 
 #endif /* ! MHD_CONNECTION_H */

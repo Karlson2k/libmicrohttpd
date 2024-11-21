@@ -100,4 +100,26 @@
 #  define mhd_TLS_GNU_SUPPORTS_MULTI_KEYWORDS_PRIORITY  1
 #endif
 
+#if GNUTLS_VERSION_NUMBER >= 0x030402
+/**
+ * Defined if GNUTLS_NO_SIGNAL flag is available for gnutls_init() function
+ */
+#  define mhd_TLS_GNU_HAS_NO_SIGNAL     1
+#endif
+
+#if GNUTLS_VERSION_NUMBER >= 0x030109
+/**
+ * Defined if transport_set_int() function is available
+ */
+#  define mhd_TLS_GNU_HAS_TRANSP_SET_INT        1
+#endif
+
+#if GNUTLS_VERSION_NUMBER >= 0x030200
+/**
+ * Defined if gnutls_alpn_set_protocols() and
+ * gnutls_alpn_get_selected_protocol() function are available
+ */
+#  define mhd_TLS_GNU_HAS_ALPN        1
+#endif
+
 #endif /* ! MHD_TLS_GNU_TLS_LIB_H */

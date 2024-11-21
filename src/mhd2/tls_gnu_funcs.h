@@ -33,6 +33,9 @@
 #error This header can be used only if GnuTLS is enabled
 #endif
 
+#include "sys_bool_type.h"
+#include "sys_base_types.h"
+
 #include "mhd_status_code_int.h"
 
 /**
@@ -101,5 +104,40 @@ MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (3);
 MHD_INTERNAL void
 mhd_tls_gnu_daemon_deinit (struct mhd_TlsGnuDaemonData *restrict d_tls)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
+
+
+/* ** Connection initialisation / de-initialisation ** */
+
+struct mhd_ConnSocket; /* Forward declaration */
+
+/**
+ * Get size size of the connection's TLS settings
+ */
+MHD_INTERNAL size_t
+mhd_tls_gnu_conn_get_tls_size (void);
+
+/**
+ * Initialise connection TLS settings
+ * @param d_tls the daemon TLS settings
+ * @param sk data about the socket for the connection
+ * @param[out] c_tls the pointer to the allocated space for
+ *                   the connection TLS settings
+ * @return 'true' on success,
+ *         'false' otherwise
+ */
+MHD_INTERNAL bool
+mhd_tls_gnu_conn_init (const struct mhd_TlsGnuDaemonData *restrict d_tls,
+                       const struct mhd_ConnSocket *sk,
+                       struct mhd_TlsGnuConnData *restrict c_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (3);
+
+/**
+ * De-initialise connection TLS settings.
+ * The provided pointer is not freed/deallocated.
+ * @param c_tls the initialised connection TLS settings
+ */
+MHD_INTERNAL void
+mhd_tls_gnu_conn_deinit (struct mhd_TlsGnuConnData *restrict c_tls)
+MHD_FN_PAR_NONNULL_ALL_;
 
 #endif /* ! MHD_TLS_GNU_FUNCS_H */

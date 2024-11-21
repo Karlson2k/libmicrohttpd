@@ -1284,7 +1284,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * Failed to initialise TLS context for the daemon
    */
-  MHD_SC_DAEMON_TLS_INIT_FAILED = 51200
+  MHD_SC_TLS_DAEMON_INIT_FAILED = 51200
+  ,
+  /**
+   * Failed to initialise TLS context for the new connection
+   */
+  MHD_SC_TLS_CONNECTION_INIT_FAILED = 51201
   ,
   /**
    * Something wrong in the internal MHD logic.
@@ -4707,8 +4712,8 @@ MHD_FN_PAR_NONNULL_ (1);
  * @param addrlen number of bytes in @a addr
  * @param connection_cntx meta data the application wants to
  *        associate with the new connection object
- * @return #MHD_SC_OK on success
- *         error on failure
+ * @return #MHD_SC_OK on success,
+ *         error on failure (the @a client_socket is closed)
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
