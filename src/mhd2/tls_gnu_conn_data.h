@@ -38,7 +38,7 @@
 /**
  * The structure with connection-specific GnuTLS data
  */
-struct mhd_ConnTlsGnuData
+struct mhd_TlsGnuConnData
 {
   /**
    * GnuTLS session data

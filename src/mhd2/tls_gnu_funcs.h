@@ -38,15 +38,15 @@
 /**
  * The structure with daemon-specific GnuTLS data
  */
-struct mhd_DaemonTlsGnuData;    /* Forward declaration */
+struct mhd_TlsGnuDaemonData;    /* Forward declaration */
 
 /**
  * The structure with connection-specific GnuTLS data
  */
-struct mhd_ConnTlsGnuData;      /* Forward declaration */
+struct mhd_TlsGnuConnData;      /* Forward declaration */
 
 
-/* ** Global initialisation ** */
+/* ** Global initialisation / de-initialisation ** */
 
 /**
  * Globally initialise GnuTLS backend
@@ -73,25 +73,25 @@ MHD_INTERNAL bool
 mhd_tls_gnu_is_inited_fine (void);
 
 
-/* ** Daemon initialisation ** */
+/* ** Daemon initialisation / de-initialisation ** */
 
 struct MHD_Daemon;      /* Forward declaration */
 struct DaemonOptions;   /* Forward declaration */
 
 /**
- * Set daemon TLS parameters
+ * Allocate and initialise daemon TLS parameters
  * @param d the daemon handle
+ * @param s the daemon settings
  * @param p_d_tls the pointer to variable to set the pointer to
  *                the daemon's TLS settings (allocated by this function)
- * @param s the daemon settings
  * @return #MHD_SC_OK on success (p_d_tls set to the allocated settings),
  *         error code otherwise
  */
 MHD_INTERNAL mhd_StatusCodeInt
 mhd_tls_gnu_daemon_init (struct MHD_Daemon *restrict d,
-                         struct mhd_DaemonTlsGnuData **restrict p_d_tls,
-                         struct DaemonOptions *restrict s)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
+                         struct DaemonOptions *restrict s,
+                         struct mhd_TlsGnuDaemonData **restrict p_d_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (3);
 
 /**
  * De-initialise daemon TLS parameters (and free memory allocated for TLS
@@ -99,7 +99,7 @@ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
  * @param d_tls the pointer to  the daemon's TLS settings
  */
 MHD_INTERNAL void
-mhd_tls_gnu_daemon_deinit (struct mhd_DaemonTlsGnuData *restrict d_tls)
+mhd_tls_gnu_daemon_deinit (struct mhd_TlsGnuDaemonData *restrict d_tls)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
 
 #endif /* ! MHD_TLS_GNU_FUNCS_H */

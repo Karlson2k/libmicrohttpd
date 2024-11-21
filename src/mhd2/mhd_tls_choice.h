@@ -114,25 +114,35 @@
 #endif
 
 /**
+ * Form function name specific for the selected TLS backend
+ */
+#define mhd_TLS_DATA(name_suffix)    \
+        mhd_MACRO_CONCAT3 (mhd_Tls,mhd_TLS_DATA_NAME_ID,name_suffix)
+
+/**
+ * Form name of the data specific for the selected TLS backend
+ */
+#define mhd_TLS_FUNC(name_suffix)    \
+        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,name_suffix)
+
+/**
  * The name of the structure that holds daemon-specific TLS data
  */
-#define mhd_DaemonTlsData     \
-        mhd_MACRO_CONCAT3 (mhd_DaemonTls,mhd_TLS_DATA_NAME_ID,Data)
+#define mhd_TlsDaemonData       mhd_TLS_DATA (DaemonData)
 /**
  * The name of the structure that holds connection-specific TLS data
  */
-#define mhd_ConnTlsData       \
-        mhd_MACRO_CONCAT3 (mhd_ConnTls,mhd_TLS_DATA_NAME_ID,Data)
+#define mhd_TlsConnData         mhd_TLS_DATA (ConnData)
 
 /**
  * The structure with daemon-specific TLS data
  */
-struct mhd_DaemonTlsData;       /* Forward declaration */
+struct mhd_TlsDaemonData;       /* Forward declaration */
 
 /**
  * The structure with connection-specific TLS data
  */
-struct mhd_ConnTlsData;         /* Forward declaration */
+struct mhd_TlsConnData;         /* Forward declaration */
 
 
 #endif /* ! MHD_TLS_CHOICE_H */

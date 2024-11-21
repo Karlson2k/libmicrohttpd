@@ -37,7 +37,9 @@
 #error This header should be used only if HTTPS is enabled
 #endif
 
-#ifdef MHD_USE_GNUTLS
+#if defined(MHD_USE_MULTITLS)
+// TODO: Multi-TLS implementation
+#elif defined(MHD_USE_GNUTLS)
 #  include "tls_gnu_funcs.h"
 #endif
 
@@ -45,40 +47,36 @@
 #  define mhd_tls_gnu_is_inited_fine()   (0)
 #endif
 
-/* ** Global initialisation ** */
+/* ** Global initialisation / de-initialisation ** */
 
 /**
  * Perform one-time global initialisation of TLS backend
  */
-#define mhd_tls_global_init_once()        \
-        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_global_init_once)()
+#define mhd_tls_global_init_once()        mhd_TLS_FUNC (_global_init_once)()
 
 /**
  * Perform de-initialisation of TLS backend
  */
-#define mhd_tls_global_deinit()           \
-        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_global_deinit)()
+#define mhd_tls_global_deinit()           mhd_TLS_FUNC (_global_deinit)()
 
 /**
  * Perform re-initialisation of TLS backend
  */
-#define mhd_tls_global_re_init()          \
-        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_global_re_init)()
+#define mhd_tls_global_re_init()          mhd_TLS_FUNC (_global_re_init)()
 
-/* ** Daemon initialisation ** */
+/* ** Daemon initialisation / de-initialisation ** */
 
 /**
- * Set daemon TLS parameters
+ * Allocate and initialise daemon TLS parameters
  * @param d the daemon handle
+ * @param s the daemon settings
  * @param p_d_tls the pointer to variable to set the pointer to
  *                the daemon's TLS settings (allocated by this function)
- * @param s the daemon settings
  * @return #MHD_SC_OK on success (p_d_tls set to the allocated settings),
  *         error code otherwise
  */
-#define mhd_tls_daemon_init(d,p_d_tls,s)        \
-        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_daemon_init)( \
-          (d),(p_d_tls),(s))
+#define mhd_tls_daemon_init(d,s,p_d_tls)        \
+        mhd_TLS_FUNC (_daemon_init)((d),(s),(p_d_tls))
 
 /**
  * De-initialise daemon TLS parameters (and free memory allocated for TLS
@@ -86,12 +84,11 @@
  * @param d_tls the pointer to  the daemon's TLS settings
  */
 #define mhd_tls_daemon_deinit(d_tls)    \
-        mhd_MACRO_CONCAT3 (mhd_tls_,mhd_TLS_FUNC_NAME_ID,_daemon_deinit)( \
-          (d_tls))
+        mhd_TLS_FUNC (_daemon_deinit)((d_tls))
 
 
 /**
- * Result of TLS backend availablility check
+ * Result of TLS backend availability check
  */
 enum mhd_TlsBackendAvailable
 {

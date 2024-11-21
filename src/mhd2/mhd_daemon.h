@@ -924,7 +924,7 @@ struct MHD_Daemon
    * If set to non-NULL then HTTPS protocol is used, if set to NULL then
    * plain HTTP protocol used.
    */
-  struct mhd_DaemonTlsData *tls;
+  struct mhd_TlsDaemonData *tls;
 #endif
 
 #ifdef MHD_USE_THREADS
@@ -1017,8 +1017,14 @@ struct MHD_Daemon
          (mhd_WM_INT_EXTERNAL_EVENTS_EDGE ==((d)->wmode_int)))
 
 #ifdef MHD_ENABLE_HTTPS
-#  define mhd_D_HAS_TLS(d) ((d->tls) ? (! 0) : (0))
+/**
+ * Returns non-zero if daemon has TLS enabled or zero otherwise
+ */
+#  define mhd_D_HAS_TLS(d) (((d)->tls) ? (! 0) : (0))
 #else
+/**
+ * Returns non-zero if daemon has TLS enabled or zero otherwise
+ */
 #  define mhd_D_HAS_TLS(d) (0)
 #endif
 

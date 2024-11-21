@@ -53,9 +53,9 @@
 #  include "tls_dh_params.h"
 #endif
 
-struct mhd_DaemonTlsGnuData;    /* Forward declaration */
+struct mhd_TlsGnuDaemonData;    /* Forward declaration */
 
-struct mhd_ConnTlsGnuData;      /* Forward declaration */
+struct mhd_TlsGnuConnData;      /* Forward declaration */
 
 
 /* ** Global initialisation ** */
@@ -132,7 +132,7 @@ check_app_tls_sessings (struct MHD_Daemon *restrict d,
  *         'false' if failed
  */
 static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_ bool
-daemon_init_dh_data (struct mhd_DaemonTlsGnuData *restrict d_tls)
+daemon_init_dh_data (struct mhd_TlsGnuDaemonData *restrict d_tls)
 {
 #if defined(mhd_TLS_GNU_DH_PARAMS_USE_KNOWN)
   /* Rely on reasonable TLS defaults set in the TLS library.
@@ -175,7 +175,7 @@ daemon_init_dh_data (struct mhd_DaemonTlsGnuData *restrict d_tls)
  * @param d_tls the daemon TLS data
  */
 static MHD_FN_PAR_NONNULL_ALL_ void
-daemon_deinit_dh_data (struct mhd_DaemonTlsGnuData *restrict d_tls)
+daemon_deinit_dh_data (struct mhd_TlsGnuDaemonData *restrict d_tls)
 {
 #if defined(mhd_TLS_GNU_DH_PARAMS_NEEDS_PKCS3)
   mhd_assert (NULL != d_tls->dh_params);
@@ -197,10 +197,10 @@ daemon_deinit_dh_data (struct mhd_DaemonTlsGnuData *restrict d_tls)
  */
 static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_init_credentials (struct MHD_Daemon *restrict d,
-                         struct mhd_DaemonTlsGnuData *restrict d_tls,
+                         struct mhd_TlsGnuDaemonData *restrict d_tls,
                          struct DaemonOptions *restrict s)
 {
-  enum MHD_StatusCode res;
+  enum MHD_StatusCode ret;
   size_t cert_len;
   size_t key_len;
 
@@ -213,12 +213,15 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
   }
 
   // TODO: Support multiple certificates
-  cert_len = strlen (s->tls_cert_key.v_mem_cert) + 1; // TODO: Reuse calculated length
-  key_len = strlen (s->tls_cert_key.v_mem_key) + 1;   // TODO: Reuse calculated length
+  cert_len = strlen (s->tls_cert_key.v_mem_cert); // TODO: Reuse calculated length
+  key_len = strlen (s->tls_cert_key.v_mem_key);   // TODO: Reuse calculated length
+
+  mhd_assert (0 != cert_len);
+  mhd_assert (0 != key_len);
 
   if (((unsigned int) cert_len != cert_len)
       || ((unsigned int) key_len != key_len))
-    res = MHD_SC_TLS_CONF_BAD_CERT; /* Very unlikely, do not waste space on special message */
+    ret = MHD_SC_TLS_CONF_BAD_CERT; /* Very unlikely, do not waste space on special message */
   else
   {
     gnutls_datum_t cert_data;
@@ -238,7 +241,7 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
     {
       mhd_LOG_MSG (d, MHD_SC_TLS_CONF_BAD_CERT, \
                    "Failed to set the provided TLS certificate");
-      res = MHD_SC_TLS_CONF_BAD_CERT;
+      ret = MHD_SC_TLS_CONF_BAD_CERT;
     }
     else
     {
@@ -247,7 +250,7 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
         mhd_LOG_MSG (d, MHD_SC_DAEMON_TLS_INIT_FAILED, \
                      "Failed to initialise Diffie-Hellman parameters " \
                      "for the daemon");
-        res = MHD_SC_DAEMON_TLS_INIT_FAILED;
+        ret = MHD_SC_DAEMON_TLS_INIT_FAILED;
       }
       else
         return MHD_SC_OK;
@@ -255,8 +258,8 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
   }
 
   gnutls_certificate_free_credentials (d_tls->cred);
-  mhd_assert (MHD_SC_OK != res);
-  return res; /* Failure exit point */
+  mhd_assert (MHD_SC_OK != ret);
+  return ret; /* Failure exit point */
 }
 
 
@@ -265,7 +268,7 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
  * @param d_tls the daemon TLS settings
  */
 static MHD_FN_PAR_NONNULL_ALL_ void
-daemon_deinit_credentials (struct mhd_DaemonTlsGnuData *restrict d_tls)
+daemon_deinit_credentials (struct mhd_TlsGnuDaemonData *restrict d_tls)
 {
   mhd_assert (NULL != d_tls->cred);
   /* To avoid dangling pointer to DH data in the credentials,
@@ -301,7 +304,7 @@ static const struct MHD_StringNullable tlsgnulib_base_priorities[] = {
  */
 static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 daemon_init_priorities_cache (struct MHD_Daemon *restrict d,
-                              struct mhd_DaemonTlsGnuData *restrict d_tls,
+                              struct mhd_TlsGnuDaemonData *restrict d_tls,
                               struct DaemonOptions *restrict s)
 {
   size_t i;
@@ -345,7 +348,7 @@ daemon_init_priorities_cache (struct MHD_Daemon *restrict d,
  * @param d_tls the daemon TLS settings
  */
 static MHD_FN_PAR_NONNULL_ALL_ void
-daemon_deinit_priorities_cache (struct mhd_DaemonTlsGnuData *restrict d_tls)
+daemon_deinit_priorities_cache (struct mhd_TlsGnuDaemonData *restrict d_tls)
 {
 #if ! defined(mhd_TLS_GNU_NULL_PRIO_CACHE_MEANS_DEF_PRIORITY)
   mhd_assert (NULL != d_tls->pri_cache);
@@ -356,21 +359,21 @@ daemon_deinit_priorities_cache (struct mhd_DaemonTlsGnuData *restrict d_tls)
 }
 
 
-MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_OUT_ (2) mhd_StatusCodeInt
+MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (3) mhd_StatusCodeInt
 mhd_tls_gnu_daemon_init (struct MHD_Daemon *restrict d,
-                         struct mhd_DaemonTlsGnuData **restrict p_d_tls,
-                         struct DaemonOptions *restrict s)
+                         struct DaemonOptions *restrict s,
+                         struct mhd_TlsGnuDaemonData **restrict p_d_tls)
 {
   mhd_StatusCodeInt res;
-  struct mhd_DaemonTlsGnuData *restrict d_tls;
+  struct mhd_TlsGnuDaemonData *restrict d_tls;
 
   res = check_app_tls_sessings (d, s);
   if (MHD_SC_OK != res)
     return res;
 
-  d_tls = (struct mhd_DaemonTlsGnuData *)
-          mhd_calloc (1, sizeof (struct mhd_DaemonTlsGnuData));
+  d_tls = (struct mhd_TlsGnuDaemonData *)
+          mhd_calloc (1, sizeof (struct mhd_TlsGnuDaemonData));
   *p_d_tls = d_tls;
   if (NULL == d_tls)
     return MHD_SC_DAEMON_MALLOC_FAILURE;
@@ -399,7 +402,7 @@ mhd_tls_gnu_daemon_init (struct MHD_Daemon *restrict d,
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_INOUT_ (1) void
-mhd_tls_gnu_daemon_deinit (struct mhd_DaemonTlsGnuData *restrict d_tls)
+mhd_tls_gnu_daemon_deinit (struct mhd_TlsGnuDaemonData *restrict d_tls)
 {
   mhd_assert (NULL != d_tls);
   daemon_deinit_priorities_cache (d_tls);

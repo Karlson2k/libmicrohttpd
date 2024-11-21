@@ -38,7 +38,7 @@
 /**
  * The structure with daemon-specific GnuTLS data
  */
-struct mhd_DaemonTlsGnuData
+struct mhd_TlsGnuDaemonData
 {
   /**
    * The credentials
