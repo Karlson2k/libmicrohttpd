@@ -206,6 +206,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
 
     if (0 < addrlen)
     {
+      // TODO: combine into single allocation. Alignment should be taken into account
       c->sk.addr.data = (struct sockaddr_storage *) malloc (addrlen);
       if (NULL == c->sk.addr.data)
       {
