@@ -63,7 +63,7 @@ struct mhd_TlsGnuDaemonData;    /* Forward declaration */
 struct mhd_TlsGnuConnData;      /* Forward declaration */
 
 
-/* ** Global initialisation ** */
+/* ** Global initialisation / de-initialisation ** */
 
 static bool gnutls_lib_inited = false;
 
@@ -96,7 +96,7 @@ mhd_tls_gnu_is_inited_fine (void)
 }
 
 
-/* ** Daemon initialisation ** */
+/* ** Daemon initialisation / de-initialisation ** */
 
 /**
  * Check application-provided daemon TLS settings
@@ -416,7 +416,7 @@ mhd_tls_gnu_daemon_deinit (struct mhd_TlsGnuDaemonData *restrict d_tls)
 }
 
 
-/* ** Connection initialisation ** */
+/* ** Connection initialisation / de-initialisation ** */
 
 MHD_INTERNAL size_t
 mhd_tls_gnu_conn_get_tls_size (void)
