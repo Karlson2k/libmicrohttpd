@@ -19,13 +19,13 @@
 */
 
 /**
- * @file src/mhd2/mhd_socket_error.c
+ * @file src/mhd2/mhd_socket_error_funcs.c
  * @brief  The definition of mhd_SocketError-related functions
  * @author Karlson2k (Evgeny Grin)
  */
 
 #include "mhd_sys_options.h"
-#include "mhd_socket_error.h"
+#include "mhd_socket_error_funcs.h"
 #include "sys_sockets_headers.h"
 #include "mhd_sockets_macros.h"
 #include "sys_sockets_types.h"

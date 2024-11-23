@@ -33,9 +33,9 @@
 #include "mhd_socket_type.h"
 #include "sys_sockets_headers.h"
 #include "mhd_sockets_macros.h"
+#include "mhd_socket_error_funcs.h"
 
 #include "mhd_limits.h"
-#include "mhd_socket_error.h"
 
 
 static MHD_FN_PAR_NONNULL_ALL_

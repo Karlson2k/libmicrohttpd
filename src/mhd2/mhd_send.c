@@ -44,6 +44,7 @@
 #include "sys_ip_headers.h"
 #include "mhd_sockets_macros.h"
 #include "daemon_logger.h"
+#include "mhd_socket_error_funcs.h"
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"

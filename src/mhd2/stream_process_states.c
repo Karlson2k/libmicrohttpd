@@ -35,6 +35,7 @@
 #include "sys_base_types.h"
 
 #include "mhd_str_macros.h"
+#include "mhd_socket_error_funcs.h"
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
