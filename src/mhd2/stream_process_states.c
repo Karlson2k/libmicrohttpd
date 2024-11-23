@@ -211,12 +211,7 @@ update_active_state (struct MHD_Connection *restrict c)
   /* Sockets errors must be already handled */
   mhd_assert (0 == (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY));
 
-  if (0 !=
-      (((unsigned int) c->sk.ready) & ((unsigned int) c->event_loop_info)
-       & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND)))
-    mhd_conn_mark_ready (c, c->daemon);
-  else
-    mhd_conn_mark_unready (c, c->daemon);
+  mhd_conn_mark_ready_update (c);
 
   return true;
 }

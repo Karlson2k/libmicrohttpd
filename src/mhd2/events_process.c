@@ -103,13 +103,7 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
                (sk_state | (unsigned int) mhd_SOCKET_NET_STATE_ERROR_READY);
   c->sk.ready = sk_state;
 
-  if ((0 !=
-       (((unsigned int) c->sk.ready) & ((unsigned int) c->event_loop_info)
-        & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND)))
-      || err_state)
-    mhd_conn_mark_ready (c, d);
-  else
-    mhd_conn_mark_unready (c, d);
+  mhd_conn_mark_ready_update3 (c, err_state, d);
 }
 
 

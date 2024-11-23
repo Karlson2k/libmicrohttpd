@@ -94,4 +94,58 @@ mhd_conn_mark_unready (struct MHD_Connection *restrict c,
 }
 
 
+/**
+ * Update "ready" mark on the connection, remove or add connection to
+ * the "process ready" list if necessary.
+ * @param c the connection to update
+ * @param force_ready ignore network states and mark the connection as "ready"
+ * @param d the daemon for the connection
+ */
+MHD_static_inline_ MHD_FN_PAR_NONNULL_ALL_ void
+mhd_conn_mark_ready_update3 (struct MHD_Connection *restrict c,
+                             unsigned int force_ready,
+                             struct MHD_Daemon *restrict d)
+{
+  if (force_ready ||
+      (0 !=
+       (((unsigned int) c->sk.ready) & ((unsigned int) c->event_loop_info)
+        & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND))))
+    mhd_conn_mark_ready (c, d);
+  else
+    mhd_conn_mark_unready (c, d);
+}
+
+
+/**
+ * Update "ready" mark on the connection, remove or add connection to
+ * the "process ready" list if necessary.
+ * This function could be used if the "daemon" handle is already extracted
+ * from the connection.
+ * @param c the connection to update
+ * @param d the daemon for the connection
+ */
+MHD_static_inline_ MHD_FN_PAR_NONNULL_ALL_ void
+mhd_conn_mark_ready_update2 (struct MHD_Connection *restrict c,
+                             struct MHD_Daemon *restrict d)
+{
+  mhd_conn_mark_ready_update3 (c, 0, d);
+}
+
+
+/**
+ * Update "ready" mark on the connection, remove or add connection to
+ * the "process ready" list if necessary.
+ * This function could be used if the "daemon" handle has not been extracted
+ * from the connection.
+ * @param c the connection to update
+ * @param d the daemon for the connection
+ */
+MHD_static_inline_ MHD_FN_PAR_NONNULL_ALL_ void
+mhd_conn_mark_ready_update (struct MHD_Connection *restrict c)
+{
+  mhd_conn_mark_ready_update2 (c,
+                               c->daemon);
+}
+
+
 #endif /* ! MHD_CONN_MARK_READY_H */
