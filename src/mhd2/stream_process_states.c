@@ -52,17 +52,8 @@
 #  include "upgrade_proc.h"
 #endif /* MHD_UPGRADE_SUPPORT */
 
-/**
- * Update current processing state: need to receive, need to send.
- * Mark stream as ready or not ready for processing.
- * Grow the receive buffer if neccesary, close stream if no buffer space left,
- * but connection needs to receive.
- * @param c the connection to update
- * @return true if connection states updated successfully,
- *         false if connection has been prepared for closing
- */
-static MHD_FN_PAR_NONNULL_ALL_ bool
-update_active_state (struct MHD_Connection *restrict c)
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
 {
   /* Do not update states of suspended connection */
   mhd_assert (! c->suspended);
@@ -188,11 +179,37 @@ update_active_state (struct MHD_Connection *restrict c)
   case MHD_CONNECTION_CLOSED:
     mhd_assert (0 && "Should be unreachable");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
-    return false;           /* do nothing, not even reading */
+    break;
   default:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
   }
+}
+
+
+/**
+ * Update current processing state: need to receive, need to send.
+ * Mark stream as ready or not ready for processing.
+ * Grow the receive buffer if neccesary, close stream if no buffer space left,
+ * but connection needs to receive.
+ * @param c the connection to update
+ * @return true if connection states updated successfully,
+ *         false if connection has been prepared for closing
+ */
+static MHD_FN_PAR_NONNULL_ALL_ bool
+update_active_state (struct MHD_Connection *restrict c)
+{
+  /* Do not update states of suspended connection */
+  mhd_assert (! c->suspended);
+
+  if (0 != (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY))
+  {
+    mhd_assert (0 && "Should be handled earlier");
+    mhd_conn_start_closing_skt_err (c);
+    return false;
+  }
+
+  mhd_conn_event_loop_state_update (c);
 
   if (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info))
   {

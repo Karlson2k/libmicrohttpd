@@ -35,8 +35,20 @@
 struct MHD_Connection; /* forward declaration */
 
 /**
- * Process states and the data for the connection
- * For HTTP/1.1 connection is equal stream
+ * Update event loop state for the connection.
+ * Event loop state indicates current stage: sending or receiving the data.
+ * The underlying connection layer (plain TCP or TLS) must be already connected.
+ * @param c the connection to process
+ */
+MHD_INTERNAL void
+mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Process states and the data for the connection.
+ * For HTTP/1.1: connection is equal stream.
+ * The function updates the states of the connection.
+ * The underlying connection layer (plain TCP or TLS) must be already connected.
  * @param c the connection to process
  * @return true if states and data has been successfully processed,
  *         false if connection needs to be closed
