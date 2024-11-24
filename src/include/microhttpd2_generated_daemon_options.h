@@ -433,7 +433,7 @@ struct MHD_DaemonOptionValueTlsCert
    * The first certificate must be the server certificate, following by the chain of signing
    * certificates up to (but not including) CA root certificate.
    */
-  /* const */ char *v_mem_cert;
+  const char *v_mem_cert;
 
   /**
    * the private key in PEM format loaded into memory (not a filename)
@@ -1756,7 +1756,7 @@ MHD_D_OPTION_TLS (
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_TLS_CERT_KEY (
-  /* const */ char *mem_cert,
+  const char *mem_cert,
   const char *mem_key,
   const char *mem_pass
   )

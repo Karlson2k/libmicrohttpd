@@ -3991,7 +3991,7 @@ MHD_D_OPTION_TLS (
  */
 struct MHD_DaemonOptionAndValue
 MHD_D_OPTION_TLS_CERT_KEY (
-  /* const */ char *mem_cert,
+  const char *mem_cert,
   const char *mem_key,
   const char *mem_pass
   );
