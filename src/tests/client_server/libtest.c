@@ -493,8 +493,10 @@ MHDT_test (MHDT_ServerSetup ss_cb,
   const char *err;
   pthread_t server_phase_thr;
   pthread_t server_run_thr;
-  struct MHDT_PhaseContext pc;
-  char base_url[128];
+  struct MHDT_PhaseContext pc_https;
+  struct MHDT_PhaseContext pc_http;
+  char base_http_url[128];
+  char base_https_url[128];
   unsigned int i;
   int p[2];
 
@@ -537,11 +539,16 @@ MHDT_test (MHDT_ServerSetup ss_cb,
       MHD_DAEMON_INFO_FIXED_BIND_PORT,
       &info);
     test_check (MHD_SC_OK == sc);
-    snprintf (base_url,
-              sizeof (base_url),
+    snprintf (base_http_url,
+              sizeof (base_http_url),
               "http://localhost:%u/",
               (unsigned int) info.v_port);
-    pc.base_url = base_url;
+    snprintf (base_https_url,
+              sizeof (base_https_url),
+              "https://localhost:%u/",
+              (unsigned int) info.v_port);
+    pc_http.base_url = base_http_url;
+    pc_https.base_url = base_https_url;
   }
   if (0 != pthread_create (&server_phase_thr,
                            NULL,
@@ -571,7 +578,9 @@ MHDT_test (MHDT_ServerSetup ss_cb,
              "Running test phase '%s'\n",
              phases[i].label);
     if (! run_client_phase (&phases[i],
-                            &pc))
+                            phases[i].use_tls
+                            ? &pc_https
+                            : &pc_http))
     {
       res = 1;
       goto cleanup;

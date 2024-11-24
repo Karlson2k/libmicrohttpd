@@ -245,6 +245,14 @@ set_url (CURL *c,
     curl_easy_cleanup (c);
     return false;
   }
+  if (CURLE_OK !=
+      curl_easy_setopt (c,
+                        CURLOPT_VERBOSE,
+                        1))
+  {
+    curl_easy_cleanup (c);
+    return false;
+  }
   if (0 == strncasecmp (base_url,
                         "https://",
                         strlen ("https://")))
