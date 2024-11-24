@@ -58,10 +58,26 @@
 #  include "tls_dh_params.h"
 #endif
 
+#ifdef mhd_USE_TLS_DEBUG_MESSAGES
+#  include <stdio.h> /* For TLS debug printing */
+#endif
+
 struct mhd_TlsGnuDaemonData;    /* Forward declaration */
 
 struct mhd_TlsGnuConnData;      /* Forward declaration */
 
+#ifdef mhd_USE_TLS_DEBUG_MESSAGES
+static void
+mhd_tls_gnu_debug_print (int level, const char *msg)
+{
+  (void) fprintf (stderr, "## GnuTLS %02i: %s",
+                  level,
+                  msg);
+  (void) fflush (stderr);
+}
+
+
+#endif /* mhd_USE_TLS_DEBUG_MESSAGES */
 
 /* ** Global initialisation / de-initialisation ** */
 
@@ -77,12 +93,21 @@ mhd_tls_gnu_global_init (void)
 #endif
   gnutls_lib_inited =
     gnutls_lib_inited && (GNUTLS_E_SUCCESS == gnutls_global_init ());
+
+#ifdef mhd_USE_TLS_DEBUG_MESSAGES
+  gnutls_global_set_log_function (&mhd_tls_gnu_debug_print);
+  gnutls_global_set_log_level (2);
+#endif
 }
 
 
 MHD_INTERNAL void
 mhd_tls_gnu_global_deinit (void)
 {
+#ifdef mhd_USE_TLS_DEBUG_MESSAGES
+  gnutls_global_set_log_level (0);
+#endif
+
   if (gnutls_lib_inited)
     gnutls_global_deinit ();
   gnutls_lib_inited = false;

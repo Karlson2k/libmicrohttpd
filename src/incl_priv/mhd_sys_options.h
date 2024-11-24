@@ -466,6 +466,17 @@
         __pragma(runtime_checks("c", restore))
 #endif /* _MSC_FULL_VER */
 
+#ifdef _DEBUG
+#  ifndef MHD_NO_TLS_DEBUG_MESSAGES
+#    ifndef mhd_USE_TLS_DEBUG_MESSAGES
+/**
+ * Enable debugging output on TLS library (if possible)
+ */
+#      define mhd_USE_TLS_DEBUG_MESSAGES    1
+#    endif
+#  endif
+#endif
+
 /* Un-define some HAVE_DECL_* macro if they equal zero.
    This should allow safely use #ifdef in the code.
    Define HAS_DECL_* macros only if matching HAVE_DECL_* macro
