@@ -134,7 +134,7 @@ static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 check_app_tls_sessings (struct MHD_Daemon *restrict d,
                         struct DaemonOptions *restrict s)
 {
-  mhd_assert (MHD_TLS_BACKEND_NONE == s->tls);
+  mhd_assert (MHD_TLS_BACKEND_NONE != s->tls);
   mhd_assert ((MHD_TLS_BACKEND_GNUTLS == s->tls) || \
               (MHD_TLS_BACKEND_ANY == s->tls));
   if (NULL == s->tls_cert_key.v_mem_cert)
