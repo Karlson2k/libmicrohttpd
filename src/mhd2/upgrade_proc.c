@@ -49,7 +49,7 @@ MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (1) bool
 mhd_upgrade_try_start_upgrading (struct MHD_Connection *restrict c)
 {
-  mhd_assert (MHD_CONNECTION_UPGRADE_HEADERS_SENDING == c->state);
+  mhd_assert (mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING == c->stage);
   mhd_assert ((mhd_ACTION_UPGRADE == c->rq.app_act.head_act.act) ||
               (mhd_UPLOAD_ACTION_UPGRADE == c->rq.app_act.upl_act.act));
   mhd_assert (NULL != c->write_buffer);
@@ -59,7 +59,7 @@ mhd_upgrade_try_start_upgrading (struct MHD_Connection *restrict c)
   if (c->write_buffer_append_offset != c->write_buffer_send_offset)
     return false;
 
-  c->state = MHD_CONNECTION_UPGRADING;
+  c->stage = mhd_HTTP_STAGE_UPGRADING;
 
   return true;
 }
@@ -70,7 +70,7 @@ MHD_FN_PAR_NONNULL_ (1) bool
 mhd_upgrade_finish_switch_to_upgraded (struct MHD_Connection *restrict c)
 {
   struct mhd_UpgradeActionData *pupgr_data;
-  mhd_assert (MHD_CONNECTION_UPGRADING == c->state);
+  mhd_assert (mhd_HTTP_STAGE_UPGRADING == c->stage);
   mhd_assert (NULL != c->write_buffer);
   mhd_assert ((0 != c->read_buffer_offset) || (NULL == c->read_buffer));
   mhd_assert (NULL == c->upgr.c);
@@ -97,7 +97,7 @@ mhd_upgrade_finish_switch_to_upgraded (struct MHD_Connection *restrict c)
 
   mhd_conn_pre_clean_part1 (c);
 
-  c->state = MHD_CONNECTION_UPGRADED;
+  c->stage = mhd_HTTP_STAGE_UPGRADED;
 
   mhd_assert (! c->in_proc_ready);
   mhd_assert (NULL == mhd_DLINKEDL_GET_PREV (c, by_timeout));
@@ -121,10 +121,10 @@ MHD_upgraded_close (struct MHD_UpgradedHandle *urh)
   struct MHD_Connection *const restrict c = urh->c;
   struct MHD_Daemon *const restrict d = c->daemon;
 
-  if (MHD_CONNECTION_UPGRADED != c->state) /* Probably, assert would be better here */
+  if (mhd_HTTP_STAGE_UPGRADED != c->stage) /* Probably, assert would be better here */
     return MHD_SC_TOO_LATE;
 
-  c->state = MHD_CONNECTION_UPGRADED_CLEANING;
+  c->stage = mhd_HTTP_STAGE_UPGRADED_CLEANING;
   mhd_mutex_lock_chk (&(d->conns.upgr.ucu_lock));
   mhd_DLINKEDL_INS_LAST (&(d->conns.upgr), c, upgr_cleanup);
   mhd_mutex_unlock_chk (&(d->conns.upgr.ucu_lock));
@@ -138,8 +138,8 @@ MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (1) void
 mhd_upgraded_deinit (struct MHD_Connection *restrict c)
 {
-  mhd_assert ((MHD_CONNECTION_UPGRADED_CLEANING == c->state) || \
-              (MHD_CONNECTION_UPGRADED == c->state));
+  mhd_assert ((mhd_HTTP_STAGE_UPGRADED_CLEANING == c->stage) || \
+              (mhd_HTTP_STAGE_UPGRADED == c->stage));
   mhd_assert (c == c->upgr.c);
 
   mhd_mutex_destroy_chk (&(c->upgr.lock));

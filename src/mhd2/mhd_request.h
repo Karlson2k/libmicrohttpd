@@ -366,7 +366,7 @@ struct MHD_Request
 
   /**
    * Number of bytes we had in the HTTP header, set once we
-   * pass #MHD_CONNECTION_HEADERS_RECEIVED.
+   * pass #mhd_HTTP_STAGE_HEADERS_RECEIVED.
    * This includes the request line, all request headers, the header section
    * terminating empty line, with all CRLF (or LF) characters.
    */
@@ -375,8 +375,8 @@ struct MHD_Request
   /**
    * The union of the size of all request field lines (headers) and
    * the starting point of the first request field line (the first header).
-   * Until #MHD_CONNECTION_HEADERS_RECEIVED the @a start member is valid,
-   * staring with #MHD_CONNECTION_HEADERS_RECEIVED the @a size member is valid.
+   * Until #mhd_HTTP_STAGE_HEADERS_RECEIVED the @a start member is valid,
+   * staring with #mhd_HTTP_STAGE_HEADERS_RECEIVED the @a size member is valid.
    * The size includes CRLF (or LR) characters, but does not include
    * the terminating empty line.
    */

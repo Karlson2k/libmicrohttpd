@@ -171,187 +171,187 @@ enum mhd_ConnClosureReason
 /**
  * States in a state machine for a connection.
  *
- * The main transitions are any-state to #MHD_CONNECTION_CLOSED, any
- * state to state+1, #MHD_CONNECTION_FOOTERS_SENT to
- * #MHD_CONNECTION_INIT.  #MHD_CONNECTION_CLOSED is the terminal state
- * and #MHD_CONNECTION_INIT the initial state.
+ * The main transitions are any-state to #mhd_HTTP_STAGE_CLOSED, any
+ * state to state+1, #mhd_HTTP_STAGE_FOOTERS_SENT to
+ * #mhd_HTTP_STAGE_INIT.  #mhd_HTTP_STAGE_CLOSED is the terminal state
+ * and #mhd_HTTP_STAGE_INIT the initial state.
  *
  * Note that transitions for *reading* happen only after the input has
  * been processed; transitions for *writing* happen after the
  * respective data has been put into the write buffer (the write does
  * not have to be completed yet).  A transition to
- * #MHD_CONNECTION_CLOSED or #MHD_CONNECTION_INIT requires the write
+ * #mhd_HTTP_STAGE_CLOSED or #mhd_HTTP_STAGE_INIT requires the write
  * to be complete.
  */
-enum MHD_FIXED_ENUM_ MHD_CONNECTION_STATE
+enum MHD_FIXED_ENUM_ mhd_HttpStage
 {
   /**
    * Connection just started (no headers received).
    * Waiting for the line with the request type, URL and version.
    */
-  MHD_CONNECTION_INIT = 0
+  mhd_HTTP_STAGE_INIT = 0
   ,
   /**
    * Part of the request line was received.
    * Wait for complete line.
    */
-  MHD_CONNECTION_REQ_LINE_RECEIVING
+  mhd_HTTP_STAGE_REQ_LINE_RECEIVING
   ,
   /**
    * We got the URL (and request type and version).  Wait for a header line.
    *
    * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_REQ_LINE_RECEIVED
+  mhd_HTTP_STAGE_REQ_LINE_RECEIVED
   ,
   /**
    * Receiving request headers.  Wait for the rest of the headers.
    */
-  MHD_CONNECTION_REQ_HEADERS_RECEIVING
+  mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING
   ,
   /**
    * We got the request headers.  Process them.
    */
-  MHD_CONNECTION_HEADERS_RECEIVED
+  mhd_HTTP_STAGE_HEADERS_RECEIVED
   ,
   /**
    * We have processed the request headers.  Call application callback.
    */
-  MHD_CONNECTION_HEADERS_PROCESSED
+  mhd_HTTP_STAGE_HEADERS_PROCESSED
   ,
   /**
    * We have processed the headers and need to send 100 CONTINUE.
    */
-  MHD_CONNECTION_CONTINUE_SENDING
+  mhd_HTTP_STAGE_CONTINUE_SENDING
   ,
   /**
    * We have sent 100 CONTINUE (or do not need to).  Read the message body.
    */
-  MHD_CONNECTION_BODY_RECEIVING
+  mhd_HTTP_STAGE_BODY_RECEIVING
   ,
   /**
    * We got the request body.
    *
    * A milestone state. No received data is processed in this state.
    */
-  MHD_CONNECTION_BODY_RECEIVED
+  mhd_HTTP_STAGE_BODY_RECEIVED
   ,
   /**
    * We are reading the request footers.
    */
-  MHD_CONNECTION_FOOTERS_RECEIVING
+  mhd_HTTP_STAGE_FOOTERS_RECEIVING
   ,
   /**
    * We received the entire footer.
    *
    * A milestone state. No data is receiving in this state.
    */
-  MHD_CONNECTION_FOOTERS_RECEIVED
+  mhd_HTTP_STAGE_FOOTERS_RECEIVED
   ,
   /**
    * We received the entire request.
    *
    * A milestone state. No data is receiving in this state.
    */
-  MHD_CONNECTION_FULL_REQ_RECEIVED
+  mhd_HTTP_STAGE_FULL_REQ_RECEIVED
   ,
   /**
    * Finished receiving request data: either complete request received or
    * MHD is going to send reply early, without getting full request.
    */
-  MHD_CONNECTION_REQ_RECV_FINISHED
+  mhd_HTTP_STAGE_REQ_RECV_FINISHED
   ,
   /**
    * Finished reading of the request and the response is ready.
    * Switch internal logic from receiving to sending, prepare connection
    * sending the reply and build the reply header.
    */
-  MHD_CONNECTION_START_REPLY
+  mhd_HTTP_STAGE_START_REPLY
   ,
   /**
    * We have prepared the response headers in the write buffer.
    * Send the response headers.
    */
-  MHD_CONNECTION_HEADERS_SENDING
+  mhd_HTTP_STAGE_HEADERS_SENDING
   ,
   /**
    * We have sent the response headers.  Get ready to send the body.
    */
-  MHD_CONNECTION_HEADERS_SENT
+  mhd_HTTP_STAGE_HEADERS_SENT
 #ifdef MHD_UPGRADE_SUPPORT
   ,
   /**
    * Sending special HTTP "Upgrade" headers
    */
-  MHD_CONNECTION_UPGRADE_HEADERS_SENDING
+  mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING
 #endif /* MHD_UPGRADE_SUPPORT */
   ,
   /**
    * We are waiting for the client to provide more
    * data of a non-chunked body.
    */
-  MHD_CONNECTION_UNCHUNKED_BODY_UNREADY
+  mhd_HTTP_STAGE_UNCHUNKED_BODY_UNREADY
   ,
   /**
    * We are ready to send a part of a non-chunked body.  Send it.
    */
-  MHD_CONNECTION_UNCHUNKED_BODY_READY
+  mhd_HTTP_STAGE_UNCHUNKED_BODY_READY
   ,
   /**
    * We are waiting for the client to provide a chunk of the body.
    */
-  MHD_CONNECTION_CHUNKED_BODY_UNREADY
+  mhd_HTTP_STAGE_CHUNKED_BODY_UNREADY
   ,
   /**
    * We are ready to send a chunk.
    */
-  MHD_CONNECTION_CHUNKED_BODY_READY
+  mhd_HTTP_STAGE_CHUNKED_BODY_READY
   ,
   /**
    * We have sent the chunked response body. Prepare the footers.
    */
-  MHD_CONNECTION_CHUNKED_BODY_SENT
+  mhd_HTTP_STAGE_CHUNKED_BODY_SENT
   ,
   /**
    * We have prepared the response footer.  Send it.
    */
-  MHD_CONNECTION_FOOTERS_SENDING
+  mhd_HTTP_STAGE_FOOTERS_SENDING
   ,
   /**
    * We have sent the entire reply.
    * Shutdown connection or restart processing to get a new request.
    */
-  MHD_CONNECTION_FULL_REPLY_SENT
+  mhd_HTTP_STAGE_FULL_REPLY_SENT
 #ifdef MHD_UPGRADE_SUPPORT
   ,
   /**
    * Transition to "Upgraded" state
    */
-  MHD_CONNECTION_UPGRADING
+  mhd_HTTP_STAGE_UPGRADING
   ,
   /**
    * Sending and receiving data on HTTP-Upgraded connection channel.
    * Normal data processing and connection handling is not performed
    * by MHD anymore.
    */
-  MHD_CONNECTION_UPGRADED
+  mhd_HTTP_STAGE_UPGRADED
   ,
   /**
    * Closing HTTP-Upgraded connection
    */
-  MHD_CONNECTION_UPGRADED_CLEANING
+  mhd_HTTP_STAGE_UPGRADED_CLEANING
 #endif /* MHD_UPGRADE_SUPPORT */
   ,
   /**
    * Finished regular connection processing.
    * Initial buffers cleanup and freeing.
    */
-  MHD_CONNECTION_PRE_CLOSING
+  mhd_HTTP_STAGE_PRE_CLOSING
   ,
   /**
    * This connection is to be closed.
    */
-  MHD_CONNECTION_CLOSED
+  mhd_HTTP_STAGE_CLOSED
 
 };
 
@@ -596,7 +596,7 @@ struct MHD_Connection
   /**
    * State in the FSM for this connection.
    */
-  enum MHD_CONNECTION_STATE state;
+  enum mhd_HttpStage stage;
 
   /**
    * What is this connection waiting for?

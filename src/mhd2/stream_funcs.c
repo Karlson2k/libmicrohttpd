@@ -297,13 +297,13 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
   size_t opt_headers_size;
   size_t host_field_line_size;
 
-  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVED < c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVED < c->stage);
   mhd_assert (MHD_PROC_RECV_HEADERS <= stage);
   mhd_assert ((0 == add_element_size) || (NULL != add_element));
 
   c->rq.too_large = true;
 
-  if (MHD_CONNECTION_HEADERS_RECEIVED > c->state)
+  if (mhd_HTTP_STAGE_HEADERS_RECEIVED > c->stage)
   {
     mhd_assert (NULL != c->rq.field_lines.start);
     opt_headers_size =
@@ -344,7 +344,7 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
     if (is_host_header)
     {
       const bool is_parsed = ! (
-        (MHD_CONNECTION_HEADERS_RECEIVED > c->state) &&
+        (mhd_HTTP_STAGE_HEADERS_RECEIVED > c->stage) &&
         (add_element_size == c->read_buffer_offset) &&
         (c->read_buffer == add_element) );
       size_t actual_element_size;
@@ -554,7 +554,7 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
     c->rp.response = NULL;
 
     c->conn_reuse = mhd_CONN_KEEPALIVE_POSSIBLE;
-    c->state = MHD_CONNECTION_INIT;
+    c->stage = mhd_HTTP_STAGE_INIT;
     c->event_loop_info =
       (0 == c->read_buffer_offset) ?
       MHD_EVENT_LOOP_INFO_RECV : MHD_EVENT_LOOP_INFO_PROCESS;
@@ -733,7 +733,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
       break;
     case mhd_SOCKET_ERR_REMT_DISCONN:
       close_hard = false;
-      end_code = (MHD_CONNECTION_INIT == c->state) ?
+      end_code = (mhd_HTTP_STAGE_INIT == c->stage) ?
                  MHD_REQUEST_ENDED_COMPLETED_OK /* Not used */ :
       MHD_REQUEST_ENDED_CLIENT_ABORT;
       break;
@@ -767,7 +767,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     break;
 
   case mhd_CONN_CLOSE_TIMEDOUT:
-    if (MHD_CONNECTION_INIT == c->state)
+    if (mhd_HTTP_STAGE_INIT == c->stage)
     {
       close_hard = false;
       end_code = MHD_REQUEST_ENDED_COMPLETED_OK; /* Not used */
@@ -806,7 +806,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 #ifdef MHD_UPGRADE_SUPPORT
   if (mhd_CONN_CLOSE_UPGRADE == reason)
   {
-    mhd_assert (MHD_CONNECTION_UPGRADING == c->state);
+    mhd_assert (mhd_HTTP_STAGE_UPGRADING == c->stage);
     c->event_loop_info = MHD_EVENT_LOOP_INFO_UPGRADED;
   }
   else
@@ -817,7 +817,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
   {
     /* Use abortive closing, send RST to remote to indicate a problem */
     (void) mhd_socket_set_hard_close (c->sk.fd);
-    c->state = MHD_CONNECTION_PRE_CLOSING;
+    c->stage = mhd_HTTP_STAGE_PRE_CLOSING;
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
   }
   else
@@ -825,12 +825,12 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     if (mhd_socket_shut_wr (c->sk.fd) && (! c->sk.state.rmt_shut_wr))
     {
       (void) 0; // TODO: start local lingering phase
-      c->state = MHD_CONNECTION_PRE_CLOSING; // TODO: start local lingering phase
+      c->stage = mhd_HTTP_STAGE_PRE_CLOSING; // TODO: start local lingering phase
       c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP; // TODO: start local lingering phase
     }
     else
     {  /* No need / not possible to linger */
-      c->state = MHD_CONNECTION_PRE_CLOSING;
+      c->stage = mhd_HTTP_STAGE_PRE_CLOSING;
       c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     }
   }
@@ -845,7 +845,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 #endif /* ! HAVE_LOG_FUNCTIONALITY */
 
 #if 0 // TODO: notification callback
-  mhd_assert ((MHD_CONNECTION_INIT != c->state) || (! c->rq.app_aware));
+  mhd_assert ((mhd_HTTP_STAGE_INIT != c->stage) || (! c->rq.app_aware));
   if ( (NULL != d->notify_completed) &&
        (c->rq.app_aware) )
     d->notify_completed (d->notify_completed_cls,
@@ -939,7 +939,7 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
   mhd_pool_destroy (c->pool);
   c->pool = NULL;
 
-  c->state = MHD_CONNECTION_CLOSED;
+  c->stage = mhd_HTTP_STAGE_CLOSED;
 #ifndef NDEBUG
   c->dbg.pre_cleaned = true;
 #endif

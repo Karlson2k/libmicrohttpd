@@ -119,7 +119,7 @@ mhd_stream_has_header_token (const struct MHD_Connection *restrict c,
 {
   struct mhd_RequestField *f;
 
-  mhd_assert (MHD_CONNECTION_START_REPLY >= c->state);
+  mhd_assert (mhd_HTTP_STAGE_START_REPLY >= c->stage);
 
   for (f = mhd_DLINKEDL_GET_FIRST (&(c->rq), fields);
        NULL != f;

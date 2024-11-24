@@ -247,8 +247,8 @@ is_conn_excluded_from_http_comm (struct MHD_Connection *restrict c)
 #ifdef MHD_UPGRADE_SUPPORT
   if (NULL != c->upgr.c)
   {
-    mhd_assert ((MHD_CONNECTION_UPGRADED == c->state) || \
-                (MHD_CONNECTION_UPGRADED_CLEANING == c->state));
+    mhd_assert ((mhd_HTTP_STAGE_UPGRADED == c->stage) || \
+                (mhd_HTTP_STAGE_UPGRADED_CLEANING == c->stage));
     return true;
   }
 #endif /* MHD_UPGRADE_SUPPORT */
@@ -306,7 +306,7 @@ daemon_cleanup_upgraded_conns (struct MHD_Daemon *restrict d)
     if (NULL == c)
       break;
 
-    mhd_assert (MHD_CONNECTION_UPGRADED_CLEANING == c->state);
+    mhd_assert (mhd_HTTP_STAGE_UPGRADED_CLEANING == c->stage);
     mhd_upgraded_deinit (c);
     mhd_conn_pre_clean (c);
     mhd_conn_remove_from_daemon (c);
@@ -333,8 +333,8 @@ close_all_daemon_conns (struct MHD_Daemon *d)
          c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn))
     {
 #ifdef MHD_UPGRADE_SUPPORT
-      mhd_assert (MHD_CONNECTION_UPGRADING != c->state);
-      mhd_assert (MHD_CONNECTION_UPGRADED_CLEANING != c->state);
+      mhd_assert (mhd_HTTP_STAGE_UPGRADING != c->stage);
+      mhd_assert (mhd_HTTP_STAGE_UPGRADED_CLEANING != c->stage);
       if (NULL != c->upgr.c)
       {
         mhd_assert (c == c->upgr.c);
@@ -459,7 +459,7 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
   for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn); NULL != c;
        c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
   {
-    mhd_assert (MHD_CONNECTION_CLOSED != c->state);
+    mhd_assert (mhd_HTTP_STAGE_CLOSED != c->stage);
     if (is_conn_excluded_from_http_comm (c))
       continue;
 
@@ -729,7 +729,7 @@ poll_update_fds (struct MHD_Daemon *restrict d,
 
     mhd_assert ((i_c - i_s) < d->conns.cfg.count_limit);
     mhd_assert (i_c < d->dbg.num_events_elements);
-    mhd_assert (MHD_CONNECTION_CLOSED != c->state);
+    mhd_assert (mhd_HTTP_STAGE_CLOSED != c->stage);
 
     d->events.data.poll.fds[i_c].fd = c->sk.fd;
     d->events.data.poll.rel[i_c].connection = c;

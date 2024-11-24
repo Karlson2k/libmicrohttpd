@@ -616,18 +616,18 @@ get_request_line_inner (struct MHD_Connection *restrict c)
      RFC 9112, section 2.2 */
   const bool bare_cr_as_sp = ((! bare_cr_keep) && (-1 >= discp_lvl));
 
-  mhd_assert (MHD_CONNECTION_INIT == c->state || \
-              MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (mhd_HTTP_STAGE_INIT == c->stage || \
+              mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
   mhd_assert (NULL == c->rq.method || \
-              MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+              mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
   mhd_assert (mhd_HTTP_METHOD_NO_METHOD == c->rq.http_mthd || \
-              MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+              mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
   mhd_assert (mhd_HTTP_METHOD_NO_METHOD == c->rq.http_mthd || \
               0 != c->rq.hdrs.rq_line.proc_pos);
 
   if (0 == c->read_buffer_offset)
   {
-    mhd_assert (MHD_CONNECTION_INIT == c->state);
+    mhd_assert (mhd_HTTP_STAGE_INIT == c->stage);
     return false; /* No data to process */
   }
   p = c->rq.hdrs.rq_line.proc_pos;
@@ -641,7 +641,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
     /* Skip empty lines before the request line.
        See RFC 9112, section 2.2 */
     bool is_empty_line;
-    mhd_assert (MHD_CONNECTION_INIT == c->state);
+    mhd_assert (mhd_HTTP_STAGE_INIT == c->stage);
     mhd_assert (NULL == c->rq.method);
     mhd_assert (NULL == c->rq.url);
     mhd_assert (0 == c->rq.url_len);
@@ -692,7 +692,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
   }
   /* All empty lines are skipped */
 
-  c->state = MHD_CONNECTION_REQ_LINE_RECEIVING;
+  c->stage = mhd_HTTP_STAGE_REQ_LINE_RECEIVING;
   /* Read and parse the request line */
   mhd_assert (1 <= c->read_buffer_offset);
 
@@ -871,7 +871,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
                                     - (size_t) (c->rq.version
                                                 - read_buffer)))
           {
-            mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING < c->state);
+            mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVING < c->stage);
             return true; /* Unsupported / broken HTTP version */
           }
           read_buffer[p] = 0; /* Zero terminate the HTTP version strings */
@@ -1232,7 +1232,7 @@ process_request_target (struct MHD_Connection *c)
 {
   size_t params_len;
 
-  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
   mhd_assert (NULL == c->rq.url);
   mhd_assert (0 == c->rq.url_len);
   mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
@@ -1282,7 +1282,7 @@ process_request_target (struct MHD_Connection *c)
                                                  0,
                                                  NULL),
         ERR_RSP_MSG_REQUEST_TOO_BIG);
-      mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING != c->state);
+      mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVING != c->stage);
       return false;
 
     }
@@ -1333,7 +1333,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
   size_t i;
   size_t o;
 
-  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
   mhd_assert (0 != c->rq.hdrs.rq_line.num_ws_in_uri);
   mhd_assert (c->rq.hdrs.rq_line.num_ws_in_uri <= \
               c->rq.req_target_len);
@@ -1428,10 +1428,10 @@ mhd_stream_get_request_line (struct MHD_Connection *restrict c)
     }
     return false;
   }
-  if (MHD_CONNECTION_REQ_LINE_RECEIVING < c->state)
+  if (mhd_HTTP_STAGE_REQ_LINE_RECEIVING < c->stage)
     return true; /* Error in the request */
 
-  mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
   mhd_assert (NULL == c->rq.url);
   mhd_assert (0 == c->rq.url_len);
   mhd_assert (NULL != c->rq.hdrs.rq_line.rq_tgt);
@@ -1453,7 +1453,7 @@ mhd_stream_get_request_line (struct MHD_Connection *restrict c)
   if (! process_request_target (c))
     return true; /* Error in processing */
 
-  c->state = MHD_CONNECTION_REQ_LINE_RECEIVED;
+  c->stage = mhd_HTTP_STAGE_REQ_LINE_RECEIVED;
   return true;
 }
 
@@ -1463,7 +1463,7 @@ mhd_stream_switch_to_rq_headers_proc (struct MHD_Connection *restrict c)
 {
   c->rq.field_lines.start = c->read_buffer;
   mhd_stream_reset_rq_hdr_proc_state (c);
-  c->state = MHD_CONNECTION_REQ_HEADERS_RECEIVING;
+  c->stage = mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING;
 }
 
 
@@ -1604,9 +1604,9 @@ get_req_header (struct MHD_Connection *restrict c,
 
   (void) process_footers; /* Unused parameter in non-debug and no messages */
 
-  mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
-               MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
-              c->state);
+  mhd_assert ((process_footers ? mhd_HTTP_STAGE_FOOTERS_RECEIVING : \
+               mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING) == \
+              c->stage);
 
   p = c->rq.hdrs.hdr.proc_pos;
 
@@ -2033,9 +2033,9 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
     struct MHD_String hdr_value;
     enum mhd_HdrLineReadRes res;
 
-    mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
-                 MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
-                c->state);
+    mhd_assert ((process_footers ? mhd_HTTP_STAGE_FOOTERS_RECEIVING : \
+                 mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING) == \
+                c->stage);
 
 #ifndef NDEBUG
     hdr_name.cstr = NULL;
@@ -2044,9 +2044,9 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
     res = get_req_header (c, process_footers, &hdr_name, &hdr_value);
     if (MHD_HDR_LINE_READING_GOT_HEADER == res)
     {
-      mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
-                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
-                  c->state);
+      mhd_assert ((process_footers ? mhd_HTTP_STAGE_FOOTERS_RECEIVING : \
+                   mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING) == \
+                  c->stage);
       mhd_assert (NULL != hdr_name.cstr);
       mhd_assert (NULL != hdr_value.cstr);
       /* Values must be zero-terminated and must not have binary zeros */
@@ -2093,29 +2093,29 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
         else
           handle_req_footers_no_space (c, hdr_name.cstr, add_element_size);
 
-        mhd_assert (MHD_CONNECTION_FULL_REQ_RECEIVED < c->state);
+        mhd_assert (mhd_HTTP_STAGE_FULL_REQ_RECEIVED < c->stage);
         return true;
       }
       /* Reset processing state */
       mhd_stream_reset_rq_hdr_proc_state (c);
-      mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
-                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
-                  c->state);
+      mhd_assert ((process_footers ? mhd_HTTP_STAGE_FOOTERS_RECEIVING : \
+                   mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING) == \
+                  c->stage);
       /* Read the next header (field) line */
       continue;
     }
     else if (MHD_HDR_LINE_READING_NEED_MORE_DATA == res)
     {
-      mhd_assert ((process_footers ? MHD_CONNECTION_FOOTERS_RECEIVING : \
-                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) == \
-                  c->state);
+      mhd_assert ((process_footers ? mhd_HTTP_STAGE_FOOTERS_RECEIVING : \
+                   mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING) == \
+                  c->stage);
       return false;
     }
     else if (MHD_HDR_LINE_READING_DATA_ERROR == res)
     {
       mhd_assert ((process_footers ? \
-                   MHD_CONNECTION_FOOTERS_RECEIVING : \
-                   MHD_CONNECTION_REQ_HEADERS_RECEIVING) < c->state);
+                   mhd_HTTP_STAGE_FOOTERS_RECEIVING : \
+                   mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING) < c->stage);
       mhd_assert (c->stop_with_error);
       mhd_assert (c->discard_request);
       return true;
@@ -2184,7 +2184,7 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
       (size_t) ((c->read_buffer - c->rq.field_lines.start) - 1);
     if ('\r' == *(c->read_buffer - 2))
       c->rq.field_lines.size--;
-    c->state = MHD_CONNECTION_HEADERS_RECEIVED;
+    c->stage = mhd_HTTP_STAGE_HEADERS_RECEIVED;
 
     if (mhd_BUF_INC_SIZE > c->read_buffer_size)
     {
@@ -2215,7 +2215,7 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
     }
   }
   else
-    c->state = MHD_CONNECTION_FOOTERS_RECEIVED;
+    c->stage = mhd_HTTP_STAGE_FOOTERS_RECEIVED;
 
   return true;
 }
@@ -2828,7 +2828,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
       c->conn_reuse = mhd_CONN_MUST_CLOSE; /* Framing could be incorrect */
   }
 
-  c->state = MHD_CONNECTION_HEADERS_PROCESSED;
+  c->stage = mhd_HTTP_STAGE_HEADERS_PROCESSED;
   return;
 }
 
@@ -2844,8 +2844,8 @@ static MHD_FN_PAR_NONNULL_ALL_ bool
 need_100_continue (struct MHD_Connection *restrict c)
 {
   mhd_assert (MHD_HTTP_VERSION_IS_SUPPORTED (c->rq.http_ver));
-  mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED <= c->state);
-  mhd_assert (MHD_CONNECTION_BODY_RECEIVING > c->state);
+  mhd_assert (mhd_HTTP_STAGE_HEADERS_PROCESSED <= c->stage);
+  mhd_assert (mhd_HTTP_STAGE_BODY_RECEIVING > c->stage);
 
   if (! c->rq.have_expect_100)
     return false; /* "100 Continue" has not been requested by the client */
@@ -2958,7 +2958,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
   {
   case mhd_ACTION_RESPONSE:
     c->rp.response = c->rq.app_act.head_act.data.response;
-    c->state = MHD_CONNECTION_REQ_RECV_FINISHED;
+    c->stage = mhd_HTTP_STAGE_REQ_RECV_FINISHED;
     return true;
   case mhd_ACTION_UPLOAD:
     if (0 != c->rq.cntn.cntn_size)
@@ -2967,33 +2967,33 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
         return true;
       if (need_100_continue (c))
       {
-        c->state = MHD_CONNECTION_CONTINUE_SENDING;
+        c->stage = mhd_HTTP_STAGE_CONTINUE_SENDING;
         return true;
       }
-      c->state = MHD_CONNECTION_BODY_RECEIVING;
+      c->stage = mhd_HTTP_STAGE_BODY_RECEIVING;
       return (0 != c->read_buffer_offset);
     }
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+    c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
     return true;
 #ifdef HAVE_POST_PARSER
   case mhd_ACTION_POST_PARSE:
     if (0 == c->rq.cntn.cntn_size)
     {
       c->rq.u_proc.post.parse_result = MHD_POST_PARSE_RES_REQUEST_EMPTY;
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       return true;
     }
     if (! mhd_stream_prepare_for_post_parse (c))
     {
-      mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVED < c->state);
+      mhd_assert (mhd_HTTP_STAGE_FOOTERS_RECEIVED < c->stage);
       return true;
     }
     if (need_100_continue (c))
     {
-      c->state = MHD_CONNECTION_CONTINUE_SENDING;
+      c->stage = mhd_HTTP_STAGE_CONTINUE_SENDING;
       return true;
     }
-    c->state = MHD_CONNECTION_BODY_RECEIVING;
+    c->stage = mhd_HTTP_STAGE_BODY_RECEIVING;
     return true;
 #endif /* HAVE_POST_PARSER */
   case mhd_ACTION_SUSPEND:
@@ -3002,7 +3002,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
 #ifdef MHD_UPGRADE_SUPPORT
   case mhd_ACTION_UPGRADE:
     mhd_assert (0 == c->rq.cntn.cntn_size);
-    c->state = MHD_CONNECTION_UPGRADE_HEADERS_SENDING;
+    c->stage = mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING;
     return false;
 #endif /* MHD_UPGRADE_SUPPORT */
   case mhd_ACTION_ABORT:
@@ -3052,7 +3052,7 @@ mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
   {
   case mhd_UPLOAD_ACTION_RESPONSE:
     c->rp.response = c->rq.app_act.upl_act.data.response;
-    c->state = MHD_CONNECTION_REQ_RECV_FINISHED;
+    c->stage = mhd_HTTP_STAGE_REQ_RECV_FINISHED;
     return true;
   case mhd_UPLOAD_ACTION_CONTINUE:
     memset (&(c->rq.app_act.upl_act), 0, sizeof(c->rq.app_act.upl_act));
@@ -3064,8 +3064,8 @@ mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
   case mhd_UPLOAD_ACTION_UPGRADE:
     mhd_assert (c->rq.cntn.recv_size == c->rq.cntn.cntn_size);
     mhd_assert (! c->rq.have_chunked_upload || \
-                MHD_CONNECTION_FULL_REQ_RECEIVED == c->state);
-    c->state = MHD_CONNECTION_UPGRADE_HEADERS_SENDING;
+                mhd_HTTP_STAGE_FULL_REQ_RECEIVED == c->stage);
+    c->stage = mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING;
     return false;
 #endif /* MHD_UPGRADE_SUPPORT */
   case mhd_UPLOAD_ACTION_ABORT:
@@ -3265,7 +3265,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
           if (0 == chunk_size)
           { /* The final (termination) chunk */
             c->rq.cntn.cntn_size = c->rq.cntn.recv_size;
-            c->state = MHD_CONNECTION_BODY_RECEIVED;
+            c->stage = mhd_HTTP_STAGE_BODY_RECEIVED;
             state_updated = true;
             break;
           }
@@ -3302,8 +3302,8 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
       // TODO: support one chunk in-place processing?
       mhd_assert ((0 == cntn_data_ready) || \
                   (MHD_POST_PARSE_RES_OK != c->rq.u_proc.post.parse_result) || \
-                  (MHD_CONNECTION_BODY_RECEIVING != c->state));
-      if (MHD_CONNECTION_BODY_RECEIVING != c->state)
+                  (mhd_HTTP_STAGE_BODY_RECEIVING != c->stage));
+      if (mhd_HTTP_STAGE_BODY_RECEIVING != c->stage)
         c->discard_request = true;
       c->rq.cntn.recv_size += size_provided;
     }
@@ -3436,15 +3436,15 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
                                            c->read_buffer);
     mhd_assert ((0 == size_provided) || \
                 (MHD_POST_PARSE_RES_OK != c->rq.u_proc.post.parse_result) || \
-                (MHD_CONNECTION_BODY_RECEIVING != c->state));
-    if (MHD_CONNECTION_BODY_RECEIVING != c->state)
+                (mhd_HTTP_STAGE_BODY_RECEIVING != c->stage));
+    if (mhd_HTTP_STAGE_BODY_RECEIVING != c->stage)
       c->discard_request = true;
 
     read_buf_reuse = true;
     c->rq.cntn.proc_size += cntn_data_ready;
     if (c->rq.cntn.recv_size == c->rq.cntn.cntn_size)
     {
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       state_updated = true;
     }
   }
@@ -3464,7 +3464,7 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
       read_buf_reuse = true;
       if (c->rq.cntn.recv_size == c->rq.cntn.cntn_size)
       {
-        c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+        c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
         state_updated = true;
       }
     }
@@ -3568,7 +3568,7 @@ mhd_stream_process_req_recv_finished (struct MHD_Connection *restrict c)
   if (c->rq.cntn.cntn_size != c->rq.cntn.proc_size)
     c->discard_request = true;
   mhd_assert (NULL != c->rp.response);
-  c->state = MHD_CONNECTION_START_REPLY;
+  c->stage = mhd_HTTP_STAGE_START_REPLY;
   return true;
 }
 
@@ -3629,24 +3629,24 @@ handle_recv_no_space (struct MHD_Connection *c,
 {
   mhd_assert (MHD_PROC_RECV_INIT <= stage);
   mhd_assert (MHD_PROC_RECV_FOOTERS >= stage);
-  mhd_assert (MHD_CONNECTION_FULL_REQ_RECEIVED > c->state);
+  mhd_assert (mhd_HTTP_STAGE_FULL_REQ_RECEIVED > c->stage);
   mhd_assert ((MHD_PROC_RECV_INIT != stage) || \
-              (MHD_CONNECTION_INIT == c->state));
+              (mhd_HTTP_STAGE_INIT == c->stage));
   mhd_assert ((MHD_PROC_RECV_METHOD != stage) || \
-              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+              (mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage));
   mhd_assert ((MHD_PROC_RECV_URI != stage) || \
-              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+              (mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage));
   mhd_assert ((MHD_PROC_RECV_HTTPVER != stage) || \
-              (MHD_CONNECTION_REQ_LINE_RECEIVING == c->state));
+              (mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage));
   mhd_assert ((MHD_PROC_RECV_HEADERS != stage) || \
-              (MHD_CONNECTION_REQ_HEADERS_RECEIVING == c->state));
+              (mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING == c->stage));
   mhd_assert (MHD_PROC_RECV_COOKIE != stage); /* handle_req_cookie_no_space() must be called directly */
   mhd_assert ((MHD_PROC_RECV_BODY_NORMAL != stage) || \
-              (MHD_CONNECTION_BODY_RECEIVING == c->state));
+              (mhd_HTTP_STAGE_BODY_RECEIVING == c->stage));
   mhd_assert ((MHD_PROC_RECV_BODY_CHUNKED != stage) || \
-              (MHD_CONNECTION_BODY_RECEIVING == c->state));
+              (mhd_HTTP_STAGE_BODY_RECEIVING == c->stage));
   mhd_assert ((MHD_PROC_RECV_FOOTERS != stage) || \
-              (MHD_CONNECTION_FOOTERS_RECEIVING == c->state));
+              (mhd_HTTP_STAGE_FOOTERS_RECEIVING == c->stage));
   mhd_assert ((MHD_PROC_RECV_BODY_NORMAL != stage) || \
               (! c->rq.have_chunked_upload));
   mhd_assert ((MHD_PROC_RECV_BODY_CHUNKED != stage) || \
@@ -3844,7 +3844,7 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
                           c->read_buffer_size);
 
     if ((rbuff_grow_desired) &&
-        (MHD_CONNECTION_BODY_RECEIVING == c->state))
+        (mhd_HTTP_STAGE_BODY_RECEIVING == c->stage))
     {
       if (! c->rq.have_chunked_upload)
       {
@@ -3892,12 +3892,12 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
   {
     enum MHD_ProcRecvDataStage stage;
 
-    switch (c->state)
+    switch (c->stage)
     {
-    case MHD_CONNECTION_INIT:
+    case mhd_HTTP_STAGE_INIT:
       stage = MHD_PROC_RECV_INIT;
       break;
-    case MHD_CONNECTION_REQ_LINE_RECEIVING:
+    case mhd_HTTP_STAGE_REQ_LINE_RECEIVING:
       if (mhd_HTTP_METHOD_NO_METHOD == c->rq.http_mthd)
         stage = MHD_PROC_RECV_METHOD;
       else if (0 == c->rq.req_target_len)
@@ -3905,41 +3905,41 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
       else
         stage = MHD_PROC_RECV_HTTPVER;
       break;
-    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+    case mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING:
       stage = MHD_PROC_RECV_HEADERS;
       break;
-    case MHD_CONNECTION_BODY_RECEIVING:
+    case mhd_HTTP_STAGE_BODY_RECEIVING:
       stage = c->rq.have_chunked_upload ?
               MHD_PROC_RECV_BODY_CHUNKED : MHD_PROC_RECV_BODY_NORMAL;
       break;
-    case MHD_CONNECTION_FOOTERS_RECEIVING:
+    case mhd_HTTP_STAGE_FOOTERS_RECEIVING:
       stage = MHD_PROC_RECV_FOOTERS;
       break;
-    case MHD_CONNECTION_REQ_LINE_RECEIVED:
-    case MHD_CONNECTION_HEADERS_RECEIVED:
-    case MHD_CONNECTION_HEADERS_PROCESSED:
-    case MHD_CONNECTION_CONTINUE_SENDING:
-    case MHD_CONNECTION_BODY_RECEIVED:
-    case MHD_CONNECTION_FOOTERS_RECEIVED:
-    case MHD_CONNECTION_FULL_REQ_RECEIVED:
-    case MHD_CONNECTION_REQ_RECV_FINISHED:
-    case MHD_CONNECTION_START_REPLY:
-    case MHD_CONNECTION_HEADERS_SENDING:
-    case MHD_CONNECTION_HEADERS_SENT:
-    case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
-    case MHD_CONNECTION_UNCHUNKED_BODY_READY:
-    case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
-    case MHD_CONNECTION_CHUNKED_BODY_READY:
-    case MHD_CONNECTION_CHUNKED_BODY_SENT:
-    case MHD_CONNECTION_FOOTERS_SENDING:
-    case MHD_CONNECTION_FULL_REPLY_SENT:
-    case MHD_CONNECTION_PRE_CLOSING:
-    case MHD_CONNECTION_CLOSED:
+    case mhd_HTTP_STAGE_REQ_LINE_RECEIVED:
+    case mhd_HTTP_STAGE_HEADERS_RECEIVED:
+    case mhd_HTTP_STAGE_HEADERS_PROCESSED:
+    case mhd_HTTP_STAGE_CONTINUE_SENDING:
+    case mhd_HTTP_STAGE_BODY_RECEIVED:
+    case mhd_HTTP_STAGE_FOOTERS_RECEIVED:
+    case mhd_HTTP_STAGE_FULL_REQ_RECEIVED:
+    case mhd_HTTP_STAGE_REQ_RECV_FINISHED:
+    case mhd_HTTP_STAGE_START_REPLY:
+    case mhd_HTTP_STAGE_HEADERS_SENDING:
+    case mhd_HTTP_STAGE_HEADERS_SENT:
+    case mhd_HTTP_STAGE_UNCHUNKED_BODY_UNREADY:
+    case mhd_HTTP_STAGE_UNCHUNKED_BODY_READY:
+    case mhd_HTTP_STAGE_CHUNKED_BODY_UNREADY:
+    case mhd_HTTP_STAGE_CHUNKED_BODY_READY:
+    case mhd_HTTP_STAGE_CHUNKED_BODY_SENT:
+    case mhd_HTTP_STAGE_FOOTERS_SENDING:
+    case mhd_HTTP_STAGE_FULL_REPLY_SENT:
+    case mhd_HTTP_STAGE_PRE_CLOSING:
+    case mhd_HTTP_STAGE_CLOSED:
 #ifdef MHD_UPGRADE_SUPPORT
-    case MHD_CONNECTION_UPGRADE_HEADERS_SENDING:
-    case MHD_CONNECTION_UPGRADING:
-    case MHD_CONNECTION_UPGRADED:
-    case MHD_CONNECTION_UPGRADED_CLEANING:
+    case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
+    case mhd_HTTP_STAGE_UPGRADING:
+    case mhd_HTTP_STAGE_UPGRADED:
+    case mhd_HTTP_STAGE_UPGRADED_CLEANING:
 #endif /* MHD_UPGRADE_SUPPORT */
     default:
       mhd_assert (0);

@@ -84,7 +84,7 @@ mhd_recv (struct MHD_Connection *restrict c,
           size_t *restrict received)
 {
   mhd_assert (MHD_INVALID_SOCKET != c->sk.fd);
-  mhd_assert (MHD_CONNECTION_CLOSED != c->state);
+  mhd_assert (mhd_HTTP_STAGE_CLOSED != c->stage);
 
   // TODO: implement TLS support
 

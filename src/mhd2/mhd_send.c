@@ -828,7 +828,7 @@ mhd_send_data (struct MHD_Connection *restrict connection,
   const bool tls_conn = false; // TODO: TLS support
 
   mhd_assert (MHD_INVALID_SOCKET != connection->sk.fd);
-  mhd_assert (MHD_CONNECTION_CLOSED != connection->state);
+  mhd_assert (mhd_HTTP_STAGE_CLOSED != connection->stage);
 
   if (tls_conn)
   {
@@ -901,7 +901,7 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
   mhd_assert ( (NULL != body) || (0 == body_size) );
 
   mhd_assert (MHD_INVALID_SOCKET != s);
-  mhd_assert (MHD_CONNECTION_CLOSED != connection->state);
+  mhd_assert (mhd_HTTP_STAGE_CLOSED != connection->stage);
 
   push_body = complete_response;
 
@@ -1376,7 +1376,7 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
   // TODO: assert for non-TLS
 
   mhd_assert (MHD_INVALID_SOCKET != connection->sk.fd);
-  mhd_assert (MHD_CONNECTION_CLOSED != connection->state);
+  mhd_assert (mhd_HTTP_STAGE_CLOSED != connection->stage);
 
   send_error = false;
   items_to_send = r_iov->cnt - r_iov->sent;

@@ -73,110 +73,110 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     }
   }
 #endif /* HTTPS_SUPPORT */
-  switch (c->state)
+  switch (c->stage)
   {
-  case MHD_CONNECTION_INIT:
-  case MHD_CONNECTION_REQ_LINE_RECEIVING:
+  case mhd_HTTP_STAGE_INIT:
+  case mhd_HTTP_STAGE_REQ_LINE_RECEIVING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
     break;
-  case MHD_CONNECTION_REQ_LINE_RECEIVED:
+  case mhd_HTTP_STAGE_REQ_LINE_RECEIVED:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+  case mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
     break;
-  case MHD_CONNECTION_HEADERS_RECEIVED:
-  case MHD_CONNECTION_HEADERS_PROCESSED:
+  case mhd_HTTP_STAGE_HEADERS_RECEIVED:
+  case mhd_HTTP_STAGE_HEADERS_PROCESSED:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_CONTINUE_SENDING:
+  case mhd_HTTP_STAGE_CONTINUE_SENDING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
-  case MHD_CONNECTION_BODY_RECEIVING:
+  case mhd_HTTP_STAGE_BODY_RECEIVING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
     break;
-  case MHD_CONNECTION_BODY_RECEIVED:
+  case mhd_HTTP_STAGE_BODY_RECEIVED:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_FOOTERS_RECEIVING:
+  case mhd_HTTP_STAGE_FOOTERS_RECEIVING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
     break;
-  case MHD_CONNECTION_FOOTERS_RECEIVED:
+  case mhd_HTTP_STAGE_FOOTERS_RECEIVED:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_FULL_REQ_RECEIVED:
+  case mhd_HTTP_STAGE_FULL_REQ_RECEIVED:
     mhd_assert (0 && "Should not be possible");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
     break;
-  case MHD_CONNECTION_REQ_RECV_FINISHED:
+  case mhd_HTTP_STAGE_REQ_RECV_FINISHED:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_START_REPLY:
+  case mhd_HTTP_STAGE_START_REPLY:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_HEADERS_SENDING:
+  case mhd_HTTP_STAGE_HEADERS_SENDING:
     /* headers in buffer, keep writing */
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
-  case MHD_CONNECTION_HEADERS_SENT:
+  case mhd_HTTP_STAGE_HEADERS_SENT:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
 #ifdef MHD_UPGRADE_SUPPORT
-  case MHD_CONNECTION_UPGRADE_HEADERS_SENDING:
+  case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
 #endif /* MHD_UPGRADE_SUPPORT */
-  case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
+  case mhd_HTTP_STAGE_UNCHUNKED_BODY_UNREADY:
     mhd_assert (0 && "Should not be possible");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
     break;
-  case MHD_CONNECTION_UNCHUNKED_BODY_READY:
+  case mhd_HTTP_STAGE_UNCHUNKED_BODY_READY:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
-  case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+  case mhd_HTTP_STAGE_CHUNKED_BODY_UNREADY:
     mhd_assert (0 && "Should not be possible");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
     break;
-  case MHD_CONNECTION_CHUNKED_BODY_READY:
+  case mhd_HTTP_STAGE_CHUNKED_BODY_READY:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
-  case MHD_CONNECTION_CHUNKED_BODY_SENT:
+  case mhd_HTTP_STAGE_CHUNKED_BODY_SENT:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_FOOTERS_SENDING:
+  case mhd_HTTP_STAGE_FOOTERS_SENDING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
-  case MHD_CONNECTION_FULL_REPLY_SENT:
+  case mhd_HTTP_STAGE_FULL_REPLY_SENT:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
 #ifdef MHD_UPGRADE_SUPPORT
-  case MHD_CONNECTION_UPGRADING:
+  case mhd_HTTP_STAGE_UPGRADING:
     mhd_assert (0 && "Impossible value");
     MHD_UNREACHABLE_;
     break;
-  case MHD_CONNECTION_UPGRADED:
+  case mhd_HTTP_STAGE_UPGRADED:
     mhd_assert (0 && "Should not be possible");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_UPGRADED;
     break;
-  case MHD_CONNECTION_UPGRADED_CLEANING:
+  case mhd_HTTP_STAGE_UPGRADED_CLEANING:
     mhd_assert (0 && "Should be unreachable");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     break;
 #endif /* MHD_UPGRADE_SUPPORT */
-  case MHD_CONNECTION_PRE_CLOSING:
+  case mhd_HTTP_STAGE_PRE_CLOSING:
     mhd_assert (0 && "Should be unreachable");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     break;
-  case MHD_CONNECTION_CLOSED:
+  case mhd_HTTP_STAGE_CLOSED:
     mhd_assert (0 && "Should be unreachable");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     break;
@@ -243,12 +243,12 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
   (void) d; /* Mute compiler warning */
 
-  if ((c->sk.state.rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
+  if ((c->sk.state.rmt_shut_wr) && (mhd_HTTP_STAGE_START_REPLY > c->stage))
   {
     if (0 == c->read_buffer_offset)
     { /* Read buffer is empty, connection state is actual */
       mhd_conn_start_closing (c,
-                              (MHD_CONNECTION_INIT == c->state) ?
+                              (mhd_HTTP_STAGE_INIT == c->stage) ?
                               mhd_CONN_CLOSE_HTTP_COMPLETED :
                               mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
                               NULL);
@@ -291,57 +291,57 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 #ifdef HTTPS_SUPPORT
     // TODO: support TLS, handshake
 #endif /* HTTPS_SUPPORT */
-    switch (c->state)
+    switch (c->stage)
     {
-    case MHD_CONNECTION_INIT:
-    case MHD_CONNECTION_REQ_LINE_RECEIVING:
+    case mhd_HTTP_STAGE_INIT:
+    case mhd_HTTP_STAGE_REQ_LINE_RECEIVING:
       if (mhd_stream_get_request_line (c))
       {
-        mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING < c->state);
+        mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVING < c->stage);
         mhd_assert ((MHD_HTTP_VERSION_IS_SUPPORTED (c->rq.http_ver)) \
                     || (c->discard_request));
         continue;
       }
-      mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVING >= c->state);
+      mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVING >= c->stage);
       break;
-    case MHD_CONNECTION_REQ_LINE_RECEIVED:
+    case mhd_HTTP_STAGE_REQ_LINE_RECEIVED:
       mhd_stream_switch_to_rq_headers_proc (c);
-      mhd_assert (MHD_CONNECTION_REQ_LINE_RECEIVED != c->state);
+      mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVED != c->stage);
       continue;
-    case MHD_CONNECTION_REQ_HEADERS_RECEIVING:
+    case mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING:
       if (mhd_stream_get_request_headers (c, false))
       {
-        mhd_assert (MHD_CONNECTION_REQ_HEADERS_RECEIVING < c->state);
-        mhd_assert ((MHD_CONNECTION_HEADERS_RECEIVED == c->state) || \
+        mhd_assert (mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING < c->stage);
+        mhd_assert ((mhd_HTTP_STAGE_HEADERS_RECEIVED == c->stage) || \
                     (c->discard_request));
         continue;
       }
-      mhd_assert (MHD_CONNECTION_REQ_HEADERS_RECEIVING == c->state);
+      mhd_assert (mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING == c->stage);
       break;
-    case MHD_CONNECTION_HEADERS_RECEIVED:
+    case mhd_HTTP_STAGE_HEADERS_RECEIVED:
       mhd_stream_parse_request_headers (c);
-      mhd_assert (c->state != MHD_CONNECTION_HEADERS_RECEIVED);
+      mhd_assert (c->stage != mhd_HTTP_STAGE_HEADERS_RECEIVED);
       continue;
-    case MHD_CONNECTION_HEADERS_PROCESSED:
+    case mhd_HTTP_STAGE_HEADERS_PROCESSED:
       if (mhd_stream_call_app_request_cb (c))
       {
-        mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED < c->state);
+        mhd_assert (mhd_HTTP_STAGE_HEADERS_PROCESSED < c->stage);
         continue;
       }
       // TODO: add assert
       break;
-    case MHD_CONNECTION_CONTINUE_SENDING:
+    case mhd_HTTP_STAGE_CONTINUE_SENDING:
       if (c->continue_message_write_offset ==
           mhd_SSTR_LEN (mdh_HTTP_1_1_100_CONTINUE_REPLY))
       {
 #ifdef MHD_UPGRADE_SUPPORT
         c->rp.sent_100_cntn = true;
 #endif /* MHD_UPGRADE_SUPPORT */
-        c->state = MHD_CONNECTION_BODY_RECEIVING;
+        c->stage = mhd_HTTP_STAGE_BODY_RECEIVING;
         continue;
       }
       break;
-    case MHD_CONNECTION_BODY_RECEIVING:
+    case mhd_HTTP_STAGE_BODY_RECEIVING:
       mhd_assert (c->rq.cntn.recv_size < c->rq.cntn.cntn_size);
       mhd_assert (! c->discard_request);
       mhd_assert (NULL == c->rp.response);
@@ -353,7 +353,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (! c->discard_request);
       mhd_assert (NULL == c->rp.response);
       break;
-    case MHD_CONNECTION_BODY_RECEIVED:
+    case mhd_HTTP_STAGE_BODY_RECEIVED:
       mhd_assert (! c->discard_request);
       mhd_assert (NULL == c->rp.response);
       mhd_assert (c->rq.have_chunked_upload);
@@ -361,97 +361,97 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       c->rq.num_cr_sp_replaced = 0;
       c->rq.skipped_broken_lines = 0;
       mhd_stream_reset_rq_hdr_proc_state (c);
-      c->state = MHD_CONNECTION_FOOTERS_RECEIVING;
+      c->stage = mhd_HTTP_STAGE_FOOTERS_RECEIVING;
       continue;
-    case MHD_CONNECTION_FOOTERS_RECEIVING:
+    case mhd_HTTP_STAGE_FOOTERS_RECEIVING:
       mhd_assert (c->rq.have_chunked_upload);
       if (mhd_stream_get_request_headers (c, true))
       {
-        mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING < c->state);
-        mhd_assert ((MHD_CONNECTION_FOOTERS_RECEIVED == c->state) || \
+        mhd_assert (mhd_HTTP_STAGE_FOOTERS_RECEIVING < c->stage);
+        mhd_assert ((mhd_HTTP_STAGE_FOOTERS_RECEIVED == c->stage) || \
                     (c->discard_request));
         continue;
       }
-      mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING == c->state);
+      mhd_assert (mhd_HTTP_STAGE_FOOTERS_RECEIVING == c->stage);
       break;
-    case MHD_CONNECTION_FOOTERS_RECEIVED:
+    case mhd_HTTP_STAGE_FOOTERS_RECEIVED:
       mhd_assert (c->rq.have_chunked_upload);
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       continue;
-    case MHD_CONNECTION_FULL_REQ_RECEIVED:
+    case mhd_HTTP_STAGE_FULL_REQ_RECEIVED:
       if (mhd_stream_call_app_final_upload_cb (c))
       {
-        mhd_assert (MHD_CONNECTION_FOOTERS_RECEIVING != c->state);
+        mhd_assert (mhd_HTTP_STAGE_FOOTERS_RECEIVING != c->stage);
         continue;
       }
       break;
-    case MHD_CONNECTION_REQ_RECV_FINISHED:
+    case mhd_HTTP_STAGE_REQ_RECV_FINISHED:
       if (mhd_stream_process_req_recv_finished (c))
         continue;
       break;
     // TODO: add stage for setup and full request buffers cleanup
-    case MHD_CONNECTION_START_REPLY:
+    case mhd_HTTP_STAGE_START_REPLY:
       mhd_assert (NULL != c->rp.response);
       mhd_stream_switch_from_recv_to_send (c);
       if (! mhd_stream_build_header_response (c))
         continue;
-      mhd_assert (MHD_CONNECTION_START_REPLY != c->state);
+      mhd_assert (mhd_HTTP_STAGE_START_REPLY != c->stage);
       break;
-    case MHD_CONNECTION_HEADERS_SENDING:
+    case mhd_HTTP_STAGE_HEADERS_SENDING:
       /* no default action, wait for sending all the headers */
       break;
-    case MHD_CONNECTION_HEADERS_SENT:
+    case mhd_HTTP_STAGE_HEADERS_SENT:
       if (c->rp.props.send_reply_body)
       {
         if (c->rp.props.chunked)
-          c->state = MHD_CONNECTION_CHUNKED_BODY_UNREADY;
+          c->stage = mhd_HTTP_STAGE_CHUNKED_BODY_UNREADY;
         else
-          c->state = MHD_CONNECTION_UNCHUNKED_BODY_UNREADY;
+          c->stage = mhd_HTTP_STAGE_UNCHUNKED_BODY_UNREADY;
       }
       else
-        c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+        c->stage = mhd_HTTP_STAGE_FULL_REPLY_SENT;
       continue;
 #ifdef MHD_UPGRADE_SUPPORT
-    case MHD_CONNECTION_UPGRADE_HEADERS_SENDING:
+    case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
       if (! mhd_upgrade_try_start_upgrading (c))
         break;
       continue;
 #endif /* MHD_UPGRADE_SUPPORT */
-    case MHD_CONNECTION_UNCHUNKED_BODY_READY:
+    case mhd_HTTP_STAGE_UNCHUNKED_BODY_READY:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (! c->rp.props.chunked);
       /* nothing to do here, send the data */
       break;
-    case MHD_CONNECTION_UNCHUNKED_BODY_UNREADY:
+    case mhd_HTTP_STAGE_UNCHUNKED_BODY_UNREADY:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (! c->rp.props.chunked);
       if (0 == c->rp.response->cntn_size)
       { /* a shortcut */
-        c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+        c->stage = mhd_HTTP_STAGE_FULL_REPLY_SENT;
         continue;
       }
       if (mhd_stream_prep_unchunked_body (c))
         continue;
       break;
-    case MHD_CONNECTION_CHUNKED_BODY_READY:
+    case mhd_HTTP_STAGE_CHUNKED_BODY_READY:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (c->rp.props.chunked);
       /* nothing to do here */
       break;
-    case MHD_CONNECTION_CHUNKED_BODY_UNREADY:
+    case mhd_HTTP_STAGE_CHUNKED_BODY_UNREADY:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (c->rp.props.chunked);
       if ( (0 == c->rp.response->cntn_size) ||
            (c->rp.rsp_cntn_read_pos ==
             c->rp.response->cntn_size) )
       {
-        c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
+        c->stage = mhd_HTTP_STAGE_CHUNKED_BODY_SENT;
         continue;
       }
       if (mhd_stream_prep_chunked_body (c))
         continue;
       break;
-    case MHD_CONNECTION_CHUNKED_BODY_SENT:
+    case mhd_HTTP_STAGE_CHUNKED_BODY_SENT:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (c->rp.props.chunked);
       mhd_assert (c->write_buffer_send_offset <= \
@@ -460,12 +460,12 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       if (mhd_stream_prep_chunked_footer (c))
         continue;
       break;
-    case MHD_CONNECTION_FOOTERS_SENDING:
+    case mhd_HTTP_STAGE_FOOTERS_SENDING:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (c->rp.props.chunked);
       /* no default action */
       break;
-    case MHD_CONNECTION_FULL_REPLY_SENT:
+    case mhd_HTTP_STAGE_FULL_REPLY_SENT:
       // FIXME: support MHD_HTTP_STATUS_PROCESSING ?
       /* Reset connection after complete reply */
       mhd_stream_finish_req_serving ( \
@@ -475,23 +475,23 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         && ! c->sk.state.rmt_shut_wr);
       continue;
 #ifdef MHD_UPGRADE_SUPPORT
-    case MHD_CONNECTION_UPGRADING:
+    case mhd_HTTP_STAGE_UPGRADING:
       if (mhd_upgrade_finish_switch_to_upgraded (c))
         return true;     /* Do not close connection */
-      mhd_assert (MHD_CONNECTION_PRE_CLOSING == c->state);
+      mhd_assert (mhd_HTTP_STAGE_PRE_CLOSING == c->stage);
       continue;
-    case MHD_CONNECTION_UPGRADED:
+    case mhd_HTTP_STAGE_UPGRADED:
       mhd_assert (0 && "Should be unreachable");
       MHD_UNREACHABLE_;
       break;
-    case MHD_CONNECTION_UPGRADED_CLEANING:
+    case mhd_HTTP_STAGE_UPGRADED_CLEANING:
       mhd_assert (0 && "Should be unreachable");
       MHD_UNREACHABLE_;
       break;
 #endif /* MHD_UPGRADE_SUPPORT */
-    case MHD_CONNECTION_PRE_CLOSING:
+    case mhd_HTTP_STAGE_PRE_CLOSING:
       return false;
-    case MHD_CONNECTION_CLOSED:
+    case mhd_HTTP_STAGE_CLOSED:
       mhd_assert (0 && "Should be unreachable");
       MHD_UNREACHABLE_;
       break;
@@ -503,9 +503,9 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     break;
   }
 
-  mhd_assert (MHD_CONNECTION_CLOSED != c->state);
+  mhd_assert (mhd_HTTP_STAGE_CLOSED != c->stage);
 
-  if (MHD_CONNECTION_PRE_CLOSING == c->state)
+  if (mhd_HTTP_STAGE_PRE_CLOSING == c->stage)
   {
     mhd_assert (0 && "Pre-closing should be already caught in the loop");
     MHD_UNREACHABLE_;
@@ -519,10 +519,10 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     return true;
   }
 
-  if ((c->sk.state.rmt_shut_wr) && (MHD_CONNECTION_START_REPLY > c->state))
+  if ((c->sk.state.rmt_shut_wr) && (mhd_HTTP_STAGE_START_REPLY > c->stage))
   {
     mhd_conn_start_closing (c,
-                            (MHD_CONNECTION_INIT == c->state) ?
+                            (mhd_HTTP_STAGE_INIT == c->stage) ?
                             mhd_CONN_CLOSE_HTTP_COMPLETED :
                             mhd_CONN_CLOSE_CLIENT_SHUTDOWN_EARLY,
                             NULL);

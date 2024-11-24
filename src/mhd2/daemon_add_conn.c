@@ -84,7 +84,7 @@ connection_set_initial_state (struct MHD_Connection *restrict c)
 {
   size_t read_buf_size;
 
-  mhd_assert (MHD_CONNECTION_INIT == c->state);
+  mhd_assert (mhd_HTTP_STAGE_INIT == c->stage);
 
   c->conn_reuse = mhd_CONN_KEEPALIVE_POSSIBLE;
   c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;

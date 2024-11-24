@@ -142,10 +142,10 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
      some data pending in system buffers, use this optimization
      only for non-blocking sockets. */
   /* No need to check 'ret' as connection is always in
-   * MHD_CONNECTION_CLOSED state if 'ret' is equal 'MHD_NO'. */
+   * mhd_HTTP_STAGE_CLOSED state if 'ret' is equal 'MHD_NO'. */
   else if (on_fasttrack && c->sk.props.is_nonblck)
   {
-    if (MHD_CONNECTION_HEADERS_SENDING == c->state)
+    if (mhd_HTTP_STAGE_HEADERS_SENDING == c->stage)
     {
       MHD_connection_handle_write (c);
       /* Always call 'MHD_connection_handle_idle()' after each read/write. */
@@ -154,8 +154,8 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
     /* If all headers were sent by single write_handler() and
      * response body is prepared by single MHD_connection_handle_idle()
      * call - continue. */
-    if ((MHD_CONNECTION_UNCHUNKED_BODY_READY == c->state) ||
-        (MHD_CONNECTION_CHUNKED_BODY_READY == c->state))
+    if ((mhd_HTTP_STAGE_UNCHUNKED_BODY_READY == c->stage) ||
+        (mhd_HTTP_STAGE_CHUNKED_BODY_READY == c->stage))
     {
       MHD_connection_handle_write (c);
       ret = MHD_connection_handle_idle (c);

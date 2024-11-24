@@ -183,7 +183,7 @@ detect_post_enc (struct MHD_Connection *restrict c)
 {
   const struct MHD_StringNullable *h_cnt_tp;
 
-  mhd_assert (MHD_CONNECTION_BODY_RECEIVING > c->state);
+  mhd_assert (mhd_HTTP_STAGE_BODY_RECEIVING > c->stage);
 
   h_cnt_tp = mhd_request_get_value_st (&(c->rq),
                                        MHD_VK_HEADER,
@@ -416,7 +416,7 @@ mhd_stream_prepare_for_post_parse (struct MHD_Connection *restrict c)
     {
       mhd_assert (MHD_POST_PARSE_RES_OK != c->rq.u_proc.post.parse_result);
       c->discard_request = true;
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       return false;
     }
   }
@@ -427,7 +427,7 @@ mhd_stream_prepare_for_post_parse (struct MHD_Connection *restrict c)
     {
       mhd_assert (MHD_POST_PARSE_RES_OK != c->rq.u_proc.post.parse_result);
       c->discard_request = true;
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       return false;
     }
   }
@@ -550,10 +550,10 @@ report_low_lbuf_mem (struct MHD_Connection *restrict c)
                "parse POST request.");
   c->rq.u_proc.post.parse_result =
     MHD_POST_PARSE_RES_FAILED_NO_LARGE_BUF_MEM;
-  if (c->state < MHD_CONNECTION_FULL_REQ_RECEIVED)
+  if (c->stage < mhd_HTTP_STAGE_FULL_REQ_RECEIVED)
   {
     c->discard_request = true;
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+    c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
 
     return true;
   }
@@ -771,15 +771,15 @@ process_complete_field_all (struct MHD_Connection *restrict c,
   mhd_assert ((0 == enc_start) || \
               (MHD_HTTP_POST_ENCODING_MULTIPART_FORMDATA == p_data->enc));
 
-  mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_RECV_FINISHED >= c->stage);
   mhd_assert (value_start + value_len <= *pfield_next_pos);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
+  mhd_assert ((mhd_HTTP_STAGE_FULL_REQ_RECEIVED <= c->stage) || \
               (value_start + value_len < *pfield_next_pos));
   mhd_assert (*pfield_next_pos <= *pdata_size);
   mhd_assert ((name_start + name_len < value_start) || \
               (0 == value_start));
   mhd_assert (value_start + value_len <= *pfield_next_pos);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
+  mhd_assert ((mhd_HTTP_STAGE_FULL_REQ_RECEIVED <= c->stage) || \
               (name_start + name_len < *pfield_next_pos));
   mhd_assert ((filename_start + filename_len < value_start) || \
               (0 == value_start));
@@ -889,7 +889,7 @@ process_complete_field_all (struct MHD_Connection *restrict c,
                                  &encoding_i,
                                  &value_i))
     {
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       mhd_LOG_MSG (c->daemon, MHD_SC_REQ_POST_PARSE_FAILED_NO_POOL_MEM, \
                    "The request POST data cannot be parsed completely " \
                    "because there is not enough pool memory.");
@@ -933,14 +933,14 @@ process_complete_field (struct MHD_Connection *restrict c,
                         size_t value_start,
                         size_t value_len)
 {
-  mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_RECV_FINISHED >= c->stage);
   mhd_assert (value_start + value_len <= *pfield_next_pos);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
+  mhd_assert ((mhd_HTTP_STAGE_FULL_REQ_RECEIVED <= c->stage) || \
               (value_start + value_len < *pfield_next_pos));
   mhd_assert ((name_start + name_len < value_start) || \
               (0 == value_start));
   mhd_assert (name_start + name_len <= *pfield_next_pos);
-  mhd_assert ((MHD_CONNECTION_FULL_REQ_RECEIVED <= c->state) || \
+  mhd_assert ((mhd_HTTP_STAGE_FULL_REQ_RECEIVED <= c->stage) || \
               (name_start + name_len < *pfield_next_pos));
   mhd_assert (field_start <= name_start);
   mhd_assert ((field_start <= value_start) || (0 == value_start));
@@ -1018,7 +1018,7 @@ process_partial_value_all (struct MHD_Connection *restrict c,
   const struct MHD_UploadAction *act;
   bool res;
 
-  mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_RECV_FINISHED >= c->stage);
   mhd_assert (*pnext_pos <= *pdata_size);
   mhd_assert (part_value_start + part_value_len <= *pnext_pos);
   mhd_assert (0 != part_value_start);
@@ -1119,7 +1119,7 @@ process_partial_value (struct MHD_Connection *restrict c,
                        size_t part_value_start,
                        size_t part_value_len)
 {
-  mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_RECV_FINISHED >= c->stage);
   mhd_assert (part_value_start + part_value_len <= *pnext_pos);
   mhd_assert (name_start + name_len < part_value_start);
   mhd_assert (0 != part_value_start);
@@ -1840,7 +1840,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
           p_data->some_data_provided ?
           MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT :
           MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
-        c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+        c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
         return true; /* Stop parsing the upload */
       }
       mhd_assert (0 != mf->f.name_len);
@@ -2063,7 +2063,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
         p_data->parse_result =
           MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
       }
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       return true;
     default:
       mhd_assert (0 && "Impossible value");
@@ -2320,7 +2320,7 @@ parse_post_text (struct MHD_Connection *restrict c,
         MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     }
     tf->st = mhd_POST_TEXT_ST_NOT_STARTED;
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+    c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
     return true;
   }
 
@@ -2426,7 +2426,7 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
       MHD_UNREACHABLE_;
       p_data->parse_result =
         MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
-      c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+      c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       return true;
     }
     if (data_size_before_parse == p_data->lbuf_used)
@@ -2908,7 +2908,7 @@ check_post_leftovers (struct MHD_Connection *restrict c)
     MHD_UNREACHABLE_;
     p_data->parse_result =
       MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
-    c->state = MHD_CONNECTION_FULL_REQ_RECEIVED;
+    c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
     break;
   }
   return true;

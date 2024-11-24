@@ -120,7 +120,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
 
   if (&(c->upgr) != urh)
     return MHD_SC_UPGRADED_HANDLE_INVALID;
-  if (MHD_CONNECTION_UPGRADED != c->state)
+  if (mhd_HTTP_STAGE_UPGRADED != c->stage)
     return MHD_SC_UPGRADED_HANDLE_INVALID;
 
   if (0 == recv_buf_size)
@@ -339,7 +339,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
 
   if (&(c->upgr) != urh)
     return MHD_SC_UPGRADED_HANDLE_INVALID;
-  if (MHD_CONNECTION_UPGRADED != c->state)
+  if (mhd_HTTP_STAGE_UPGRADED != c->stage)
     return MHD_SC_UPGRADED_HANDLE_INVALID;
 
   finish_time_set = false;

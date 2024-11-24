@@ -49,7 +49,7 @@ mhd_conn_data_recv (struct MHD_Connection *restrict c,
   size_t received;
   enum mhd_SocketError res;
 
-  mhd_assert (MHD_CONNECTION_CLOSED != c->state);
+  mhd_assert (mhd_HTTP_STAGE_CLOSED != c->stage);
   mhd_assert (NULL != c->read_buffer);
   mhd_assert (c->read_buffer_size > c->read_buffer_offset);
   mhd_assert (! has_err || \
@@ -102,8 +102,8 @@ if ((bytes_read < 0) || socket_error)
 {
   if (MHD_ERR_CONNRESET_ == bytes_read)
   {
-    if ( (MHD_CONNECTION_INIT < c->state) &&
-         (MHD_CONNECTION_FULL_REQ_RECEIVED > c->state) )
+    if ( (mhd_HTTP_STAGE_INIT < c->stage) &&
+         (mhd_HTTP_STAGE_FULL_REQ_RECEIVED > c->stage) )
     {
 #ifdef HAVE_MESSAGES
       MHD_DLOG (c->daemon,
@@ -117,7 +117,7 @@ if ((bytes_read < 0) || socket_error)
   }
 
 #ifdef HAVE_MESSAGES
-  if (MHD_CONNECTION_INIT != c->state)
+  if (mhd_HTTP_STAGE_INIT != c->stage)
     MHD_DLOG (c->daemon,
               _ ("Connection socket is closed when reading " \
                  "request due to the error: %s\n"),
@@ -133,8 +133,8 @@ if ((bytes_read < 0) || socket_error)
 if (0 == bytes_read)
 { /* Remote side closed c. */   // FIXME: Actually NOT!
   c->sk.state.rmt_shut_wr = true;
-  if ( (MHD_CONNECTION_INIT < c->state) &&
-       (MHD_CONNECTION_FULL_REQ_RECEIVED > c->state) )
+  if ( (mhd_HTTP_STAGE_INIT < c->stage) &&
+       (mhd_HTTP_STAGE_FULL_REQ_RECEIVED > c->stage) )
   {
 #ifdef HAVE_MESSAGES
     MHD_DLOG (c->daemon,
@@ -145,7 +145,7 @@ if (0 == bytes_read)
     MHD_connection_close_ (c,
                            MHD_REQUEST_TERMINATED_CLIENT_ABORT);
   }
-  else if (MHD_CONNECTION_INIT == c->state)
+  else if (mhd_HTTP_STAGE_INIT == c->stage)
     /* This termination code cannot be reported to the application
      * because application has not been informed yet about this request */
     MHD_connection_close_ (c,

@@ -58,7 +58,7 @@ respond_with_error_len (struct MHD_Connection *c,
   struct MHD_Response *err_res;
 
   mhd_assert (! c->stop_with_error); /* Do not send error twice */
-  mhd_assert (MHD_CONNECTION_REQ_RECV_FINISHED >= c->state);
+  mhd_assert (mhd_HTTP_STAGE_REQ_RECV_FINISHED >= c->stage);
 
   /* Discard most of the request data */
 
@@ -119,5 +119,5 @@ respond_with_error_len (struct MHD_Connection *c,
     return;
   }
   c->rp.response = err_res;
-  c->state = MHD_CONNECTION_START_REPLY;
+  c->stage = mhd_HTTP_STAGE_START_REPLY;
 }

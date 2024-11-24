@@ -152,7 +152,7 @@ build_reply_header (struct MHD_Connection *restrict c,
 
   mhd_assert (MHD_HTTP_VERSION_1_1 == c->rq.http_ver);
   mhd_assert ((0 == c->rq.cntn.cntn_size) || \
-              (MHD_CONNECTION_FULL_REQ_RECEIVED == c->state));
+              (mhd_HTTP_STAGE_FULL_REQ_RECEIVED == c->stage));
 
   buf_used = 0;
 
@@ -422,21 +422,21 @@ mhd_upgrade_prep_for_action (struct MHD_Request *restrict req,
   struct MHD_Connection *const c =
     mhd_cntnr_ptr (req, struct MHD_Connection, rq);
 
-  mhd_assert (MHD_CONNECTION_HEADERS_PROCESSED <= c->state);
-  mhd_assert (MHD_CONNECTION_FULL_REQ_RECEIVED >= c->state);
+  mhd_assert (mhd_HTTP_STAGE_HEADERS_PROCESSED <= c->stage);
+  mhd_assert (mhd_HTTP_STAGE_FULL_REQ_RECEIVED >= c->stage);
 
   if (req->have_chunked_upload &&
-      (MHD_CONNECTION_FOOTERS_RECEIVED >= c->state))
+      (mhd_HTTP_STAGE_FOOTERS_RECEIVED >= c->stage))
     return false; /* The request has not been fully received */
 
   if (! is_upload_act)
   {
-    if (MHD_CONNECTION_HEADERS_PROCESSED != c->state)
+    if (mhd_HTTP_STAGE_HEADERS_PROCESSED != c->stage)
       return false;
   }
   else
   {
-    if (MHD_CONNECTION_BODY_RECEIVING > c->state)
+    if (mhd_HTTP_STAGE_BODY_RECEIVING > c->stage)
       return false;
   }
 

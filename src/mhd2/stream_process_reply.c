@@ -892,7 +892,7 @@ mhd_stream_build_header_response (struct MHD_Connection *restrict c)
                       "No memory in the pool for the reply headers.");
     return false;
   }
-  c->state = MHD_CONNECTION_HEADERS_SENDING;
+  c->stage = mhd_HTTP_STAGE_HEADERS_SENDING;
   return true;
 }
 
@@ -978,7 +978,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
 
   if (0 == r->cntn_size)
   { /* 0-byte response is always ready */
-    c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+    c->stage = mhd_HTTP_STAGE_FULL_REPLY_SENT;
     return true;
   }
 
@@ -1017,7 +1017,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
         mhd_assert (MHD_SIZE_UNKNOWN == r->cntn_size);
         mhd_assert (c->rp.props.end_by_closing);
 
-        c->state = MHD_CONNECTION_FULL_REPLY_SENT;
+        c->stage = mhd_HTTP_STAGE_FULL_REPLY_SENT;
 
         return true;
       }
@@ -1093,7 +1093,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
     c->rp.rsp_cntn_read_pos = r->cntn_size;
   }
 
-  c->state = MHD_CONNECTION_UNCHUNKED_BODY_READY;
+  c->stage = mhd_HTTP_STAGE_UNCHUNKED_BODY_READY;
   return false;
 }
 
@@ -1151,7 +1151,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
   if ((0 == left_to_send) &&
       (mhd_RESPONSE_CONTENT_DATA_CALLBACK != r->cntn_dtype))
   {
-    c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
+    c->stage = mhd_HTTP_STAGE_CHUNKED_BODY_SENT;
     return true;
   }
   else if (mhd_RESPONSE_CONTENT_DATA_BUFFER == r->cntn_dtype)
@@ -1185,7 +1185,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
     if (mhd_DCC_ACTION_FINISH == c->rp.app_act.act)
     {
       mhd_assert (MHD_SIZE_UNKNOWN == r->cntn_size);
-      c->state = MHD_CONNECTION_CHUNKED_BODY_SENT;
+      c->stage = mhd_HTTP_STAGE_CHUNKED_BODY_SENT;
 
       return true;
     }
@@ -1229,7 +1229,7 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
   else
     c->rp.rsp_cntn_read_pos = r->cntn_size;
 
-  c->state = MHD_CONNECTION_CHUNKED_BODY_READY;
+  c->stage = mhd_HTTP_STAGE_CHUNKED_BODY_READY;
 
   return false;
 }
@@ -1253,7 +1253,7 @@ prep_chunked_footer_inn (struct MHD_Connection *restrict c)
   // struct MHD_HTTP_Res_Header *pos;
 
   mhd_assert (c->rp.props.chunked);
-  mhd_assert (MHD_CONNECTION_CHUNKED_BODY_SENT == c->state);
+  mhd_assert (mhd_HTTP_STAGE_CHUNKED_BODY_SENT == c->stage);
   mhd_assert (NULL != c->rp.response);
 
   buf_size = mhd_stream_maximize_write_buffer (c);
@@ -1313,6 +1313,6 @@ mhd_stream_prep_chunked_footer (struct MHD_Connection *restrict c)
                       "No memory in the pool for the reply chunked footer.");
     return true;
   }
-  c->state = MHD_CONNECTION_FOOTERS_SENDING;
+  c->stage = mhd_HTTP_STAGE_FOOTERS_SENDING;
   return false;
 }
