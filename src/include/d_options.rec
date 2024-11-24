@@ -154,7 +154,7 @@ Value: 121
 Comment: Provide TLS key and certificate data in-memory.
 + Works only if TLS mode is enabled.
 Type: struct MHD_DaemonOptionValueTlsCert
-Argument1: /* const */ char *mem_cert
+Argument1: const char *mem_cert
 Description1: The X.509 certificates chain in PEM format loaded into memory (not a filename).
 + The first certificate must be the server certificate, following by the chain of signing
 + certificates up to (but not including) CA root certificate.
@@ -174,7 +174,7 @@ CustomSetter: /* custom setter */
 +   size_t pass_size;
 +   cert_size = strlen (option->val.tls_cert_key.v_mem_cert);
 +   key_size = strlen (option->val.tls_cert_key.v_mem_key);
-+   if ((0 == cert_size) 
++   if ((0 == cert_size)
 +       || (0 == key_size))
 +     return MHD_SC_TLS_CONF_BAD_CERT;
 +   ++cert_size; /* Space for zero-termination */
