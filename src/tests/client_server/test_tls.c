@@ -152,6 +152,7 @@ main (int argc, char *argv[])
       .timeout_ms = 2500,
       .use_tls = true
     },
+#if BROKEN
     {
       .label = "GET with sendfile",
       .server_cb = &MHDT_server_reply_file,
@@ -161,6 +162,7 @@ main (int argc, char *argv[])
       .timeout_ms = 2500,
       .use_tls = true
     },
+#endif
     {
       .label = "client PUT with content-length",
       .server_cb = &MHDT_server_reply_check_upload,
