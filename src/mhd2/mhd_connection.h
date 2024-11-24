@@ -79,6 +79,106 @@
 
 struct MHD_Connection; /* forward declaration */
 
+#define mhd_CONN_FLAG_RECV      (1u << 0)
+#define mhd_CONN_FLAG_SEND      (1u << 1)
+#define mhd_CONN_FLAG_TLS       (1u << 2)
+#define mhd_CONN_FLAG_HANDSHAKE (1u << 3)
+#define mhd_CONN_FLAG_CLOSING   (1u << 4)
+#define mhd_CONN_FLAG_ERROR     (1u << 6)
+#define mhd_CONN_FLAG_CLOSED    (1u << 7)
+
+/**
+ * The states of connection TLS layer
+ * The bits (1 << 0) | (1 << 1) in enum values match the same bits in
+ * enum MHD_ConnectionEventLoopInfo and in enum mhd_SocketNetState values
+ */
+enum MHD_FIXED_ENUM_ mhd_ConnState
+{
+  /**
+   * TLS not started / plain TCP communication
+   */
+  mhd_CONN_STATE_TCP_CONNECTED = 0
+  ,
+  /**
+   * TLS handshake in progress, need to receive the data
+   */
+  mhd_CONN_STATE_TLS_HANDSHAKE_RECV =
+    mhd_CONN_FLAG_TLS | mhd_CONN_FLAG_HANDSHAKE | mhd_CONN_FLAG_RECV
+  ,
+  /**
+   * TLS handshake in progress, need to send the data
+   */
+  mhd_CONN_STATE_TLS_HANDSHAKE_SEND =
+    mhd_CONN_FLAG_TLS | mhd_CONN_FLAG_HANDSHAKE | mhd_CONN_FLAG_SEND
+  ,
+  /**
+   * TLS connection established, HTTP communication is performing
+   */
+  mhd_CONN_STATE_TLS_CONNECTED = mhd_CONN_FLAG_TLS
+  ,
+  /**
+   * Sending TLS message for shutting down TLS communication on the MHD side
+   */
+  mhd_CONN_STATE_TLS_SHUT_WR_SENDING =
+    mhd_CONN_FLAG_TLS | mhd_CONN_FLAG_CLOSING | mhd_CONN_FLAG_SEND
+  ,
+  /**
+   * Waiting to receive message from remote for shutting down TLS communication
+   */
+  mhd_CONN_STATE_TLS_LINGERING =
+    mhd_CONN_FLAG_TLS | mhd_CONN_FLAG_CLOSING | mhd_CONN_FLAG_RECV
+  ,
+  /**
+   * TLS communication gracefully closed.
+   * This state should be avoided. Use #mhd_CONN_STATE_TCP_CONNECTED or
+   * #mhd_CONN_STATE_CLOSED.
+   */
+  mhd_CONN_STATE_TLS_CLOSED = mhd_CONN_FLAG_TLS | mhd_CONN_FLAG_CLOSED
+  ,
+  /**
+   * TLS communication broken
+   */
+  mhd_CONN_STATE_TLS_FAILED = mhd_CONN_FLAG_TLS | mhd_CONN_FLAG_ERROR
+#if 0 // TODO: Extend to TCP states
+  ,
+  /**
+   * Setting TCP shutdown WR
+   */
+  mhd_CONN_STATE_TCP_SHUT_WR_SENDING =
+    mhd_CONN_FLAG_CLOSING | mhd_CONN_FLAG_SEND
+  ,
+  /**
+   * Waiting for EOF from the remote side
+   */
+  mhd_CONN_STATE_TCP_LINGERING =
+    mhd_CONN_FLAG_CLOSING | mhd_CONN_FLAG_RECV
+#endif
+  ,
+  /**
+   * TCP communication closed
+   */
+  mhd_CONN_STATE_CLOSED = mhd_CONN_FLAG_CLOSED
+};
+
+#ifdef MHD_ENABLE_HTTPS
+/**
+ * The status of TLS buffer for incoming (receive) data
+ */
+enum mhd_TlsBufDataIn
+{
+  /**
+   * No data in pending in the TLS buffer
+   */
+  mhd_TLS_BUF_NO_DATA = 0
+  ,
+  /**
+   * The incoming data in already pending in the TLS buffer
+   */
+  mhd_TLS_BUF_HAS_DATA_IN = mhd_SOCKET_NET_STATE_RECV_READY
+};
+#endif /* MHD_ENABLE_HTTPS */
+
+
 /**
  * What is this connection waiting for?
  */
@@ -413,7 +513,17 @@ struct MHD_Connection
    * deallocated separately.
    */
   struct mhd_TlsConnData *tls;
-#endif
+
+  /**
+   * The state of the communication layer
+   */
+  enum mhd_ConnState conn_state;
+
+  /**
+   * Status of TLS buffer for the incoming data
+   */
+  enum mhd_TlsBufDataIn tls_has_data_in;
+#endif /* MHD_ENABLE_HTTPS */
 
   /**
    * 'true' if connection is in 'process ready' list,
@@ -616,11 +726,27 @@ struct MHD_Connection
  * Returns non-zero if connection has TLS enabled or zero otherwise
  */
 #  define mhd_C_HAS_TLS(c) (((c)->tls) ? (! 0) : (0))
-#else
+#else  /* ! MHD_ENABLE_HTTPS */
 /**
  * Returns non-zero if connection has TLS enabled or zero otherwise
  */
 #  define mhd_C_HAS_TLS(c) (0)
-#endif
+#endif /* ! MHD_ENABLE_HTTPS */
+
+
+#ifdef MHD_ENABLE_HTTPS
+/**
+ * Returns #mhd_SOCKET_NET_STATE_RECV_READY if connection has incoming data
+ * pending in TLS buffers
+ */
+#  define mhd_C_HAS_TLS_DATA_IN(c) \
+        (((c)->tls) ? ((unsigned int) ((c)->tls_has_data_in)) : (0u))
+#else  /* ! MHD_ENABLE_HTTPS */
+/**
+ * Returns #mhd_SOCKET_NET_STATE_RECV_READY if connection has incoming data
+ * pending in TLS buffers
+ */
+#  define mhd_C_HAS_TLS_DATA_IN(c) (0)
+#endif /* ! MHD_ENABLE_HTTPS */
 
 #endif /* ! MHD_CONNECTION_H */

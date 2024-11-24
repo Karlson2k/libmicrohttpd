@@ -108,7 +108,8 @@ mhd_conn_mark_ready_update3 (struct MHD_Connection *restrict c,
 {
   if (force_ready ||
       (0 !=
-       (((unsigned int) c->sk.ready) & ((unsigned int) c->event_loop_info)
+       ((((unsigned int) c->sk.ready) | mhd_C_HAS_TLS_DATA_IN (c))
+        & ((unsigned int) c->event_loop_info)
         & (MHD_EVENT_LOOP_INFO_RECV | MHD_EVENT_LOOP_INFO_SEND))))
     mhd_conn_mark_ready (c, d);
   else

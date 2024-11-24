@@ -71,6 +71,10 @@
 
 #include "mhd_limits.h"
 
+#ifdef MHD_ENABLE_HTTPS
+#  include "mhd_tls_funcs.h"
+#endif
+
 #if defined(HAVE_SENDMSG) || defined(HAVE_WRITEV) || \
   defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_USE_VECT_SEND 1
@@ -751,7 +755,7 @@ post_send_setopt (struct MHD_Connection *connection,
 static MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (5) enum mhd_SocketError
-mhd_plain_send (struct MHD_Connection *restrict c,
+mhd_send_plain (struct MHD_Connection *restrict c,
                 size_t buf_size,
                 const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
                 bool push_data,
@@ -760,6 +764,9 @@ mhd_plain_send (struct MHD_Connection *restrict c,
   /* plaintext transmission */
   ssize_t res;
   bool full_buf_sent;
+
+  mhd_assert (! mhd_C_HAS_TLS (c));
+  mhd_assert (! mhd_D_HAS_TLS (c->daemon));
 
   if (buf_size > MHD_SCKT_SEND_MAX_SIZE_)
   {
@@ -816,6 +823,52 @@ mhd_plain_send (struct MHD_Connection *restrict c,
 }
 
 
+#ifdef MHD_ENABLE_HTTPS
+
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (3,2)
+MHD_FN_PAR_OUT_ (5) enum mhd_SocketError
+mhd_send_tls (struct MHD_Connection *restrict c,
+              size_t buf_size,
+              const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+              bool push_data,
+              size_t *restrict sent)
+{
+  /* TLS connection */
+  enum mhd_SocketError res;
+
+  mhd_assert (mhd_C_HAS_TLS (c));
+  mhd_assert (mhd_D_HAS_TLS (c->daemon));
+  mhd_assert (0 != buf_size);
+
+  pre_send_setopt (c, false, push_data);
+
+  res = mhd_tls_conn_send (c->tls,
+                           buf_size,
+                           buf,
+                           sent);
+
+  if (mhd_SOCKET_ERR_NO_ERROR != res)
+  {
+    if (mhd_SOCKET_ERR_AGAIN == res)
+      c->sk.ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
+                    (((unsigned int) c->sk.ready)
+                     & (~(enum mhd_SocketNetState)
+                        mhd_SOCKET_NET_STATE_SEND_READY));
+    return res;
+  }
+
+  /* If there is a need to push the data from network buffers
+   * call post_send_setopt(). */
+  if (push_data && (buf_size == *sent))
+    post_send_setopt (c, false, true);
+
+  return mhd_SOCKET_ERR_NO_ERROR;
+}
+
+
+#endif /* MHD_ENABLE_HTTPS */
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (5) enum mhd_SocketError
@@ -825,28 +878,19 @@ mhd_send_data (struct MHD_Connection *restrict connection,
                bool push_data,
                size_t *restrict sent)
 {
-  const bool tls_conn = false; // TODO: TLS support
-
   mhd_assert (MHD_INVALID_SOCKET != connection->sk.fd);
   mhd_assert (mhd_HTTP_STAGE_CLOSED != connection->stage);
 
-  if (tls_conn)
-  {
-    enum mhd_SocketError ret;
+#ifdef MHD_ENABLE_HTTPS
+  if (mhd_C_HAS_TLS (connection))
+    return mhd_send_tls (connection,
+                         buf_size,
+                         buf,
+                         push_data,
+                         sent);
+#endif /* MHD_ENABLE_HTTPS */
 
-#ifdef HTTPS_SUPPORT
-    pre_send_setopt (connection,
-                     (! tls_conn),
-                     push_data);
-    ret = mhd_SOCKET_ERR_OTHER;
-    mhd_assert (0 && "Not implemented yet");
-#else  /* ! HTTPS_SUPPORT  */
-    ret = mhd_SOCKET_ERR_NOTCONN;
-#endif /* ! HTTPS_SUPPORT  */
-    return ret;
-  }
-
-  return mhd_plain_send (connection,
+  return mhd_send_plain (connection,
                          buf_size,
                          buf,
                          push_data,
@@ -885,9 +929,7 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
   bool no_vec; /* Is vector-send() disallowed? */
 
   no_vec = false;
-#ifdef HTTPS_SUPPORT
-  no_vec = no_vec || (false); // TODO: TLS support
-#endif /* HTTPS_SUPPORT */
+  no_vec = no_vec || (mhd_C_HAS_TLS (connection));
 #if (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL) ) && \
   defined(mhd_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
   defined(mhd_SEND_SPIPE_SUPPRESS_NEEDED)
@@ -947,7 +989,6 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
                          push_hdr,
                          sent);
 
-    // TODO: check 'send-ready'
     if ((mhd_SOCKET_ERR_NO_ERROR == ret) &&
         (header_size == *sent) &&
         (0 != body_size) &&
@@ -975,6 +1016,8 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
     return ret;
   }
 #ifdef mhd_USE_VECT_SEND
+
+  mhd_assert (! mhd_C_HAS_TLS (connection));
 
   if (header_size > (header_size + body_size))
   {
@@ -1133,7 +1176,7 @@ mhd_send_sendfile (struct MHD_Connection *restrict c,
   mhd_assert (mhd_REPLY_CNTN_LOC_FILE == c->rp.cntn_loc);
   mhd_assert (MHD_SIZE_UNKNOWN != c->rp.response->cntn_size);
   mhd_assert (chunk_size <= (size_t) SSIZE_MAX);
-  // mhd_assert (0 == (connection->daemon->options & MHD_USE_TLS)); // TODO: TLS support
+  mhd_assert (! mhd_C_HAS_TLS (c));
 
   send_size = 0;
   push_data = true;
@@ -1373,7 +1416,8 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
   DWORD cnt_w;
 #endif /* MHD_SOCKETS_KIND_WINSOCK */
 
-  // TODO: assert for non-TLS
+  mhd_assert (! mhd_C_HAS_TLS (connection));
+  mhd_assert (! mhd_D_HAS_TLS (connection->daemon));
 
   mhd_assert (MHD_INVALID_SOCKET != connection->sk.fd);
   mhd_assert (mhd_HTTP_STAGE_CLOSED != connection->stage);
@@ -1492,7 +1536,7 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
 
 #endif /* mhd_USE_VECT_SEND */
 
-#if ! defined(mhd_USE_VECT_SEND) || defined(HTTPS_SUPPORT) || \
+#if ! defined(mhd_USE_VECT_SEND) || defined(MHD_ENABLE_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
 
 
@@ -1574,7 +1618,7 @@ send_iov_emu (struct MHD_Connection *restrict connection,
 }
 
 
-#endif /* !mhd_USE_VECT_SEND || HTTPS_SUPPORT
+#endif /* !mhd_USE_VECT_SEND || MHD_ENABLE_HTTPS
           || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
@@ -1585,10 +1629,10 @@ mhd_send_iovec (struct MHD_Connection *restrict connection,
                 size_t *restrict sent)
 {
 #ifdef mhd_USE_VECT_SEND
-#if defined(HTTPS_SUPPORT) || \
+#if defined(MHD_ENABLE_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
   bool use_iov_send = true;
-#endif /* HTTPS_SUPPORT || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+#endif /* MHD_ENABLE_HTTPS || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 #endif /* mhd_USE_VECT_SEND */
 
   mhd_assert (NULL != connection->rp.resp_iov.iov);
@@ -1596,24 +1640,22 @@ mhd_send_iovec (struct MHD_Connection *restrict connection,
               connection->rp.response->cntn_dtype);
   mhd_assert (connection->rp.resp_iov.cnt > connection->rp.resp_iov.sent);
 #ifdef mhd_USE_VECT_SEND
-#if defined(HTTPS_SUPPORT) || \
+#if defined(MHD_ENABLE_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
-#ifdef HTTPS_SUPPORT
   use_iov_send = use_iov_send &&
-                 (true); // TODO: TLS support
-#endif /* HTTPS_SUPPORT */
+                 (! mhd_C_HAS_TLS (connection));
 #ifdef mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED
   use_iov_send = use_iov_send && (connection->daemon->sigpipe_blocked ||
                                   connection->sk.props.has_spipe_supp);
 #endif /* mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
   if (use_iov_send)
-#endif /* HTTPS_SUPPORT || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+#endif /* MHD_ENABLE_HTTPS || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
   return send_iov_nontls (connection, r_iov, push_data, sent);
 #endif /* mhd_USE_VECT_SEND */
 
-#if ! defined(mhd_USE_VECT_SEND) || defined(HTTPS_SUPPORT) || \
+#if ! defined(mhd_USE_VECT_SEND) || defined(MHD_ENABLE_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
   return send_iov_emu (connection, r_iov, push_data, sent);
-#endif /* !mhd_USE_VECT_SEND || HTTPS_SUPPORT
+#endif /* !mhd_USE_VECT_SEND || MHD_ENABLE_HTTPS
           || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 }

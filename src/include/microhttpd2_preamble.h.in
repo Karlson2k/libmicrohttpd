@@ -1292,6 +1292,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_TLS_CONNECTION_INIT_FAILED = 51201
   ,
   /**
+   * Failed to perform TLS handshake
+   */
+  MHD_SC_TLS_CONNECTION_HANDSHAKED_FAILED = 51220
+  ,
+  /**
    * Something wrong in the internal MHD logic.
    * This error should be never returned if MHD works as expected.
    * If this code is ever returned, please report to MHD maintainers.

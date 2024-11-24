@@ -108,8 +108,9 @@ upgrade_files = \
 
 tls_common_files = \
   mhd_tls_choice.h \
-  mhd_tls_funcs.c           mhd_tls_funcs.h \
-  tls_dh_params.h
+  mhd_tls_funcs.c           mhd_tls_funcs.h           mhd_tls_enums.h \
+  tls_dh_params.h \
+  conn_tls_check.c          conn_tls_check.h
 
 tls_gnu_files = \
   tls_gnu_tls_lib.h         tls_gnu_daemon_data.h     tls_gnu_conn_data.h \

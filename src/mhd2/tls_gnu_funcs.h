@@ -38,6 +38,9 @@
 
 #include "mhd_status_code_int.h"
 
+#include "mhd_tls_enums.h"
+#include "mhd_socket_error.h"
+
 /**
  * The structure with daemon-specific GnuTLS data
  */
@@ -139,5 +142,78 @@ MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (3);
 MHD_INTERNAL void
 mhd_tls_gnu_conn_deinit (struct mhd_TlsGnuConnData *restrict c_tls)
 MHD_FN_PAR_NONNULL_ALL_;
+
+
+/* ** TLS connection establishing ** */
+
+/**
+ * Perform TLS handshake
+ * @param c_tls the connection TLS handle
+ * @return #mhd_TLS_PROCED_SUCCESS if completed successfully
+ *         or other enum mhd_TlsProcedureResult values
+ */
+MHD_INTERNAL enum mhd_TlsProcedureResult
+mhd_tls_gnu_conn_handshake (struct mhd_TlsGnuConnData *restrict c_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Perform shutdown of TLS layer
+ * @param c_tls the connection TLS handle
+ * @return #mhd_TLS_PROCED_SUCCESS if completed successfully
+ *         or other enum mhd_TlsProcedureResult values
+ */
+MHD_INTERNAL enum mhd_TlsProcedureResult
+mhd_tls_gnu_conn_shutdown (struct mhd_TlsGnuConnData *restrict c_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_;
+
+
+/* ** Data sending and receiving over TLS connection ** */
+
+/**
+ * Receive the data from the remote side over TLS connection
+ *
+ * @param c_tls the connection TLS handle
+ * @param buf_size the size of the @a buf buffer
+ * @param[out] buf the buffer to fill with the received data
+ * @param[out] received the pointer to variable to get the size of the data
+ *                      actually put to the @a buffer
+ * @return mhd_SOCKET_ERR_NO_ERROR if receive succeed (the @a received gets
+ *         the received size) or socket error
+ */
+MHD_INTERNAL enum mhd_SocketError
+mhd_tls_gnu_conn_recv (struct mhd_TlsGnuConnData *restrict c_tls,
+                       size_t buf_size,
+                       char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+                       size_t *restrict received)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4);
+
+/**
+ * Check whether any incoming data is pending in the TLS buffers
+ *
+ * @param c_tls the connection TLS handle
+ * @return 'true' if any incoming remote data is already pending (the TLS recv()
+ *          call can be performed),
+ *         'false' otherwise
+ */
+MHD_INTERNAL bool
+mhd_tls_gnu_conn_has_data_in (struct mhd_TlsGnuConnData *restrict c_tls)
+MHD_FN_PAR_NONNULL_ALL_;
+
+/**
+ * Send data to the remote side over TLS connection
+ *
+ * @param c_tls the connection TLS handle
+ * @param buffer_size the size of the @a buffer (in bytes)
+ * @param buffer content of the buffer to send
+ * @param[out] sent the pointer to get amount of actually sent bytes
+ * @return mhd_SOCKET_ERR_NO_ERROR if send succeed (the @a sent gets
+ *         the sent size) or socket error
+ */
+MHD_INTERNAL enum mhd_SocketError
+mhd_tls_gnu_conn_send (struct mhd_TlsGnuConnData *restrict c_tls,
+                       size_t buf_size,
+                       const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+                       size_t *restrict sent)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4);
 
 #endif /* ! MHD_TLS_GNU_FUNCS_H */

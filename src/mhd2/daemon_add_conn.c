@@ -249,10 +249,13 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
                        "the new connection");
           ret = MHD_SC_TLS_CONNECTION_INIT_FAILED;
         }
-#ifndef NDEBUG
         else
+        {
+          c->conn_state = mhd_CONN_STATE_TLS_HANDSHAKE_RECV;
+#ifndef NDEBUG
           c->dbg.tls_inited = true;
 #endif
+        }
       }
 
       if (MHD_SC_OK == ret)

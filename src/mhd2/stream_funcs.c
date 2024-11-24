@@ -52,6 +52,10 @@
 #include "conn_mark_ready.h"
 #include "stream_process_reply.h"
 
+#ifdef MHD_ENABLE_HTTPS
+#  include "mhd_tls_funcs.h"
+#endif
+
 #include "mhd_public_api.h"
 
 
@@ -822,7 +826,28 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
   }
   else
   {
-    if (mhd_socket_shut_wr (c->sk.fd) && (! c->sk.state.rmt_shut_wr))
+    bool use_graceful_closing;
+
+    mhd_assert (! mhd_SOCKET_ERR_IS_HARD (c->sk.state.discnt_err));
+
+    use_graceful_closing = true;
+#ifdef MHD_ENABLE_HTTPS
+    if (mhd_C_HAS_TLS (c))
+    {
+      if ((0 != (((unsigned int) c->sk.ready)
+                 & mhd_SOCKET_NET_STATE_SEND_READY))
+          || c->sk.props.is_nonblck)
+        use_graceful_closing =
+          (mhd_TLS_PROCED_FAILED != mhd_tls_conn_shutdown (c->tls));
+    }
+#endif /* MHD_ENABLE_HTTPS */
+    else if (1)
+    {
+      use_graceful_closing = mhd_socket_shut_wr (c->sk.fd);
+      if (use_graceful_closing)
+        use_graceful_closing = (! c->sk.state.rmt_shut_wr); /* Skip as already closed */
+    }
+    if (use_graceful_closing)
     {
       (void) 0; // TODO: start local lingering phase
       c->stage = mhd_HTTP_STAGE_PRE_CLOSING; // TODO: start local lingering phase

@@ -302,13 +302,11 @@ setup_reply_properties (struct MHD_Connection *restrict c)
       c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_IOV;
       break;
     case mhd_RESPONSE_CONTENT_DATA_FILE:
-#if 0 // TODO: TLS support
-      if (use_tls)
+      if (mhd_C_HAS_TLS (c))
       {
         c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_CONN_BUF;
         break;
       }
-#endif
 #ifdef MHD_USE_SENDFILE
       if (r->cntn.file.use_sf)
       {

@@ -19,52 +19,54 @@
 */
 
 /**
- * @file src/mhd2/tls_gnu_conn_data.h
- * @brief  The definition of GnuTLS daemon-specific data structures
+ * @file src/mhd2/mhd_tls_enums.h
+ * @brief  The definition of internal enums used for TLS communication
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_TLS_GNU_CONN_DATA_H
-#define MHD_TLS_GNU_CONN_DATA_H 1
+#ifndef MHD_TLS_ENUMS_H
+#define MHD_TLS_ENUMS_H 1
 
 #include "mhd_sys_options.h"
 
-#ifndef MHD_USE_GNUTLS
-#error This header can be used only if GnuTLS is enabled
+#ifndef MHD_ENABLE_HTTPS
+#error This header should be used only if HTTPS is enabled
 #endif
 
-#include "tls_gnu_tls_lib.h"
-
-#ifndef NDEBUG
-struct mhd_TlsGnuConnDebug
-{
-  unsigned int is_inited;
-  unsigned int is_tls_handshake_completed;
-  unsigned int is_finished;
-  unsigned int is_failed;
-};
-#endif /* ! NDEBUG */
-
 /**
- * The structure with connection-specific GnuTLS data
+ * Result of performing TLS procedure
  */
-struct mhd_TlsGnuConnData
+enum MHD_FIXED_ENUM_ mhd_TlsProcedureResult
 {
   /**
-   * GnuTLS session data
+   * Completed successfully
    */
-  gnutls_session_t sess;
-
+  mhd_TLS_PROCED_SUCCESS = 0
+  ,
   /**
-   * 'true' if received EOF (the remote side initiated shutting down)
+   * In progress, receive operation interrupted
    */
-  bool rmt_shut_tls_wr;
-#ifndef NDEBUG
+  mhd_TLS_PROCED_RECV_INTERRUPTED
+  ,
   /**
-   * Debugging data
+   * In progress, send operation interrupted
    */
-  struct mhd_TlsGnuConnDebug dbg;
-#endif /* ! NDEBUG */
+  mhd_TLS_PROCED_SEND_INTERRUPTED
+  ,
+  /**
+   * In progress, need to receive more data
+   */
+  mhd_TLS_PROCED_RECV_MORE_NEEDED
+  ,
+  /**
+   * In progress, need to send more data
+   */
+  mhd_TLS_PROCED_SEND_MORE_NEEDED
+  ,
+  /**
+   * Procedure failed
+   */
+  mhd_TLS_PROCED_FAILED
 };
 
-#endif /* ! MHD_TLS_GNU_CONN_DATA_H */
+#endif /* ! MHD_TLS_ENUMS_H */

@@ -57,8 +57,6 @@ mhd_conn_data_recv (struct MHD_Connection *restrict c,
   mhd_assert ((0 == (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY)) || \
               has_err);
 
-  // TODO: TLS support: handshake/transport layer
-
   buf = c->read_buffer + c->read_buffer_offset;
   buf_size = c->read_buffer_size - c->read_buffer_offset;
 

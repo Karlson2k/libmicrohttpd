@@ -33,14 +33,19 @@
 #include "mhd_socket_type.h"
 #include "sys_sockets_headers.h"
 #include "mhd_sockets_macros.h"
-#include "mhd_socket_error_funcs.h"
 
 #include "mhd_limits.h"
 
+#include "mhd_assert.h"
+#include "mhd_socket_error_funcs.h"
+
+#ifdef MHD_ENABLE_HTTPS
+#  include "mhd_tls_funcs.h"
+#endif
 
 static MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
-mhd_plain_recv (struct MHD_Connection *restrict c,
+mhd_recv_plain (struct MHD_Connection *restrict c,
                 size_t buf_size,
                 char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
                 size_t *restrict received)
@@ -76,6 +81,43 @@ mhd_plain_recv (struct MHD_Connection *restrict c,
 }
 
 
+#ifdef MHD_ENABLE_HTTPS
+
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
+mhd_recv_tls (struct MHD_Connection *restrict c,
+              size_t buf_size,
+              char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+              size_t *restrict received)
+{
+  /* TLS connection */
+  enum mhd_SocketError res;
+
+  mhd_assert (mhd_C_HAS_TLS (c));
+  mhd_assert (0 != buf_size);
+
+  res = mhd_tls_conn_recv (c->tls,
+                           buf_size,
+                           buf,
+                           received);
+  c->tls_has_data_in = mhd_TLS_BUF_NO_DATA; /* Updated with the actual value below */
+
+  if (mhd_SOCKET_ERR_AGAIN == res)
+    c->sk.ready = (enum mhd_SocketNetState) /* Clear 'recv-ready' */
+                  (((unsigned int) c->sk.ready)
+                   & (~(enum mhd_SocketNetState)
+                      mhd_SOCKET_NET_STATE_RECV_READY));
+  else if ((mhd_SOCKET_ERR_NO_ERROR == res) &&
+           (*received == buf_size) &&
+           mhd_tls_conn_has_data_in (c->tls))
+    c->tls_has_data_in = mhd_TLS_BUF_HAS_DATA_IN;
+
+  return res;
+}
+
+
+#endif /* MHD_ENABLE_HTTPS */
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
 mhd_recv (struct MHD_Connection *restrict c,
@@ -86,7 +128,13 @@ mhd_recv (struct MHD_Connection *restrict c,
   mhd_assert (MHD_INVALID_SOCKET != c->sk.fd);
   mhd_assert (mhd_HTTP_STAGE_CLOSED != c->stage);
 
-  // TODO: implement TLS support
+#ifdef MHD_ENABLE_HTTPS
+  if (mhd_C_HAS_TLS (c))
+    return mhd_recv_tls (c,
+                         buf_size,
+                         buf,
+                         received);
+#endif /* MHD_ENABLE_HTTPS */
 
-  return mhd_plain_recv (c, buf_size, buf, received);
+  return mhd_recv_plain (c, buf_size, buf, received);
 }

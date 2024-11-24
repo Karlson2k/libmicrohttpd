@@ -312,7 +312,7 @@ static const struct MHD_StringNullable tlsgnulib_base_priorities[] = {
   {0, NULL} /* Replaced with app-defined name */
   ,
 #ifdef mhd_TLS_GNU_SUPPORTS_MULTI_KEYWORDS_PRIORITY
-  mhd_MSTR_INIT ("@LIBMICROHTTPD,@SYSTEM")
+  mhd_MSTR_INIT ("@LIBMICROHTTPD,SYSTEM")
 #else
   mhd_MSTR_INIT ("@LIBMICROHTTPD")
   ,
@@ -539,6 +539,9 @@ mhd_tls_gnu_conn_init (const struct mhd_TlsGnuDaemonData *restrict d_tls,
         (void) alpn_res; /* Ignore any possible ALPN set errors */
       }
 #endif /* mhd_TLS_GNU_HAS_ALPN */
+#ifndef NDEBUG
+      c_tls->dbg.is_inited = true;
+#endif /* ! NDEBUG */
 
       return true; /* Success exit point */
     }
@@ -559,5 +562,208 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_tls_gnu_conn_deinit (struct mhd_TlsGnuConnData *restrict c_tls)
 {
   mhd_assert (NULL != c_tls->sess);
+  mhd_assert (c_tls->dbg.is_inited);
   gnutls_deinit (c_tls->sess);
+}
+
+
+/* ** TLS connection establishing ** */
+
+MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
+enum mhd_TlsProcedureResult
+mhd_tls_gnu_conn_handshake (struct mhd_TlsGnuConnData *restrict c_tls)
+{
+  int res;
+
+  mhd_assert (c_tls->dbg.is_inited);
+  mhd_assert (! c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_failed);
+
+  res = gnutls_handshake (c_tls->sess);
+  switch (res)
+  {
+  case GNUTLS_E_SUCCESS:
+#ifndef NDEBUG
+    c_tls->dbg.is_tls_handshake_completed = true;
+#endif /* ! NDEBUG */
+    return mhd_TLS_PROCED_SUCCESS;
+  case GNUTLS_E_INTERRUPTED:
+  case GNUTLS_E_AGAIN:
+  case GNUTLS_E_WARNING_ALERT_RECEIVED: /* Ignore any warning for now */
+    if (1)
+    {
+      int is_sending;
+
+      is_sending = gnutls_record_get_direction (c_tls->sess);
+      if (GNUTLS_E_INTERRUPTED == res)
+        return is_sending ?
+               mhd_TLS_PROCED_SEND_INTERRUPTED :
+               mhd_TLS_PROCED_RECV_INTERRUPTED;
+      return is_sending ?
+             mhd_TLS_PROCED_SEND_MORE_NEEDED :
+             mhd_TLS_PROCED_RECV_MORE_NEEDED;
+    }
+    break;
+  default:
+    break;
+  }
+#ifndef NDEBUG
+  c_tls->dbg.is_failed = true;
+#endif /* ! NDEBUG */
+  return mhd_TLS_PROCED_FAILED;
+}
+
+
+MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
+enum mhd_TlsProcedureResult
+mhd_tls_gnu_conn_shutdown (struct mhd_TlsGnuConnData *restrict c_tls)
+{
+  int res;
+
+  mhd_assert (c_tls->dbg.is_inited);
+  mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_failed);
+
+  res = gnutls_bye (c_tls->sess,
+                    c_tls->rmt_shut_tls_wr ? GNUTLS_SHUT_WR : GNUTLS_SHUT_RDWR);
+  switch (res)
+  {
+  case GNUTLS_E_SUCCESS:
+#ifndef NDEBUG
+    c_tls->dbg.is_finished = true;
+#endif /* ! NDEBUG */
+    return mhd_TLS_PROCED_SUCCESS;
+  case GNUTLS_E_INTERRUPTED:
+  case GNUTLS_E_AGAIN:
+  case GNUTLS_E_WARNING_ALERT_RECEIVED: /* Ignore any warning for now */
+    if (1)
+    {
+      int is_sending;
+
+      is_sending = gnutls_record_get_direction (c_tls->sess);
+      if (GNUTLS_E_INTERRUPTED == res)
+        return is_sending ?
+               mhd_TLS_PROCED_SEND_INTERRUPTED :
+               mhd_TLS_PROCED_RECV_INTERRUPTED;
+      return is_sending ?
+             mhd_TLS_PROCED_SEND_MORE_NEEDED :
+             mhd_TLS_PROCED_RECV_MORE_NEEDED;
+    }
+    break;
+  default:
+    break;
+  }
+#ifndef NDEBUG
+  c_tls->dbg.is_failed = true;
+#endif /* ! NDEBUG */
+  return mhd_TLS_PROCED_FAILED;
+}
+
+
+/* ** Data receiving and sending ** */
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_SIZE_ (3,2)
+MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
+mhd_tls_gnu_conn_recv (struct mhd_TlsGnuConnData *restrict c_tls,
+                       size_t buf_size,
+                       char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+                       size_t *restrict received)
+{
+  ssize_t res;
+
+  mhd_assert (c_tls->dbg.is_inited);
+  mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_failed);
+
+  /* Check for GnuTLS return value limitation */
+  if (0 > (ssize_t) buf_size)
+    buf_size = (ssize_t) ((~((size_t) 0u)) >> 1); /* SSIZE_MAX */
+
+  res = gnutls_record_recv (c_tls->sess,
+                            buf,
+                            buf_size);
+  if (0 >= res)
+  {
+    *received = 0;
+    switch (res)
+    {
+    case 0: /* Not an error */
+      c_tls->rmt_shut_tls_wr = true;
+      return mhd_SOCKET_ERR_NO_ERROR;
+    case GNUTLS_E_AGAIN:
+      return mhd_SOCKET_ERR_AGAIN;
+    case GNUTLS_E_INTERRUPTED:
+      return mhd_SOCKET_ERR_INTR;
+    case GNUTLS_E_PREMATURE_TERMINATION:
+      return mhd_SOCKET_ERR_CONNRESET;
+    default:
+      break;
+    }
+    /* Treat all other kinds of errors as hard errors */
+#ifndef NDEBUG
+    c_tls->dbg.is_failed = true;
+#endif /* ! NDEBUG */
+    return mhd_SOCKET_ERR_TLS;
+  }
+
+  *received = (size_t) res;
+  return mhd_SOCKET_ERR_NO_ERROR;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
+mhd_tls_gnu_conn_has_data_in (struct mhd_TlsGnuConnData *restrict c_tls)
+{
+  return 0 != gnutls_record_check_pending (c_tls->sess);
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (3,2)
+MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
+mhd_tls_gnu_conn_send (struct mhd_TlsGnuConnData *restrict c_tls,
+                       size_t buf_size,
+                       const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+                       size_t *restrict sent)
+{
+  ssize_t res;
+
+  mhd_assert (c_tls->dbg.is_inited);
+  mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_failed);
+
+  /* Check for GnuTLS return value limitation */
+  if (0 > (ssize_t) buf_size)
+    buf_size = (ssize_t) ((~((size_t) 0u)) >> 1); /* SSIZE_MAX */
+
+  res = gnutls_record_send (c_tls->sess,
+                            buf,
+                            buf_size);
+
+  mhd_assert (0 != res);
+
+  if (0 > res)
+  {
+    *sent = 0;
+    switch (res)
+    {
+    case GNUTLS_E_AGAIN:
+      return mhd_SOCKET_ERR_AGAIN;
+    case GNUTLS_E_INTERRUPTED:
+      return mhd_SOCKET_ERR_INTR;
+    case GNUTLS_E_PREMATURE_TERMINATION:
+      return mhd_SOCKET_ERR_CONNRESET;
+    default:
+      break;
+    }
+    /* Treat all other kinds of errors as hard errors */
+#ifndef NDEBUG
+    c_tls->dbg.is_failed = true;
+#endif /* ! NDEBUG */
+    return mhd_SOCKET_ERR_TLS;
+  }
+
+  *sent = (size_t) res;
+  return mhd_SOCKET_ERR_NO_ERROR;
 }

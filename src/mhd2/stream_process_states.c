@@ -55,24 +55,13 @@
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
 {
-  /* Do not update states of suspended connection */
-  mhd_assert (! c->suspended);
+#ifdef MHD_ENABLE_HTTPS
+  mhd_assert (! mhd_C_HAS_TLS (c) || \
+              (mhd_CONN_STATE_TLS_CONNECTED == c->conn_state));
+  mhd_assert (mhd_C_HAS_TLS (c) || \
+              (mhd_CONN_STATE_TCP_CONNECTED == c->conn_state));
+#endif /* MHD_ENABLE_HTTPS */
 
-  if (0 != (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY))
-  {
-    mhd_assert (0 && "Should be handled earlier");
-    mhd_conn_start_closing_skt_err (c);
-    return false;
-  }
-
-#if 0 // def HTTPS_SUPPORT // TODO: implement TLS support
-  if (MHD_TLS_CONN_NO_TLS != connection->tls_state)
-  {   /* HTTPS connection. */
-    switch (connection->tls_state)
-    {
-    }
-  }
-#endif /* HTTPS_SUPPORT */
   switch (c->stage)
   {
   case mhd_HTTP_STAGE_INIT:
@@ -288,9 +277,12 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 
   while (! c->suspended)
   {
-#ifdef HTTPS_SUPPORT
-    // TODO: support TLS, handshake
-#endif /* HTTPS_SUPPORT */
+#ifdef MHD_ENABLE_HTTPS
+    mhd_assert (! mhd_C_HAS_TLS (c) || \
+                (mhd_CONN_STATE_TLS_CONNECTED == c->conn_state));
+    mhd_assert (mhd_C_HAS_TLS (c) || \
+                (mhd_CONN_STATE_TCP_CONNECTED == c->conn_state));
+#endif /* MHD_ENABLE_HTTPS */
     switch (c->stage)
     {
     case mhd_HTTP_STAGE_INIT:

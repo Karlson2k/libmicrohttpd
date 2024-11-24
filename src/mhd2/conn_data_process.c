@@ -46,26 +46,51 @@
 #include "conn_data_send.h"
 #include "stream_process_states.h"
 
+#ifdef MHD_ENABLE_HTTPS
+#  include "conn_tls_check.h"
+#endif /* MHD_ENABLE_HTTPS */
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
 {
+  bool send_ready_state_known;
+  bool has_sock_err;
+  bool data_processed;
+
+#ifdef MHD_ENABLE_HTTPS
+  if (mhd_C_HAS_TLS (c))
+  {
+    switch (mhd_conn_tls_check (c))
+    {
+    case mhd_CONN_TLS_CHECK_OK:
+      break;        /* Process HTTP data */
+    case mhd_CONN_TLS_CHECK_HANDSHAKING:
+      return true;  /* TLS is not yet ready */
+    case mhd_CONN_TLS_CHECK_BROKEN:
+      return false; /* Connection is broken */
+    default:
+      mhd_assert (0 && "Impossible value");
+      MHD_UNREACHABLE_;
+    }
+  }
+#endif /* MHD_ENABLE_HTTPS */
+
   /* The "send-ready" state is known if system polling call is edge-triggered
      (it always checks for both send- and recv-ready) or if connection needs
      sending (therefore "send-ready" was explicitly checked by sockets polling
      call). */
-  const bool send_ready_state_known =
+  send_ready_state_known =
     ((mhd_D_IS_USING_EDGE_TRIG (c->daemon)) ||
      (0 != (MHD_EVENT_LOOP_INFO_SEND & c->event_loop_info)));
-  const bool has_sock_err =
+  has_sock_err =
     (0 != (mhd_SOCKET_NET_STATE_ERROR_READY & c->sk.ready));
-  bool data_processed;
-
   data_processed = false;
 
   if (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info))
   {
     bool use_recv;
-    use_recv = (0 != (mhd_SOCKET_NET_STATE_RECV_READY & c->sk.ready));
+    use_recv = (0 != (mhd_SOCKET_NET_STATE_RECV_READY
+                      & (c->sk.ready | mhd_C_HAS_TLS_DATA_IN (c))));
     use_recv = use_recv ||
                (has_sock_err && c->sk.props.is_nonblck);
 
@@ -85,7 +110,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
      * + connection is ready for sending or
      * + just formed send data, connection send ready status is not known and
      *   connection socket is non-blocking
-     * + detected network error on the connection, to check to the error */
+     * + detected network error on the connection, to check for the error */
     /* Assuming that after finishing receiving phase, connection send system
        buffers should have some space as sending was performed before receiving
        or has not been performed yet. */
@@ -107,80 +132,4 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
   if (! data_processed)
     return mhd_conn_process_data (c);
   return true;
-
-#if 0 // TODO: re-implement fasttrack as a single unified buffer sending
-  if (! force_close)
-  {
-    /* No need to check value of 'ret' here as closed connection
-     * cannot be in MHD_EVENT_LOOP_INFO_SEND state. */
-    if ( (MHD_EVENT_LOOP_INFO_SEND == c->event_loop_info) &&
-         write_ready)
-    {
-      MHD_connection_handle_write (c);
-      ret = MHD_connection_handle_idle (c);
-      states_info_processed = true;
-    }
-  }
-  else
-  {
-    MHD_connection_close_ (c,
-                           MHD_REQUEST_TERMINATED_WITH_ERROR);
-    return MHD_connection_handle_idle (c);
-  }
-
-  if (! states_info_processed)
-  {   /* Connection is not read or write ready, but external conditions
-       * may be changed and need to be processed. */
-    ret = MHD_connection_handle_idle (c);
-  }
-  /* Fast track for fast connections. */
-  /* If full request was read by single read_handler() invocation
-     and headers were completely prepared by single MHD_connection_handle_idle()
-     then try not to wait for next sockets polling and send response
-     immediately.
-     As writeability of socket was not checked and it may have
-     some data pending in system buffers, use this optimization
-     only for non-blocking sockets. */
-  /* No need to check 'ret' as connection is always in
-   * mhd_HTTP_STAGE_CLOSED state if 'ret' is equal 'MHD_NO'. */
-  else if (on_fasttrack && c->sk.props.is_nonblck)
-  {
-    if (mhd_HTTP_STAGE_HEADERS_SENDING == c->stage)
-    {
-      MHD_connection_handle_write (c);
-      /* Always call 'MHD_connection_handle_idle()' after each read/write. */
-      ret = MHD_connection_handle_idle (c);
-    }
-    /* If all headers were sent by single write_handler() and
-     * response body is prepared by single MHD_connection_handle_idle()
-     * call - continue. */
-    if ((mhd_HTTP_STAGE_UNCHUNKED_BODY_READY == c->stage) ||
-        (mhd_HTTP_STAGE_CHUNKED_BODY_READY == c->stage))
-    {
-      MHD_connection_handle_write (c);
-      ret = MHD_connection_handle_idle (c);
-    }
-  }
-
-  /* All connection's data and states are processed for this turn.
-   * If connection already has more data to be processed - use
-   * zero timeout for next select()/poll(). */
-  /* Thread-per-connection do not need global zero timeout as
-   * connections are processed individually. */
-  /* Note: no need to check for read buffer availability for
-   * TLS read-ready connection in 'read info' state as connection
-   * without space in read buffer will be marked as 'info block'. */
-  if ( (! c->daemon->data_already_pending) &&
-       (! mhd_D_HAS_THR_PER_CONN (c->daemon)) )
-  {
-    if (0 != (MHD_EVENT_LOOP_INFO_PROCESS & c->event_loop_info))
-      c->daemon->data_already_pending = true;
-#ifdef HTTPS_SUPPORT
-    else if ( (c->tls_read_ready) &&
-              (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info)) )
-      c->daemon->data_already_pending = true;
-#endif /* HTTPS_SUPPORT */
-  }
-  return ret;
-#endif
 }

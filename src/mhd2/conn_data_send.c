@@ -83,10 +83,6 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
 
   // TODO: assert check suspended
 
-#ifdef HTTPS_SUPPORT
-  // TODO: TLS support, handshake
-#endif /* HTTPS_SUPPORT */
-
   // TODO: MOVE out STATES PROCESSING
 
   res = mhd_SOCKET_ERR_INTERNAL;

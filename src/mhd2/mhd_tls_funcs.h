@@ -116,6 +116,67 @@
         mhd_TLS_FUNC (_conn_deinit)((c_tls))
 
 
+/* ** TLS connection establishing ** */
+
+/**
+ * Perform TLS handshake
+ * @param c_tls the connection TLS handle
+ * @return #mhd_TLS_PROCED_SUCCESS if completed successfully
+ *         or other enum mhd_TlsProcedureResult values
+ */
+#define mhd_tls_conn_handshake(c_tls)       \
+        mhd_TLS_FUNC (_conn_handshake)((c_tls))
+
+/**
+ * Perform shutdown of TLS layer
+ * @param c_tls the connection TLS handle
+ * @return #mhd_TLS_PROCED_SUCCESS if completed successfully
+ *         or other enum mhd_TlsProcedureResult values
+ */
+#define mhd_tls_conn_shutdown(c_tls)       \
+        mhd_TLS_FUNC (_conn_shutdown)((c_tls))
+
+/* ** Data sending and receiving over TLS connection ** */
+
+/**
+ * Receive the data from the remote side over TLS connection
+ *
+ * @param c_tls the connection TLS handle
+ * @param buf_size the size of the @a buf buffer
+ * @param[out] buf the buffer to fill with the received data
+ * @param[out] received the pointer to variable to get the size of the data
+ *                      actually put to the @a buffer
+ * @return mhd_SOCKET_ERR_NO_ERROR if receive succeed (the @a received gets
+ *         the received size) or socket error
+ */
+#define mhd_tls_conn_recv(c_tls,buf_size,buf,received)  \
+        mhd_TLS_FUNC (_conn_recv)((c_tls),(buf_size),(buf),(received))
+
+/**
+ * Check whether any incoming data is pending in the TLS buffers
+ *
+ * @param c_tls the connection TLS handle
+ * @return 'true' if any incoming remote data is already pending (the TLS recv()
+ *          call can be performed),
+ *         'false' otherwise
+ */
+#define mhd_tls_conn_has_data_in(c_tls)       \
+        mhd_TLS_FUNC (_conn_has_data_in)((c_tls))
+
+/**
+ * Send data to the remote side over TLS connection
+ *
+ * @param c_tls the connection TLS handle
+ * @param buffer_size the size of the @a buffer (in bytes)
+ * @param buffer content of the buffer to send
+ * @param[out] sent the pointer to get amount of actually sent bytes
+ * @return mhd_SOCKET_ERR_NO_ERROR if send succeed (the @a sent gets
+ *         the sent size) or socket error
+ */
+#define mhd_tls_conn_send(c_tls,buf_size,buf,sent)      \
+        mhd_TLS_FUNC (_conn_send)((c_tls),(buf_size),(buf),(sent))
+
+
 /* ** General information function ** */
 
 /**
