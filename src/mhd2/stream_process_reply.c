@@ -968,6 +968,7 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
 {
   struct MHD_Response *const restrict r = c->rp.response;
+  uint64_t left_to_send;
 
   mhd_assert (c->rp.props.send_reply_body);
   mhd_assert (c->rp.rsp_cntn_read_pos != r->cntn_size);
@@ -981,6 +982,15 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
   }
 
   mhd_assert (mhd_REPLY_CNTN_LOC_NOWHERE != c->rp.cntn_loc);
+  mhd_assert (mhd_RESPONSE_CONTENT_DATA_INVALID != r->cntn_dtype);
+
+  if (MHD_SIZE_UNKNOWN == r->cntn_size)
+    left_to_send = MHD_SIZE_UNKNOWN;
+  else
+    left_to_send = r->cntn_size - c->rp.rsp_cntn_read_pos;
+
+  mhd_assert (0 != left_to_send);
+
   if (mhd_REPLY_CNTN_LOC_RESP_BUF == c->rp.cntn_loc)
   {
     (void) 0; /* Nothing to do, buffers are ready */
@@ -990,9 +1000,12 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
     if (mhd_RESPONSE_CONTENT_DATA_CALLBACK == r->cntn_dtype)
     {
       const struct MHD_DynamicContentCreatorAction *act;
-      const size_t size_to_fill =
+      size_t size_to_fill =
         c->write_buffer_size - c->write_buffer_append_offset;
       size_t filled;
+
+      if (size_to_fill > left_to_send)
+        size_to_fill = (size_t) left_to_send;
 
       mhd_assert (c->write_buffer_append_offset < c->write_buffer_size);
       mhd_assert (NULL == c->rp.app_act_ctx.connection);
