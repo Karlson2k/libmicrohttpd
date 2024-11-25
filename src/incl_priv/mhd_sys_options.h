@@ -347,6 +347,24 @@
 #  define mhd_DROP_CONST(ptr)  ((void *) ((const void *) (ptr)))
 #endif
 
+/**
+ * Cast signed integer to pointer
+ */
+#if defined(HAVE_INTPTR_T)
+#  define mhd_INT_TO_PTR(i)  ((void *) ((intptr_t) (i)))
+#else
+#  define mhd_INT_TO_PTR(i)  ((void *) (i))
+#endif
+
+/**
+ * Cast unsigned integer to pointer
+ */
+#if defined(HAVE_UINTPTR_T)
+#  define mhd_UINT_TO_PTR(i)  ((void *) ((uintptr_t) (i)))
+#else
+#  define mhd_UINT_TO_PTR(i)  ((void *) (i))
+#endif
+
 
 #if defined(OS390)
 #define _OPEN_THREADS

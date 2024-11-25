@@ -509,13 +509,16 @@ mhd_tls_gnu_conn_init (const struct mhd_TlsGnuDaemonData *restrict d_tls,
                                 GNUTLS_CRD_CERTIFICATE,
                                 d_tls->cred))
     {
-#ifdef mhd_TLS_GNU_HAS_TRANSP_SET_INT
-      if (sizeof(int) == sizeof(MHD_Socket))
-        gnutls_transport_set_int (c_tls->sess,
-                                  (int) sk->fd);
-#endif /* mhd_TLS_GNU_HAS_TRANSP_SET_INT */
+#if defined(mhd_TLS_GNU_HAS_TRANSP_SET_INT) && defined(MHD_SOCKETS_KIND_POSIX)
+      gnutls_transport_set_int (c_tls->sess,
+                                sk->fd);
+#elif defined(MHD_SOCKETS_KIND_POSIX)
       gnutls_transport_set_ptr (c_tls->sess,
-                                (void *) sk->fd);
+                                mhd_INT_TO_PTR (sk->fd));
+#else  /* MHD_SOCKETS_KIND_WINSOCK */
+      gnutls_transport_set_ptr (c_tls->sess,
+                                mhd_UINT_TO_PTR (sk->fd));
+#endif /* MHD_SOCKETS_KIND_WINSOCK */
 
       /* The basic TLS session properties has been set.
          The rest is optional settings. */
