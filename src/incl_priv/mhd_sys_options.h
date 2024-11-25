@@ -332,6 +332,13 @@
 #  endif
 #endif /* mhd_THREADS_KIND_POSIX || mhd_THREADS_KIND_W32 */
 
+#if defined(_WIN32) && ! defined(__CYGWIN__)
+/**
+ * Defined if the platform is native W32.
+ * Not define on Cygwin.
+ */
+#  define mhd_W32_NATIVE        1
+#endif
 /**
  * Macro to drop 'const' qualifier from pointer.
  * Try to avoid compiler warning.
@@ -401,10 +408,12 @@
 #define RESTRICT __restrict__
 #endif /* __VXWORKS__ || __vxworks || OS_VXWORKS */
 
-#if defined(LINUX) && (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64)) && \
-  ! defined(_LARGEFILE64_SOURCE)
+#if defined(__linux__) && \
+  (defined(HAVE_SENDFILE64) || defined(HAVE_LSEEK64) || defined(HAVE_PREAD64))
+#  if ! defined(_LARGEFILE64_SOURCE)
 /* On Linux, special macro is required to enable definitions of some xxx64 functions */
-#define _LARGEFILE64_SOURCE 1
+#    define _LARGEFILE64_SOURCE 1
+#  endif
 #endif
 
 #ifdef HAVE_C11_GMTIME_S

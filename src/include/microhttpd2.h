@@ -1153,6 +1153,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_REPLY_POOL_ALLOCATION_FAILURE = 50231
   ,
   /**
+   * Failed to read the file for file-backed response.
+   */
+  MHD_SC_REPLY_FILE_READ_ERROR = 50232
+  ,
+  /**
    * Failed to allocate memory in connection's pool for the reply.
    */
   MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE = 50250
@@ -1456,6 +1461,18 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The provided reply headers do not fit the connection buffer
    */
   MHD_SC_REPLY_HEADERS_TOO_LARGE = 60103
+  ,
+  /**
+   * Specified offset in file-backed response is too large and not supported
+   * by the platform
+   */
+  MHD_SC_REPLY_FILE_OFFSET_TOO_LARGE = 60104
+  ,
+  /**
+   * File-backed response has file smaller than specified combination of
+   * the file offset and the response size.
+   */
+  MHD_SC_REPLY_FILE_TOO_SHORT = 60105
   ,
   /**
    * The new connection cannot be used because the FD number is higher than
@@ -3734,8 +3751,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
   MHD_REQUEST_ENDED_CLIENT_ABORT = 30
   ,
   /**
-   * The request is not valid according to
-   * HTTP specifications.
+   * The request is not valid according to HTTP specifications.
    * @ingroup request
    */
   MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR = 31
@@ -3747,7 +3763,8 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
   MHD_REQUEST_ENDED_BY_APP_ABORT = 40
   ,
   /**
-   * The application aborted request without response.
+   * The request was aborted due to the application failed to provide a valid
+   * resonse.
    * @ingroup request
    */
   MHD_REQUEST_ENDED_BY_APP_ERROR = 41
@@ -3757,6 +3774,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
    * @ingroup request
    */
   MHD_REQUEST_ENDED_NO_RESOURCES = 50
+  ,
+  /**
+   * The request was aborted due to error reading file for file-backed response
+   * @ingroup request
+   */
+  MHD_REQUEST_ENDED_FILE_ERROR = 51
   ,
   /**
    * Closing the session since MHD is being shut down.

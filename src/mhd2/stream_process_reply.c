@@ -53,6 +53,8 @@
 #include "stream_funcs.h"
 #include "request_get_value.h"
 
+#include "mhd_read_file.h"
+
 #include "mhd_public_api.h"
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
@@ -964,6 +966,67 @@ preprocess_dcc_action (struct MHD_Connection *restrict c,
 }
 
 
+/**
+ * Read next portion of the response file to the buffer, based on information
+ * about amount of response content position.
+ * Handle file read errors, update response position.
+ * @param c the stream to use
+ * @param r the response to use
+ * @param buf_size the size of the @a buf buffer
+ * @param[out] buf the buffer to fill with the file data
+ * @param[out] size_filled the pointer to variable to get the size of the data
+ *                         actually put to the @a buffer
+ * @return 'true' if succeed (size_filled and response position are updated),
+ *         'false' if failed (the stream is closed)
+ */
+static MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_SIZE_ (4, 3) MHD_FN_PAR_OUT_ (5) bool
+read_response_file (struct MHD_Connection *restrict c,
+                    struct MHD_Response *const restrict r,
+                    size_t buf_size,
+                    char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+                    size_t *restrict size_filled)
+{
+  mhd_assert (r == c->rp.response);
+  mhd_assert (mhd_RESPONSE_CONTENT_DATA_FILE == r->cntn_dtype);
+
+  switch (mhd_read_file (r->cntn.file.fd,
+                         r->cntn.file.offset + c->rp.rsp_cntn_read_pos,
+                         buf_size,
+                         buf,
+                         size_filled))
+  {
+  case mhd_FILE_READ_OK:
+    break;
+  case mhd_FILE_READ_ERROR:
+    mhd_STREAM_ABORT (c, \
+                      mhd_CONN_CLOSE_FILE_READ_ERROR, \
+                      "Error reading file for file-backed response.");
+    return false;
+  case mhd_FILE_READ_OFFSET_TOO_LARGE:
+    mhd_STREAM_ABORT (c, \
+                      mhd_CONN_CLOSE_FILE_OFFSET_TOO_LARGE, \
+                      "The offset for file-backed response is too large " \
+                      "for this platform.");
+    return false;
+  case mhd_FILE_READ_EOF:
+    mhd_STREAM_ABORT (c, \
+                      mhd_CONN_CLOSE_FILE_TOO_SHORT, \
+                      "The file for file-backed response is smaller " \
+                      "than specified by application.");
+    return false;
+  default:
+    mhd_assert (0 && "Impossible value");
+    MHD_UNREACHABLE_;
+    c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
+    return false;
+  }
+
+  c->rp.rsp_cntn_read_pos += *size_filled;
+  return true;
+}
+
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
 {
@@ -1049,10 +1112,21 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
     }
     else if (mhd_RESPONSE_CONTENT_DATA_FILE == r->cntn_dtype)
     {
-      // TODO: implement fallback
-      mhd_assert (0 && "Not implemented yet");
-      c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
-      c->rp.rsp_cntn_read_pos = r->cntn_size;
+      size_t size_to_fill =
+        c->write_buffer_size - c->write_buffer_append_offset;
+      size_t filled;
+
+      if (size_to_fill > left_to_send)
+        size_to_fill = (size_t) left_to_send;
+
+      if (! read_response_file (c,
+                                r,
+                                size_to_fill,
+                                c->write_buffer + c->write_buffer_append_offset,
+                                &filled))
+        return true; /* Error, the stream is closed */
+
+      c->write_buffer_append_offset += filled;
     }
     else
     {
@@ -1061,10 +1135,6 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
       c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
       c->rp.rsp_cntn_read_pos = r->cntn_size;
     }
-
-    mhd_assert (0 && "Not implemented yet");
-    c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
-    c->rp.rsp_cntn_read_pos = r->cntn_size;
   }
   else if (mhd_REPLY_CNTN_LOC_IOV == c->rp.cntn_loc)
   {
@@ -1213,6 +1283,17 @@ mhd_stream_prep_chunked_body (struct MHD_Connection *restrict c)
       return true;
     }
     c->rp.rsp_cntn_read_pos += filled;
+    c->write_buffer_append_offset += filled;
+  }
+  else if (mhd_RESPONSE_CONTENT_DATA_FILE == r->cntn_dtype)
+  {
+    if (! read_response_file (c,
+                              r,
+                              size_to_fill,
+                              c->write_buffer + max_chunk_hdr_len,
+                              &filled))
+      return true; /* Error, the stream is closed */
+
     c->write_buffer_append_offset += filled;
   }
   else

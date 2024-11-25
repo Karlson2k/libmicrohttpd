@@ -198,6 +198,21 @@ enum mhd_ConnCloseReason
    */
   mhd_CONN_CLOSE_APP_ABORTED
   ,
+  /**
+   * File-backed response too large (unsupported by OS) file offset
+   */
+  mhd_CONN_CLOSE_FILE_OFFSET_TOO_LARGE
+  ,
+  /**
+   * Error reading file-backed response
+   */
+  mhd_CONN_CLOSE_FILE_READ_ERROR
+  ,
+  /**
+   * File-backed response has file smaller than specified by application
+   */
+  mhd_CONN_CLOSE_FILE_TOO_SHORT
+  ,
 
   /* Hard problem while receiving or sending */
   /**

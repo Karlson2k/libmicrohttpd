@@ -720,6 +720,21 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     end_code = MHD_REQUEST_ENDED_BY_APP_ABORT;
     sc = MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION;
     break;
+  case mhd_CONN_CLOSE_FILE_OFFSET_TOO_LARGE:
+    close_hard = true;
+    end_code = MHD_REQUEST_ENDED_FILE_ERROR;
+    sc = MHD_SC_REPLY_FILE_OFFSET_TOO_LARGE;
+    break;
+  case mhd_CONN_CLOSE_FILE_READ_ERROR:
+    close_hard = true;
+    end_code = MHD_REQUEST_ENDED_FILE_ERROR;
+    sc = MHD_SC_REPLY_FILE_READ_ERROR;
+    break;
+  case mhd_CONN_CLOSE_FILE_TOO_SHORT:
+    close_hard = true;
+    end_code = MHD_REQUEST_ENDED_BY_APP_ERROR;
+    sc = MHD_SC_REPLY_FILE_TOO_SHORT;
+    break;
   case mhd_CONN_CLOSE_INT_ERROR:
     close_hard = true;
     end_code = MHD_REQUEST_ENDED_NO_RESOURCES;

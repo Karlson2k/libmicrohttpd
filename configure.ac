@@ -4526,10 +4526,16 @@ AM_CONDITIONAL([MHD_HAVE_LIBMAGIC], [[test "x$mhd_cv_have_func_magic_open" = "xy
 # large file support (> 4 GB)
 MHD_CHECK_FUNC([lseek64],
   [[
+#ifndef _LARGEFILE64_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
 #if defined(HAVE_SYS_TYPES_H)
 #  include <sys/types.h>
 #endif
-#include <unistd.h>
+#include <stdlib.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
   ]],
   [[
   i][f (((off64_t) -1) == lseek64(0, (off64_t) 0, SEEK_SET))
@@ -4538,10 +4544,16 @@ MHD_CHECK_FUNC([lseek64],
 )
 MHD_CHECK_FUNC([pread64],
   [[
+#ifndef _LARGEFILE64_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
 #if defined(HAVE_SYS_TYPES_H)
 #  include <sys/types.h>
 #endif
-#include <unistd.h>
+#include <stdlib.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
   ]],
   [[
   char buf[5];
@@ -4554,7 +4566,10 @@ MHD_CHECK_FUNC([pread],
 #if defined(HAVE_SYS_TYPES_H)
 #  include <sys/types.h>
 #endif
-#include <unistd.h>
+#include <stdlib.h>
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
   ]],
   [[
   char buf[5];
@@ -4608,6 +4623,9 @@ static void empty_func(void)
         AC_MSG_RESULT([[yes]])
         MHD_CHECK_FUNC([sendfile64],
           [[
+#ifndef _LARGEFILE64_SOURCE
+#  define _LARGEFILE64_SOURCE 1
+#endif
 #include <sys/sendfile.h>
           ]],
           [[

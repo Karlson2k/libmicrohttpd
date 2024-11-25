@@ -55,6 +55,7 @@ libmicrohttpd2_la_SOURCES = \
   mhd_threads.c             mhd_threads.h             sys_thread_entry_type.h \
   mhd_mono_clock.c          mhd_mono_clock.h \
   mhd_mempool.c             mhd_mempool.h \
+  mhd_read_file.c           mhd_read_file.h \
   mhd_recv.c                mhd_recv.h \
   mhd_send.c                mhd_send.h \
   mhd_daemon.h \
