@@ -256,24 +256,25 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
   {
     gnutls_datum_t cert_data;
     gnutls_datum_t key_data;
-    int rc;
+    int res;
 
     cert_data.data = mhd_DROP_CONST (s->tls_cert_key.v_mem_cert);
     cert_data.size = (unsigned int) cert_len;
     key_data.data = mhd_DROP_CONST (s->tls_cert_key.v_mem_key);
     key_data.size = (unsigned int) key_len;
-    if (0 >
-        (rc = gnutls_certificate_set_x509_key_mem2 (d_tls->cred,
-                                                    &cert_data,
-                                                    &key_data,
-                                                    GNUTLS_X509_FMT_PEM,
-                                                    s->tls_cert_key.v_mem_pass,
-                                                    0)))
+    res = gnutls_certificate_set_x509_key_mem2 (d_tls->cred,
+                                                &cert_data,
+                                                &key_data,
+                                                GNUTLS_X509_FMT_PEM,
+                                                s->tls_cert_key.v_mem_pass,
+                                                0);
+    if (0 > res)
     {
-      mhd_logger (d,
-                  MHD_SC_TLS_CONF_BAD_CERT,
-                  "Failed to set the provided TLS certificate: %s",
-                  gnutls_strerror (rc));
+      mhd_LOG_PRINT (d, \
+                     MHD_SC_TLS_CONF_BAD_CERT, \
+                     mhd_LOG_FMT ("Failed to set the provided " \
+                                  "TLS certificate: %s"),
+                     gnutls_strerror (res));
       ret = MHD_SC_TLS_CONF_BAD_CERT;
     }
     else
