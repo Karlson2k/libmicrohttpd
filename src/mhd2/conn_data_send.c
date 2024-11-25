@@ -181,12 +181,13 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
     {
       struct MHD_Response *const restrict resp = c->rp.response;
       mhd_assert (c->rp.props.send_reply_body);
-      mhd_assert (c->rp.rsp_cntn_read_pos < resp->cntn_size);
+      mhd_assert (c->rp.rsp_cntn_read_pos <= resp->cntn_size);
       mhd_assert ((mhd_HTTP_STAGE_CHUNKED_BODY_READY != c->stage) || \
                   (mhd_REPLY_CNTN_LOC_CONN_BUF == c->rp.cntn_loc));
       if (mhd_REPLY_CNTN_LOC_RESP_BUF == c->rp.cntn_loc)
       {
         mhd_assert (mhd_RESPONSE_CONTENT_DATA_BUFFER == resp->cntn_dtype);
+        mhd_assert (c->rp.rsp_cntn_read_pos < resp->cntn_size);
 
         res = mhd_send_data (c,
                              c->rp.rsp_cntn_read_pos - resp->cntn_size,
