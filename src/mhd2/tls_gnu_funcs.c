@@ -249,8 +249,8 @@ daemon_init_credentials (struct MHD_Daemon *restrict d,
   mhd_assert (0 != cert_len);
   mhd_assert (0 != key_len);
 
-  if (((unsigned int) cert_len != cert_len)
-      || ((unsigned int) key_len != key_len))
+  if ((cert_len != (unsigned int) cert_len)
+      || (key_len != (unsigned int) key_len))
     ret = MHD_SC_TLS_CONF_BAD_CERT; /* Very unlikely, do not waste space on special message */
   else
   {
@@ -315,7 +315,9 @@ daemon_deinit_credentials (struct mhd_TlsGnuDaemonData *restrict d_tls)
 static const struct MHD_StringNullable tlsgnulib_base_priorities[] = {
   {0, NULL} /* Replaced with app-defined name */
   ,
-#ifdef mhd_TLS_GNU_SUPPORTS_MULTI_KEYWORDS_PRIORITY
+  /* Do not use "multi-keyword": if the first configuration is found, but has
+     some error, the next configuration is not tried. */
+#if 0 /* ifdef mhd_TLS_GNU_SUPPORTS_MULTI_KEYWORDS_PRIORITY */
   mhd_MSTR_INIT ("@LIBMICROHTTPD,SYSTEM")
 #else
   mhd_MSTR_INIT ("@LIBMICROHTTPD")
@@ -347,6 +349,8 @@ daemon_init_priorities_cache (struct MHD_Daemon *restrict d,
 
   for (i = 0; i < mhd_ARR_NUM_ELEMS (tlsgnulib_base_priorities); ++i)
   {
+    int res;
+
     if (0 == i)
       continue; // TODO: support app-defined name for TLS backend profile
 #if ! defined(mhd_TLS_GNU_TREATS_NULL_AS_DEF_PRIORITY)
@@ -361,11 +365,13 @@ daemon_init_priorities_cache (struct MHD_Daemon *restrict d,
 #  endif
     }
 #endif /* ! mhd_TLS_GNU_TREATS_NULL_AS_DEF_PRIORITY */
-    if (GNUTLS_E_SUCCESS ==
-        gnutls_priority_init (&(d_tls->pri_cache),
-                              tlsgnulib_base_priorities[i].cstr,
-                              NULL))
+    res = gnutls_priority_init (&(d_tls->pri_cache),
+                                tlsgnulib_base_priorities[i].cstr,
+                                NULL);
+    if (GNUTLS_E_SUCCESS == res)
       break;
+    if (GNUTLS_E_MEMORY_ERROR == res)
+      return MHD_SC_DAEMON_MALLOC_FAILURE;
   }
 
   if (i < mhd_ARR_NUM_ELEMS (tlsgnulib_base_priorities))
