@@ -50,18 +50,23 @@ mhd_logger (struct MHD_Daemon *daemon,
             ...);
 
 /**
- * Log a single message.
+ * Log a single fixed message.
  *
  * The @a msg is a 'printf()' string, treated as format specifiers string.
  * Any '%' symbols should be doubled ('%%') to avoid interpretation as a format
  * specifier symbol.
+ *
+ * Note: no printf() parameters allowed (except the format string). To log
+ *       message with variable parameters, use #mhd_LOG_PRINT with #mhd_LOG_FMT.
  */
 #define mhd_LOG_MSG(daemon,sc,msg) mhd_logger (daemon,sc,msg)
 
 /**
- * Format message and log it
+ * Format message and log it.
  *
  * Always use with #mhd_LOG_FMT() for the format string.
+ *
+ * Example: mhd_LOG_PRINT(daemon, MHD_SC_VALUE, mhd_LOG_FMT("Number: %d"), i);
  */
 #define mhd_LOG_PRINT mhd_logger
 
@@ -77,18 +82,23 @@ mhd_logger (struct MHD_Daemon *daemon,
 #ifdef HAVE_MACRO_VARIADIC
 
 /**
- * Log a single message.
+ * Log a single fixed message.
  *
  * The @a msg is a 'printf()' string, treated as format specifiers string.
  * Any '%' symbols should be doubled ('%%') to avoid interpretation as a format
  * specifier symbol.
+ *
+ * Note: no printf() parameters allowed (except the format string). To log
+ *       message with variable parameters, use #mhd_LOG_PRINT with #mhd_LOG_FMT.
  */
 #define mhd_LOG_MSG(daemon,sc,msg)  do { (void) daemon; } while (0)
 
 /**
- * Format message and log it
+ * Format message and log it.
  *
  * Always use with #mhd_LOG_FMT() for the format string.
+ *
+ * Example: mhd_LOG_PRINT(daemon, MHD_SC_VALUE, mhd_LOG_FMT("Number: %d"), i);
  */
 #define mhd_LOG_PRINT(daemon,sc,fm,...)  do { (void) daemon; } while (0)
 
