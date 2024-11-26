@@ -39,13 +39,19 @@ mhd_tls_is_backend_available (struct DaemonOptions *s)
 {
   mhd_assert (MHD_TLS_BACKEND_NONE != s->tls);
   if (MHD_TLS_BACKEND_ANY == s->tls)
-    return mhd_tls_gnu_is_inited_fine ()
-           /* || mhd_tls_other_is_inited_fine() */ ?
+    return (mhd_tls_gnu_is_inited_fine ()
+            || mhd_tls_open_is_inited_fine ()) ?
            mhd_TLS_BACKEND_AVAIL_OK :
            mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE;
 #ifdef MHD_USE_GNUTLS
   if (MHD_TLS_BACKEND_GNUTLS == s->tls)
     return mhd_tls_gnu_is_inited_fine () ?
+           mhd_TLS_BACKEND_AVAIL_OK :
+           mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE;
+#endif
+#ifdef MHD_USE_OPENSSL
+  if (MHD_TLS_BACKEND_OPENSSL == s->tls)
+    return mhd_tls_open_is_inited_fine () ?
            mhd_TLS_BACKEND_AVAIL_OK :
            mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE;
 #endif

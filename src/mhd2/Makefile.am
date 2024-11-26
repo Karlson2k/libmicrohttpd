@@ -117,6 +117,10 @@ tls_gnu_files = \
   tls_gnu_tls_lib.h         tls_gnu_daemon_data.h     tls_gnu_conn_data.h \
   tls_gnu_funcs.c           tls_gnu_funcs.h
 
+tls_open_files = \
+  tls_open_tls_lib.h        tls_open_daemon_data.h    tls_open_conn_data.h \
+  tls_open_funcs.c          tls_open_funcs.h
+
 if HAVE_POST_PARSER
   libmicrohttpd2_la_SOURCES += $(post_parser_files)
 endif
@@ -130,6 +134,10 @@ if MHD_ENABLE_HTTPS
 
 if MHD_USE_GNUTLS
   libmicrohttpd2_la_SOURCES += $(tls_gnu_files)
+endif
+
+if MHD_USE_OPENSSL
+  libmicrohttpd2_la_SOURCES += $(tls_open_files)
 endif
 endif
 

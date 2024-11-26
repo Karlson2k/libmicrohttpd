@@ -1297,6 +1297,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_TLS_CONNECTION_INIT_FAILED = 51201
   ,
   /**
+   * Warning about TLS backend configuration
+   */
+  MHD_SC_TLS_LIB_CONF_WARNING = 51202
+  ,
+  /**
    * Failed to perform TLS handshake
    */
   MHD_SC_TLS_CONNECTION_HANDSHAKED_FAILED = 51220
@@ -3345,14 +3350,12 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_UseStictLevel
 enum MHD_FIXED_ENUM_APP_SET_ MHD_TlsBackend
 {
   /**
-   * Disable TLS, use plain TCP connections
+   * Disable TLS, use plain TCP connections (default)
    */
   MHD_TLS_BACKEND_NONE = 0
   ,
   /**
    * Use best available TLS backend.
-   * Currently this is equivalent to GnuTLS (if TLS is enabled
-   * for MHD build).
    */
   MHD_TLS_BACKEND_ANY = 1
   ,
@@ -3360,6 +3363,11 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_TlsBackend
    * Use GnuTLS as TLS backend.
    */
   MHD_TLS_BACKEND_GNUTLS = 2
+  ,
+  /**
+   * Use OpenSSL as TLS backend.
+   */
+  MHD_TLS_BACKEND_OPENSSL = 3
 };
 
 /**

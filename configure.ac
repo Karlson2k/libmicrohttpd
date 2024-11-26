@@ -4867,6 +4867,13 @@ AM_CONDITIONAL([HAVE_POST_PARSER], [test "x$enable_postparser" != "xno"])
 AC_MSG_RESULT([[$enable_postparser]])
 
 have_gnutls=no
+have_gnutls_pkgcfg=no
+have_openssl=no
+have_openssl_pkgcfg=no
+AS_UNSET([MHD_TLS_LIB_CPPFLAGS])
+AS_UNSET([MHD_TLS_LIB_LDFLAGS])
+AS_UNSET([MHD_TLS_LIBDEPS])
+MSG_TLS_BACKENDS="none"
 
 # optional: HTTPS support.  Enabled if GnuTLS is available.
 AC_ARG_ENABLE([https],
@@ -4885,11 +4892,12 @@ AS_IF([test "x$enable_https" != "xno"],
       [
         AS_CASE([$with_gnutls],
           [no],[
-            AC_MSG_RESULT([[GnuTLS disabled]])
+            have_gnutls="no"
             AS_UNSET([GNUTLS_CPPFLAGS])
             AS_UNSET([GNUTLS_CFLAGS])
             AS_UNSET([GNUTLS_LDFLAGS])
             AS_UNSET([GNUTLS_LIBS])
+            AC_MSG_RESULT([[GnuTLS disabled]])
           ],
           [yes],[
             AC_MSG_RESULT([[automatically, forced]])
@@ -4916,7 +4924,7 @@ AS_IF([test "x$enable_https" != "xno"],
                 GNUTLS_LDFLAGS="-L$with_gnutls/lib"
                 GNUTLS_LIBS="-lgnutls"
               ],
-              [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])],
+              [AC_MSG_ERROR([cannot find usable libgnutls at specified prefix $with_gnutls])],
               [-lgnutls]
             )
             CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
@@ -4931,7 +4939,6 @@ AS_IF([test "x$enable_https" != "xno"],
       [
         PKG_CHECK_MODULES([GNUTLS], [[gnutls]],
           [
-            have_gnutls_pkgcfg='yes'
             CPPFLAGS="${CPPFLAGS_ac} $GNUTLS_CFLAGS ${user_CPPFLAGS}"
             # A simple check for the working header and the library
             MHD_CHECK_FUNC([gnutls_check_version],
@@ -4944,7 +4951,8 @@ AS_IF([test "x$enable_https" != "xno"],
                  return 3;
               ],
               [
-                have_gnutls=yes
+                have_gnutls="yes"
+                have_gnutls_pkgcfg="yes"
                 # GNUTLS_CFLAGS is actually CPPFLAGS
                 GNUTLS_CPPFLAGS="$GNUTLS_CFLAGS"
                 AS_UNSET([GNUTLS_CFLAGS])
@@ -4953,9 +4961,9 @@ AS_IF([test "x$enable_https" != "xno"],
               ],
               [
                 AS_VAR_IF([with_gnutls],["yes"],
-                  [AC_MSG_ERROR([can't find usable libgnutls at specified prefix $with_gnutls])]
+                  [AC_MSG_ERROR([cannot find usable libgnutls])]
                 )
-                AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS can't be used])
+                AC_MSG_WARN([pkg-config reports that GnuTLS is present, but GnuTLS cannot be used])
                 AS_UNSET([GNUTLS_CPPFLAGS])
                 AS_UNSET([GNUTLS_CFLAGS])
                 AS_UNSET([GNUTLS_LDFLAGS])
@@ -4966,7 +4974,7 @@ AS_IF([test "x$enable_https" != "xno"],
           ],
           [
             # check for GnuTLS at default paths
-            have_gnutls_pkgcfg='no'
+            have_gnutls_pkgcfg="no"
             # A simple check for the working header and the library
             MHD_CHECK_FUNC([gnutls_check_version],
               [[
@@ -4986,7 +4994,7 @@ AS_IF([test "x$enable_https" != "xno"],
               ],
               [
                 AS_VAR_IF([with_gnutls],["yes"],
-                  [AC_MSG_ERROR([can't find usable libgnutls])]
+                  [AC_MSG_ERROR([cannot find usable libgnutls])]
                 )
                 AS_UNSET([GNUTLS_CPPFLAGS])
                 AS_UNSET([GNUTLS_CFLAGS])
@@ -5003,10 +5011,7 @@ AS_IF([test "x$enable_https" != "xno"],
       [
         AC_CACHE_CHECK([[whether GnuTLS is modern enough]], [mhd_cv_gnutls_ver_ok],
           [
-            SAVE_LIBS="$LIBS"
             CPPFLAGS="${CPPFLAGS_ac} ${GNUTLS_CPPFLAGS} ${user_CPPFLAGS}"
-            LDFLAGS="${LDFLAGS_ac} ${GNUTLS_LDFLAGS} ${user_LDFLAGS}"
-            LIBS="$GNUTLS_LIBS $LIBS"
             AC_COMPILE_IFELSE(
               [
                 AC_LANG_PROGRAM(
@@ -5022,20 +5027,27 @@ choke me now
                   ]]
                 )
               ],
-              [[mhd_cv_gnutls_ver_ok='yes']], [[mhd_cv_gnutls_ver_ok='no']]
+              [[mhd_cv_gnutls_ver_ok="yes"]], [[mhd_cv_gnutls_ver_ok="no"]]
             )
-            LIBS="$SAVE_LIBS"
-            LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
             CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
           ]
         )
-        AS_VAR_IF([mhd_cv_gnutls_ver_ok],["yes"],[:],[have_gnutls="no"])
+        AS_VAR_IF([mhd_cv_gnutls_ver_ok],["yes"],[:],
+          [
+            have_gnutls="no"
+            AS_VAR_IF([with_gnutls],["yes"],
+              [AC_MSG_ERROR([cannot find usable libgnutls])]
+            )
+          ]
+        )
       ]
     )
 
     AS_VAR_IF([have_gnutls],["yes"],
       [:],
       [
+        have_gnutls="no"
+        have_gnutls_pkgcfg="no"
         AS_UNSET([GNUTLS_CPPFLAGS])
         AS_UNSET([GNUTLS_CFLAGS])
         AS_UNSET([GNUTLS_LDFLAGS])
@@ -5044,23 +5056,222 @@ choke me now
     )
 
 
-    AS_VAR_IF([have_gnutls],["yes"],
+    AC_MSG_CHECKING([[how to find OpenSSL library]])
+    AC_ARG_WITH([[openssl]],
+      [
+        AS_HELP_STRING([[--with-openssl[=PRFX]]],
+          [use OpenSSL for HTTPS support, optional PRFX overrides pkg-config data for OpenSSL headers (PRFX/include) and libs (PRFX/lib)])
+      ],
+      [
+        AS_CASE([$with_openssl],
+          [no],[
+            have_openssl="no"
+            AC_MSG_RESULT([[OpenSSL disabled]])
+            AS_UNSET([OPENSSL_CPPFLAGS])
+            AS_UNSET([OPENSSL_CFLAGS])
+            AS_UNSET([OPENSSL_LDFLAGS])
+            AS_UNSET([OPENSSL_LIBS])
+          ],
+          [yes],[
+            AC_MSG_RESULT([[automatically, forced]])
+          ],
+          [
+            AC_MSG_RESULT([[-I$with_openssl/include -L$with_openssl/lib -lssl -lcrypto]])
+            LDFLAGS="${LDFLAGS_ac} -L$with_openssl/lib ${user_LDFLAGS}"
+            CPPFLAGS="${CPPFLAGS_ac} -I$with_openssl/include ${user_CPPFLAGS}"
+            have_openssl_pkgcfg="no"
+            # A simple check for the working header and the library
+            MHD_CHECK_FUNC([SSL_CTX_new],
+              [[
+#include <openssl/ssl.h>
+              ]],
+              [[
+               SSL_CTX_free(SSL_CTX_new(TLS_server_method()));
+              ]],
+              [
+                have_openssl="yes"
+                OPENSSL_CPPFLAGS="-I$with_openssl/include"
+                AS_UNSET([OPENSSL_CFLAGS])
+                OPENSSL_LDFLAGS="-L$with_openssl/lib"
+                OPENSSL_LIBS="-lssl -lcrypto"
+              ],
+              [AC_MSG_ERROR([cannot find usable OpenSSL library at specified prefix $with_openssl])],
+              [-lssl -lcrypto]
+            )
+            CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+            CFLAGS="${CFLAGS_ac} ${user_CFLAGS}"
+            LDFLAGS="${LDFLAGS_ac} ${user_LDFLAGS}"
+          ])
+       ],
+       [AC_MSG_RESULT([[automatically]])]
+    )
+
+    AS_IF([test "x$with_openssl" != "xno" && test "x$have_openssl" != "xyes"],
+      [
+        PKG_CHECK_MODULES([OPENSSL], [[openssl >= 3.0]],
+          [
+            CPPFLAGS="${CPPFLAGS_ac} $OPENSSL_CFLAGS ${user_CPPFLAGS}"
+            # A simple check for the working header and the library
+            MHD_CHECK_FUNC([SSL_CTX_new],
+              [[
+#include <openssl/ssl.h>
+              ]],
+              [[
+               SSL_CTX_free(SSL_CTX_new(TLS_server_method()));
+              ]],
+              [
+                have_openssl=yes
+                have_openssl_pkgcfg='yes'
+                # OPENSSL_CFLAGS is actually CPPFLAGS
+                OPENSSL_CPPFLAGS="$OPENSSL_CFLAGS"
+                AS_UNSET([OPENSSL_CFLAGS])
+                # OPENSSL_LIBS is a combination of LDFLAGS and LIBS
+                AS_UNSET([OPENSSL_LDFLAGS])
+              ],
+              [
+                AS_VAR_IF([with_openssl],["yes"],
+                  [AC_MSG_ERROR([cannot find usable OpenSSL library])]
+                )
+                AC_MSG_WARN([pkg-config reports that OpenSSL is present, but OpenSSL cannot be used])
+                AS_UNSET([OPENSSL_CPPFLAGS])
+                AS_UNSET([OPENSSL_CFLAGS])
+                AS_UNSET([OPENSSL_LDFLAGS])
+                AS_UNSET([OPENSSL_LIBS])
+              ],
+              [$OPENSSL_LIBS]
+            )
+          ],
+          [
+            # check for OpenSSL at default paths
+            have_openssl_pkgcfg="no"
+            # A simple check for the working header and the library
+            MHD_CHECK_FUNC([SSL_CTX_new],
+              [[
+#include <openssl/ssl.h>
+              ]],
+              [[
+               SSL_CTX_free(SSL_CTX_new(TLS_server_method()));
+              ]],
+              [
+                have_openssl="yes"
+                AS_UNSET([OPENSSL_CPPFLAGS])
+                AS_UNSET([OPENSSL_CFLAGS])
+                AS_UNSET([OPENSSL_LDFLAGS])
+                OPENSSL_LIBS="-lssl -lcrypto"
+              ],
+              [
+                AS_VAR_IF([with_openssl],["yes"],
+                  [AC_MSG_ERROR([cannot find usable OpenSSL library])]
+                )
+                AS_UNSET([OPENSSL_CPPFLAGS])
+                AS_UNSET([OPENSSL_CFLAGS])
+                AS_UNSET([OPENSSL_LDFLAGS])
+                AS_UNSET([OPENSSL_LIBS])
+              ],
+              [-lssl -lcrypto]
+            )
+          ]
+        )
+      ]
+    )
+    AS_VAR_IF([have_openssl],["yes"],
+      [
+        AC_CACHE_CHECK([[whether OpenSSL is modern enough]], [mhd_cv_openssl_ver_ok],
+          [
+            CPPFLAGS="${CPPFLAGS_ac} ${OPENSSL_CPPFLAGS} ${user_CPPFLAGS}"
+            AC_COMPILE_IFELSE(
+              [
+                AC_LANG_PROGRAM(
+                  [[
+#include <openssl/opensslv.h>
+                  ]],
+                  [[
+#ifndef OPENSSL_VERSION_PREREQ
+#error OPENSSL_VERSION_PREREQ is not defined. OpenSSL is too old.
+choke me now
+#endif
+#if !OPENSSL_VERSION_PREREQ(3,0)
+#error OpenSSL version is too old and not suitable.
+choke me now
+#endif
+                  ]]
+                )
+              ],
+              [[mhd_cv_openssl_ver_ok="yes"]], [[mhd_cv_openssl_ver_ok="no"]]
+            )
+            CPPFLAGS="${CPPFLAGS_ac} ${user_CPPFLAGS}"
+          ]
+        )
+        AS_VAR_IF([mhd_cv_openssl_ver_ok],["yes"],[:],
+          [
+            have_openssl="no"
+            AS_VAR_IF([with_openssl],["yes"],
+              [AC_MSG_ERROR([cannot find usable OpenSSL library])]
+            )
+          ]
+        )
+      ]
+    )
+
+    AS_VAR_IF([have_openssl],["yes"],
+      [:],
+      [
+        have_openssl="no"
+        have_openssl_pkgcfg="no"
+        AS_UNSET([OPENSSL_CPPFLAGS])
+        AS_UNSET([OPENSSL_CFLAGS])
+        AS_UNSET([OPENSSL_LDFLAGS])
+        AS_UNSET([OPENSSL_LIBS])
+      ]
+    )
+
+
+    AS_IF([test "x$have_gnutls" = "xyes" || test "x$have_openssl" = "xyes"],
       [
         enable_https="yes"
-        MSG_HTTPS="yes (using libgnutls)"
+        MSG_HTTPS="yes (single backend)"
+        MSG_TLS_BACKENDS=""
 
+        AS_VAR_IF([have_gnutls],["yes"],
+          [
+            AS_IF([test -n "${MSG_TLS_BACKENDS}"],
+              [
+                MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}, "
+                MSG_HTTPS="yes (multiple backends)"
+              ]
+            )
+            AC_DEFINE([MHD_USE_GNUTLS],[1],[Define to '1' i][f GnuTLS library should be used])
+            MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}GnuTLS"
+            MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_CPPFLAGS],[$GNUTLS_CPPFLAGS])
+            MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_LDFLAGS],[$GNUTLS_LDFLAGS])
+            MHD_PREPEND_FLAG_TO_VAR([MHD_TLS_LIBDEPS],[$GNUTLS_LIBS])
+          ]
+        )
+        AS_VAR_IF([have_openssl],["yes"],
+          [
+            AS_IF([test -n "${MSG_TLS_BACKENDS}"],
+              [
+                MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}, "
+                MSG_HTTPS="yes (multiple backends)"
+              ]
+            )
+            AC_DEFINE([MHD_USE_OPENSSL],[1],[Define to '1' i][f OpenSSL library should be used])
+            MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}OpenSSL"
+            MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_CPPFLAGS],[$OPENSSL_CPPFLAGS])
+            MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_LDFLAGS],[$OPENSSL_LDFLAGS])
+            MHD_PREPEND_FLAG_TO_VAR([MHD_TLS_LIBDEPS],[$OPENSSL_LIBS])
+          ]
+        )
+        AS_IF([test -z "$MSG_TLS_BACKENDS"],[AC_MSG_FAILURE([configure internal error: no TLS backends])])
         AC_DEFINE([MHD_ENABLE_HTTPS],[1],[Define to '1' i][f HTTPS protocol should be enabled])
-        AC_DEFINE([MHD_USE_GNUTLS],[1],[Define to '1' i][f GnuTLS library should be used])
-        MHD_TLS_LIB_CPPFLAGS="$GNUTLS_CPPFLAGS"
-        MHD_TLS_LIB_LDFLAGS="$GNUTLS_LDFLAGS"
-        MHD_TLS_LIBDEPS="$GNUTLS_LIBS"
       ],
       [
         AS_VAR_IF([enable_https],["yes"],
-          [AC_MSG_ERROR([GniTLS library not found, HTTPS cannot be enabled])]
+          [AC_MSG_ERROR([no suitable TLS lib found, HTTPS cannot be enabled])]
         )
         enable_https="no"
-        MSG_HTTPS="no (lacking libgnutls)"
+        MSG_HTTPS="no (no suitable TLS lib found)"
+        MSG_TLS_BACKENDS="none"
       ]
     )
   ],
@@ -5070,15 +5281,35 @@ choke me now
   ]
 )
 
-
 AC_MSG_CHECKING(whether to support HTTPS)
+AS_VAR_IF([enable_https],["yes"],
+  [
+    AS_CASE([$MSG_HTTPS],[yes*],[:],
+      [AC_MSG_FAILURE([configure internal error: wrong MSG_HTTPS])]
+    )
+  ],
+  [
+    enable_https="no"
+    MSG_TLS_BACKENDS="none"
+    AS_UNSET([MHD_TLS_LIB_CPPFLAGS])
+    AS_UNSET([MHD_TLS_LIB_LDFLAGS])
+    AS_UNSET([MHD_TLS_LIBDEPS])
+    AS_CASE([$MSG_HTTPS],[no*],[:],
+      [AC_MSG_FAILURE([configure internal error: wrong MSG_HTTPS])]
+    )
+  ]
+)
 AC_MSG_RESULT([$MSG_HTTPS])
 
-AM_CONDITIONAL([MHD_ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 AM_CONDITIONAL([MHD_USE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
 AC_SUBST([GNUTLS_CPPFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
 AC_SUBST([GNUTLS_LIBS])
+AM_CONDITIONAL([MHD_USE_OPENSSL], [[test "x$have_openssl" = "xyes"]])
+AC_SUBST([OPENSSL_CPPFLAGS])
+AC_SUBST([OPENSSL_LDFLAGS])
+AC_SUBST([OPENSSL_LIBS])
+AM_CONDITIONAL([MHD_ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 
 AS_VAR_IF([have_gnutls], ["yes"],
   [
@@ -7182,6 +7413,7 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   epoll support:     ${enable_epoll=no}
   sendfile used:     ${found_sendfile}
   HTTPS support:     ${MSG_HTTPS}
+  TLS backends:      ${MSG_TLS_BACKENDS}
   Logging support:   ${enable_log_messages}
   Verbose auto replies: ${enable_http_messages}
   Cookie parser:     ${enable_cookie}
@@ -7207,13 +7439,23 @@ AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Fuzzing tests:     ${run_zzuf_tests_MSG=no}
 ])
 
-AS_IF([test "x$enable_https" = "xyes"],
- [AC_MSG_NOTICE([HTTPS subsystem configuration:
-  License         :  LGPL version 2.1 or any later version
- ])],
- [AC_MSG_NOTICE([
-  License         :  LGPLv2.1+ or eCos
- ])])
+licence_num="0"
+AS_VAR_IF([have_gnutls],["yes"],
+  [AS_IF([test "2" -gt "$licence_num"],[licence_num="2"])]
+)
+AS_VAR_IF([have_openssl],["yes"],
+  [AS_IF([test "3" -gt "$licence_num"],[licence_num="3"])]
+)
+AS_CASE([$licence_num],
+  [0],[licence_descr="LGPLv2.1+ or eCos"],
+  [2],[licence_descr="LGPL version 2.1 or any later version"],
+  [3],[licence_descr="LGPL version 3.0 or any later version"],
+  [AC_MSG_ERROR(internal error: unexpected licence version)]
+)
+
+AC_MSG_NOTICE([
+  Licence:           ${licence_descr}
+])
 
 AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \

@@ -66,11 +66,30 @@
  */
 #define mhd_TLS_GNU_IS_SUPPORTED()     (! ! mhd_TLS_GNU_ENABLED)
 
+/* * OpenSSL * */
+
+#ifdef MHD_USE_OPENSSL
+/**
+ * Defined to one if OpenSSL is enabled at build time or to zero if not enabled
+ */
+#  define mhd_TLS_OPEN_ENABLED   (1)
+#else
+/**
+ * Defined to one if GnuTLS is enabled at build time or to zero if not enabled
+ */
+#  define mhd_TLS_OPEN_ENABLED   (0)
+#endif
+
+/**
+ * Return non-zero if OpenSSL is supported
+ */
+#define mhd_TLS_OPEN_IS_SUPPORTED()     (! ! mhd_TLS_GNU_ENABLED)
+
 /**
  * Defined to the number of enabled TLS backends
  */
 #define mhd_TLS_NUM_BACKENDS \
-        (mhd_TLS_GNU_ENABLED /* + mhd_TLS_SOME_ENABLED */)
+        (mhd_TLS_GNU_ENABLED + mhd_TLS_OPEN_ENABLED)
 
 #if mhd_TLS_NUM_BACKENDS == 0
 #error At least one TLS backend must be enabled is this header is included
@@ -117,6 +136,19 @@
  * The TLS back-end identifier for macro names
  */
 #  define mhd_TLS_MACRO_NAME_ID GNU
+#elif defined(MHD_USE_OPENSSL)
+/**
+ * The TLS back-end identifier for function names
+ */
+#  define mhd_TLS_FUNC_NAME_ID open
+/**
+ * The TLS back-end identifier for data names
+ */
+#  define mhd_TLS_DATA_NAME_ID Open
+/**
+ * The TLS back-end identifier for macro names
+ */
+#  define mhd_TLS_MACRO_NAME_ID OPEN
 #endif
 
 
