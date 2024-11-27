@@ -90,6 +90,14 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2select,
       .server_runner = &MHDT_server_run_minimal,
     },
+#if HAVE_GNUTLS_GNUTLS_H
+    {
+      .label = "multi-threaded select, forcing GnuTLS",
+      .server_setup = &MHDT_server_setup_gnutls,
+      .server_setup_cls = thread2select,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#endif
 #endif
 #ifdef MHD_USE_POLL
     {
@@ -104,6 +112,14 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2poll,
       .server_runner = &MHDT_server_run_minimal,
     },
+#if HAVE_GNUTLS_GNUTLS_H
+    {
+      .label = "multi-threaded poll, forcing GnuTLS",
+      .server_setup = &MHDT_server_setup_gnutls,
+      .server_setup_cls = thread2poll,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#endif
 #endif
 #if MHD_USE_EPOLL
     {
@@ -118,6 +134,14 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2epoll,
       .server_runner = &MHDT_server_run_minimal,
     },
+#if HAVE_GNUTLS_GNUTLS_H
+    {
+      .label = "multi-threaded epoll, forcing GnuTLS",
+      .server_setup = &MHDT_server_setup_gnutls,
+      .server_setup_cls = thread2epoll,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#endif
 #endif
     {
       .label = "auto-selected mode, single threaded",
@@ -125,6 +149,14 @@ main (int argc, char *argv[])
       .server_setup_cls = thread1auto,
       .server_runner = &MHDT_server_run_minimal,
     },
+#if HAVE_GNUTLS_GNUTLS_H
+    {
+      .label = "auto-selected mode, single threaded, forcing GnuTLS",
+      .server_setup = &MHDT_server_setup_gnutls,
+      .server_setup_cls = thread1auto,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#endif
 #if 1
     /* FIXME: remove once MHD_daemon_process_blocking
        has been implemented */

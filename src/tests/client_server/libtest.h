@@ -576,6 +576,19 @@ MHDT_server_setup_tls (const void *cls,
 
 
 /**
+ * Initialize MHD daemon with TLS support using GnuTLS, binding to any free
+ * port.
+ *
+ * @param cls closure
+ * @param[in,out] d daemon to initialize
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_server_setup_gnutls (const void *cls,
+                          struct MHD_Daemon *d);
+
+
+/**
  * Function that runs an MHD daemon until
  * a read() against @a finsig succeeds.
  *

@@ -54,11 +54,15 @@ MHDT_server_setup_minimal (const void *cls,
 }
 
 
-const char *
-MHDT_server_setup_tls (const void *cls,
-                       struct MHD_Daemon *d)
+/**
+ * Setup TLS at @a d for the given backend @a be.
+ *
+ * @return NULL on success, otherwise error message
+ */
+static const char *
+server_setup_tls (struct MHD_Daemon *d,
+                  enum MHD_TlsBackend be)
 {
-  const struct MHD_DaemonOptionAndValue *options = cls;
   static const char *mem_cert =
     "-----BEGIN CERTIFICATE-----\n\
 MIIFJjCCAw6gAwIBAgIBBTANBgkqhkiG9w0BAQsFADCBgTELMAkGA1UEBhMCUlUx\n\
@@ -121,21 +125,9 @@ bC1zEehy8q0jMywvSR8vsS1v\n\
     -----END PRIVATE KEY-----";
 
   if (MHD_SC_OK !=
-      MHD_daemon_set_options (
-        d,
-        options,
-        MHD_OPTIONS_ARRAY_MAX_SIZE))
-    return "Failed to configure threading mode!";
-  if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
         d,
-        MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
-                                0)))
-    return "Failed to bind to port 0!";
-  if (MHD_SC_OK !=
-      MHD_DAEMON_SET_OPTIONS (
-        d,
-        MHD_D_OPTION_TLS (MHD_TLS_BACKEND_ANY)))
+        MHD_D_OPTION_TLS (be)))
     return "Failed to enable TLS!";
   if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
@@ -144,6 +136,44 @@ bC1zEehy8q0jMywvSR8vsS1v\n\
                                    mem_key,
                                    NULL)))
     return "Failed to enable TLS!";
+  return NULL;
+}
+
+
+const char *
+MHDT_server_setup_tls (const void *cls,
+                       struct MHD_Daemon *d)
+{
+  const struct MHD_DaemonOptionAndValue *options = cls;
+  const char *err;
+
+  err = MHDT_server_setup_minimal (options,
+                                   d);
+  if (NULL != err)
+    return err;
+  err = server_setup_tls (d,
+                          MHD_TLS_BACKEND_ANY);
+  if (NULL != err)
+    return err;
+  return NULL;
+}
+
+
+const char *
+MHDT_server_setup_gnutls (const void *cls,
+                          struct MHD_Daemon *d)
+{
+  const struct MHD_DaemonOptionAndValue *options = cls;
+  const char *err;
+
+  err = MHDT_server_setup_minimal (options,
+                                   d);
+  if (NULL != err)
+    return err;
+  err = server_setup_tls (d,
+                          MHD_TLS_BACKEND_GNUTLS);
+  if (NULL != err)
+    return err;
   return NULL;
 }
 
