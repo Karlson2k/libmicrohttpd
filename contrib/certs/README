@@ -1,0 +1,27 @@
+This directory includes files and scripts to create
+X509 certificates used in MHD test cases.
+
+Using the code requires openssl.
+
+Outputs are:
+
+Self-signed root CA:
+- rca-private-key.pem
+- rca-signed-cert.pem
+
+RCA-signed intermediate CA:
+- ica-private-key.pem
+- ica-signed-cert.pem
+
+Client of root CA:
+- client-of-rca-private-key.pem
+- client-of-rca-signed-cert.pem
+
+Clients of intermediate CA:
+- client-of-ica-private-key.pem
+- client-of-ica-signed-cert.pem
+- client2-of-ica-private-key.pem
+- client2-of-ica-signed-cert.pem
+
+Certificate chain for ICA clients:
+- ica-chain.pem

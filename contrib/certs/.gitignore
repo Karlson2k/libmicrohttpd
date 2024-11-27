@@ -1,0 +1,5 @@
+dir
+idir
+certdir
+icertdir
+*.pem
