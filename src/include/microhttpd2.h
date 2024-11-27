@@ -4009,7 +4009,7 @@ MHD_D_OPTION_TLS (
  *   certificates up to (but not including) CA root certificate.
  * @param mem_key the private key in PEM format loaded into memory (not a filename)
  * @param mem_pass the option passphrase phrase to decrypt the private key,
- *   could be NULL is private does not need a password
+ *   could be NULL if private key does not need a password
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue

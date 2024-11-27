@@ -442,7 +442,7 @@ struct MHD_DaemonOptionValueTlsCert
 
   /**
    * the option passphrase phrase to decrypt the private key,
-   * could be NULL is private does not need a password
+   * could be NULL if private key does not need a password
    */
   const char *v_mem_pass;
 
@@ -1032,7 +1032,7 @@ Works only when #MHD_D_OPTION_BIND_PORT() or #MHD_D_OPTION_BIND_SA() are used.
  *   certificates up to (but not including) CA root certificate.
  * @param mem_key the private key in PEM format loaded into memory (not a filename)
  * @param mem_pass the option passphrase phrase to decrypt the private key,
- *   could be NULL is private does not need a password
+ *   could be NULL if private key does not need a password
  * @return structure with the requested setting
  */
 #  define MHD_D_OPTION_TLS_CERT_KEY(mem_cert,mem_key,mem_pass) \
@@ -1751,7 +1751,7 @@ MHD_D_OPTION_TLS (
  *   certificates up to (but not including) CA root certificate.
  * @param mem_key the private key in PEM format loaded into memory (not a filename)
  * @param mem_pass the option passphrase phrase to decrypt the private key,
- *   could be NULL is private does not need a password
+ *   could be NULL if private key does not need a password
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue

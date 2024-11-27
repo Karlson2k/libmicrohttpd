@@ -162,7 +162,7 @@ Argument2: const char *mem_key
 Description2: the private key in PEM format loaded into memory (not a filename)
 Argument3: const char *mem_pass
 Description3: the option passphrase phrase to decrypt the private key,
-+ could be NULL is private does not need a password
++ could be NULL if private key does not need a password
 CustomSetter: /* custom setter */
 + if ((NULL == option->val.tls_cert_key.v_mem_cert)
 +     || (NULL == option->val.tls_cert_key.v_mem_key))
