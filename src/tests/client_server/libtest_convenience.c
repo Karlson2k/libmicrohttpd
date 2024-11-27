@@ -23,12 +23,12 @@
  * @brief convenience functions for libtest users
  * @author Christian Grothoff
  */
+#include "libtest.h"
 #include <pthread.h>
 #include <stdbool.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
-#include "libtest.h"
 #include <curl/curl.h>
 
 
