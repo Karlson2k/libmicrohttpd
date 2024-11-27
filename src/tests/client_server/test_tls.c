@@ -90,7 +90,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2select,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if HAVE_GNUTLS_GNUTLS_H
+#if MHD_USE_GNUTLS
     {
       .label = "multi-threaded select, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
@@ -112,7 +112,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2poll,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if HAVE_GNUTLS_GNUTLS_H
+#if MHD_USE_GNUTLS
     {
       .label = "multi-threaded poll, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
@@ -134,7 +134,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2epoll,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if HAVE_GNUTLS_GNUTLS_H
+#if MHD_USE_GNUTLS
     {
       .label = "multi-threaded epoll, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
@@ -149,7 +149,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread1auto,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if HAVE_GNUTLS_GNUTLS_H
+#if MHD_USE_GNUTLS
     {
       .label = "auto-selected mode, single threaded, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
