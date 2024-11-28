@@ -44,6 +44,9 @@
 #endif
 
 #ifndef MHD_USE_GNUTLS
+/**
+ * Check whether GnuTLS backend was successfully initialised globally
+ */
 #  define mhd_tls_gnu_is_inited_fine()   (0)
 #endif
 

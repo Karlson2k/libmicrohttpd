@@ -62,10 +62,6 @@
 #  include <stdio.h> /* For TLS debug printing */
 #endif
 
-struct mhd_TlsGnuDaemonData;    /* Forward declaration */
-
-struct mhd_TlsGnuConnData;      /* Forward declaration */
-
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 static void
 mhd_tls_gnu_debug_print (int level, const char *msg)
@@ -590,6 +586,7 @@ mhd_tls_gnu_conn_handshake (struct mhd_TlsGnuConnData *restrict c_tls)
 
   mhd_assert (c_tls->dbg.is_inited);
   mhd_assert (! c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_finished);
   mhd_assert (! c_tls->dbg.is_failed);
 
   res = gnutls_handshake (c_tls->sess);
@@ -635,6 +632,7 @@ mhd_tls_gnu_conn_shutdown (struct mhd_TlsGnuConnData *restrict c_tls)
 
   mhd_assert (c_tls->dbg.is_inited);
   mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_finished);
   mhd_assert (! c_tls->dbg.is_failed);
 
   res = gnutls_bye (c_tls->sess,
@@ -687,6 +685,7 @@ mhd_tls_gnu_conn_recv (struct mhd_TlsGnuConnData *restrict c_tls,
 
   mhd_assert (c_tls->dbg.is_inited);
   mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_finished);
   mhd_assert (! c_tls->dbg.is_failed);
 
   /* Check for GnuTLS return value limitation */
@@ -744,6 +743,7 @@ mhd_tls_gnu_conn_send (struct mhd_TlsGnuConnData *restrict c_tls,
 
   mhd_assert (c_tls->dbg.is_inited);
   mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+  mhd_assert (! c_tls->dbg.is_finished);
   mhd_assert (! c_tls->dbg.is_failed);
 
   /* Check for GnuTLS return value limitation */

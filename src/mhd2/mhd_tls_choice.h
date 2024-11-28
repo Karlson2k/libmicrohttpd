@@ -33,6 +33,8 @@
 #error This header should be used only if HTTPS is enabled
 #endif
 
+/* ** Helper macros ** */
+
 /**
  * Concatenate three arguments literally
  */
@@ -42,6 +44,10 @@
  */
 #define mhd_MACRO_CONCAT3(a,b,c)         mhd_MACRO_CONCAT3_ (a,b,c)
 
+
+/* ** Enumerate TLS backends ** */
+
+/* * GnuTLS * */
 
 #ifdef MHD_USE_GNUTLS
 /**
@@ -113,6 +119,9 @@
 #  define mhd_TLS_MACRO_NAME_ID GNU
 #endif
 
+
+/* ** Functions names and structures names macros ** */
+
 /**
  * Form function name specific for the selected TLS backend
  */
@@ -133,6 +142,9 @@
  * The name of the structure that holds connection-specific TLS data
  */
 #define mhd_TlsConnData         mhd_TLS_DATA (ConnData)
+
+
+/* ** Forward declarations ** */
 
 /**
  * The structure with daemon-specific TLS data

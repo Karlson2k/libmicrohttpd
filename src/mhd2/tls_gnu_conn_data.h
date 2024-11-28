@@ -35,6 +35,8 @@
 
 #include "tls_gnu_tls_lib.h"
 
+#include "sys_bool_type.h"
+
 #ifndef NDEBUG
 struct mhd_TlsGnuConnDebug
 {
