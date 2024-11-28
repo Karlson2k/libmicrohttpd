@@ -113,6 +113,10 @@ tls_common_files = \
   tls_dh_params.h \
   conn_tls_check.c          conn_tls_check.h
 
+tls_multi_files = \
+  tls_multi_tls_lib.h       tls_multi_daemon_data.h   tls_multi_conn_data.h \
+  tls_multi_funcs.c         tls_multi_funcs.h
+
 tls_gnu_files = \
   tls_gnu_tls_lib.h         tls_gnu_daemon_data.h     tls_gnu_conn_data.h \
   tls_gnu_funcs.c           tls_gnu_funcs.h
@@ -131,6 +135,10 @@ endif
 
 if MHD_ENABLE_HTTPS
   libmicrohttpd2_la_SOURCES += $(tls_common_files)
+
+if MHD_ENABLE_MULTITLS
+  libmicrohttpd2_la_SOURCES += $(tls_multi_files)
+endif
 
 if MHD_USE_GNUTLS
   libmicrohttpd2_la_SOURCES += $(tls_gnu_files)

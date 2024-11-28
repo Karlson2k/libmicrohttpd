@@ -20,13 +20,21 @@
 
 /**
  * @file src/mhd2/mhd_tls_funcs.c
- * @brief  The TLS backend generic functions
+ * @brief  The TLS backend generic functions implementation
  * @author Karlson2k (Evgeny Grin)
  */
 
 #include "mhd_sys_options.h"
 
 #include "mhd_tls_funcs.h"
+
+/* Include all supported TLS backends headers */
+#if defined(MHD_USE_GNUTLS)
+#  include "tls_gnu_funcs.h"
+#endif
+#if defined(MHD_USE_OPENSSL)
+#  include "tls_open_funcs.h"
+#endif
 
 #include "mhd_assert.h"
 

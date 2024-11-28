@@ -4870,6 +4870,7 @@ have_gnutls=no
 have_gnutls_pkgcfg=no
 have_openssl=no
 have_openssl_pkgcfg=no
+multiple_tls="no"
 AS_UNSET([MHD_TLS_LIB_CPPFLAGS])
 AS_UNSET([MHD_TLS_LIB_LDFLAGS])
 AS_UNSET([MHD_TLS_LIBDEPS])
@@ -5229,7 +5230,7 @@ choke me now
     AS_IF([test "x$have_gnutls" = "xyes" || test "x$have_openssl" = "xyes"],
       [
         enable_https="yes"
-        MSG_HTTPS="yes (single backend)"
+        multiple_tls="no"
         MSG_TLS_BACKENDS=""
 
         AS_VAR_IF([have_gnutls],["yes"],
@@ -5237,7 +5238,7 @@ choke me now
             AS_IF([test -n "${MSG_TLS_BACKENDS}"],
               [
                 MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}, "
-                MSG_HTTPS="yes (multiple backends)"
+                multiple_tls="yes"
               ]
             )
             AC_DEFINE([MHD_USE_GNUTLS],[1],[Define to '1' i][f GnuTLS library should be used])
@@ -5252,7 +5253,7 @@ choke me now
             AS_IF([test -n "${MSG_TLS_BACKENDS}"],
               [
                 MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}, "
-                MSG_HTTPS="yes (multiple backends)"
+                multiple_tls="yes"
               ]
             )
             AC_DEFINE([MHD_USE_OPENSSL],[1],[Define to '1' i][f OpenSSL library should be used])
@@ -5261,6 +5262,13 @@ choke me now
             MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_LDFLAGS],[$OPENSSL_LDFLAGS])
             MHD_PREPEND_FLAG_TO_VAR([MHD_TLS_LIBDEPS],[$OPENSSL_LIBS])
           ]
+        )
+        AS_VAR_IF([multiple_tls],["yes"],
+          [
+            MSG_HTTPS="yes (multiple backends)"
+            AC_DEFINE([mhd_HAVE_SEVERAL_TLS_BACKENDS],[1],[Define to '1' if several TLS backend are linked])
+          ],
+          [MSG_HTTPS="yes (single backend)"]
         )
         AS_IF([test -z "$MSG_TLS_BACKENDS"],[AC_MSG_FAILURE([configure internal error: no TLS backends])])
         AC_DEFINE([MHD_ENABLE_HTTPS],[1],[Define to '1' i][f HTTPS protocol should be enabled])
@@ -5309,6 +5317,7 @@ AM_CONDITIONAL([MHD_USE_OPENSSL], [[test "x$have_openssl" = "xyes"]])
 AC_SUBST([OPENSSL_CPPFLAGS])
 AC_SUBST([OPENSSL_LDFLAGS])
 AC_SUBST([OPENSSL_LIBS])
+AM_CONDITIONAL([MHD_ENABLE_MULTITLS], [test "x$multiple_tls" = "xyes"])
 AM_CONDITIONAL([MHD_ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
 
 AS_VAR_IF([have_gnutls], ["yes"],

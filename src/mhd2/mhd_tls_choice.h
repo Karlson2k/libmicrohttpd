@@ -102,6 +102,14 @@
 #  define MHD_USE_MULTITLS
 #endif
 
+/* Sanity check */
+#if defined(MHD_USE_MULTITLS) && ! defined(mhd_HAVE_SEVERAL_TLS_BACKENDS)
+#error several TLS backends set by configure, but only one available for code
+#endif
+#if ! defined(MHD_USE_MULTITLS) && defined(mhd_HAVE_SEVERAL_TLS_BACKENDS)
+#error several TLS backends available for code, but ony one set by configure
+#endif
+
 #ifdef MHD_USE_MULTITLS
 /**
  * Defined to one if Multi-TLS is enabled at build time or
@@ -122,7 +130,18 @@
 
 
 #if defined(MHD_USE_MULTITLS)
-// TODO: Multi-TLS implementation
+/**
+ * The TLS back-end identifier for function names
+ */
+#  define mhd_TLS_FUNC_NAME_ID multi
+/**
+ * The TLS back-end identifier for data names
+ */
+#  define mhd_TLS_DATA_NAME_ID Multi
+/**
+ * The TLS back-end identifier for macro names
+ */
+#  define mhd_TLS_MACRO_NAME_ID MULTI
 #elif defined(MHD_USE_GNUTLS)
 /**
  * The TLS back-end identifier for function names

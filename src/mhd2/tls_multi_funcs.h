@@ -19,71 +19,70 @@
 */
 
 /**
- * @file src/mhd2/mhd_tls_funcs.h
- * @brief  The TLS backend functions generic declaration, mapped to specific TLS
- *         backend at compile-time
+ * @file src/mhd2/tls_multi_funcs.h
+ * @brief  The declarations of MultiTLS wrapper functions
  * @author Karlson2k (Evgeny Grin)
  */
 
-#ifndef MHD_TLS_FUNCS_H
-#define MHD_TLS_FUNCS_H 1
+#ifndef MHD_TLS_MULTI_FUNCS_H
+#define MHD_TLS_MULTI_FUNCS_H 1
 
 #include "mhd_sys_options.h"
 
-#include "sys_bool_type.h"
-
 #include "mhd_tls_choice.h"
-#ifndef MHD_ENABLE_HTTPS
-#error This header should be used only if HTTPS is enabled
-#endif
-
-#if defined(MHD_USE_MULTITLS)
-#  include "tls_multi_funcs.h"
-#elif defined(MHD_USE_GNUTLS)
-#  include "tls_gnu_funcs.h"
-#elif defined(MHD_USE_OPENSSL)
-#  include "tls_open_funcs.h"
-#endif
-
-#ifndef MHD_USE_GNUTLS
-/**
- * Check whether GnuTLS backend was successfully initialised globally
- */
-#  define mhd_tls_gnu_is_inited_fine()   (0)
-#endif
-
-#ifndef MHD_USE_OPENSSL
-/**
- * Check whether OpenSSL backend was successfully initialised globally
- */
-#  define mhd_tls_open_is_inited_fine() (0)
-#endif
 
 #ifndef MHD_USE_MULTITLS
-/**
- * Check whether MultiTLS backend was successfully initialised globally
- */
-#  define mhd_tls_multi_is_inited_fine() (0)
+#error This header can be used only when MultiTLS is enabled
 #endif
+
+#include "sys_bool_type.h"
+#include "sys_base_types.h"
+
+#include "mhd_status_code_int.h"
+
+#include "mhd_tls_enums.h"
+#include "mhd_socket_error.h"
+
+/**
+ * The structure with daemon-specific MultiTLS data
+ */
+struct mhd_TlsMultiDaemonData;  /* Forward declaration */
+
+/**
+ * The structure with connection-specific MultiTLS data
+ */
+struct mhd_TlsMultiConnData;    /* Forward declaration */
+
 
 /* ** Global initialisation / de-initialisation ** */
 
 /**
- * Perform one-time global initialisation of TLS backend
+ * Globally initialise MultiTLS backend
  */
-#define mhd_tls_global_init_once()        mhd_TLS_FUNC (_global_init_once)()
 
 /**
- * Perform de-initialisation of TLS backend
+ * Perform one-time global initialisation of MultiTLS backend
  */
-#define mhd_tls_global_deinit()           mhd_TLS_FUNC (_global_deinit)()
+MHD_INTERNAL void
+mhd_tls_multi_global_init_once (void);
 
 /**
- * Perform re-initialisation of TLS backend
+ * Perform de-initialisation of MultiTLS backend
  */
-#define mhd_tls_global_re_init()          mhd_TLS_FUNC (_global_re_init)()
+MHD_INTERNAL void
+mhd_tls_multi_global_deinit (void);
+
+/**
+ * Perform re-initialisation of MultiTLS backend
+ */
+MHD_INTERNAL void
+mhd_tls_multi_global_re_init (void);
+
 
 /* ** Daemon initialisation / de-initialisation ** */
+
+struct MHD_Daemon;      /* Forward declaration */
+struct DaemonOptions;   /* Forward declaration */
 
 /**
  * Allocate and initialise daemon TLS parameters
@@ -94,26 +93,31 @@
  * @return #MHD_SC_OK on success (p_d_tls set to the allocated settings),
  *         error code otherwise
  */
-#define mhd_tls_daemon_init(d,s,p_d_tls)        \
-        mhd_TLS_FUNC (_daemon_init)((d),(s),(p_d_tls))
+MHD_INTERNAL mhd_StatusCodeInt
+mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
+                           struct DaemonOptions *restrict s,
+                           struct mhd_TlsMultiDaemonData **restrict p_d_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (3);
 
 /**
  * De-initialise daemon TLS parameters (and free memory allocated for TLS
  * settings)
  * @param d_tls the pointer to  the daemon's TLS settings
  */
-#define mhd_tls_daemon_deinit(d_tls)    \
-        mhd_TLS_FUNC (_daemon_deinit)((d_tls))
+MHD_INTERNAL void
+mhd_tls_multi_daemon_deinit (struct mhd_TlsMultiDaemonData *restrict d_tls)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_INOUT_ (1);
 
 
 /* ** Connection initialisation / de-initialisation ** */
 
+struct mhd_ConnSocket; /* Forward declaration */
+
 /**
  * Get size size of the connection's TLS settings
- * @param d_tls the pointer to  the daemon's TLS settings
  */
-#define mhd_tls_conn_get_tls_size(d_tls)     \
-        mhd_TLS_FUNC (_conn_get_tls_size)(d_tls)
+MHD_INTERNAL size_t
+mhd_tls_multi_conn_get_tls_size (struct mhd_TlsMultiDaemonData *restrict d_tls);
 
 /**
  * Initialise connection TLS settings
@@ -124,16 +128,20 @@
  * @return 'true' on success,
  *         'false' otherwise
  */
-#define mhd_tls_conn_init(d_tls,sk,c_tls)       \
-        mhd_TLS_FUNC (_conn_init)((d_tls),(sk),(c_tls))
+MHD_INTERNAL bool
+mhd_tls_multi_conn_init (const struct mhd_TlsMultiDaemonData *restrict d_tls,
+                         const struct mhd_ConnSocket *sk,
+                         struct mhd_TlsMultiConnData *restrict c_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (3);
 
 /**
  * De-initialise connection TLS settings.
  * The provided pointer is not freed/deallocated.
  * @param c_tls the initialised connection TLS settings
  */
-#define mhd_tls_conn_deinit(c_tls)       \
-        mhd_TLS_FUNC (_conn_deinit)((c_tls))
+MHD_INTERNAL void
+mhd_tls_multi_conn_deinit (struct mhd_TlsMultiConnData *restrict c_tls)
+MHD_FN_PAR_NONNULL_ALL_;
 
 
 /* ** TLS connection establishing ** */
@@ -144,8 +152,9 @@
  * @return #mhd_TLS_PROCED_SUCCESS if completed successfully
  *         or other enum mhd_TlsProcedureResult values
  */
-#define mhd_tls_conn_handshake(c_tls)       \
-        mhd_TLS_FUNC (_conn_handshake)((c_tls))
+MHD_INTERNAL enum mhd_TlsProcedureResult
+mhd_tls_multi_conn_handshake (struct mhd_TlsMultiConnData *restrict c_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_;
 
 /**
  * Perform shutdown of TLS layer
@@ -153,8 +162,10 @@
  * @return #mhd_TLS_PROCED_SUCCESS if completed successfully
  *         or other enum mhd_TlsProcedureResult values
  */
-#define mhd_tls_conn_shutdown(c_tls)       \
-        mhd_TLS_FUNC (_conn_shutdown)((c_tls))
+MHD_INTERNAL enum mhd_TlsProcedureResult
+mhd_tls_multi_conn_shutdown (struct mhd_TlsMultiConnData *restrict c_tls)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_;
+
 
 /* ** Data sending and receiving over TLS connection ** */
 
@@ -169,8 +180,12 @@
  * @return mhd_SOCKET_ERR_NO_ERROR if receive succeed (the @a received gets
  *         the received size) or socket error
  */
-#define mhd_tls_conn_recv(c_tls,buf_size,buf,received)  \
-        mhd_TLS_FUNC (_conn_recv)((c_tls),(buf_size),(buf),(received))
+MHD_INTERNAL enum mhd_SocketError
+mhd_tls_multi_conn_recv (struct mhd_TlsMultiConnData *restrict c_tls,
+                         size_t buf_size,
+                         char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+                         size_t *restrict received)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4);
 
 /**
  * Check whether any incoming data is pending in the TLS buffers
@@ -180,8 +195,9 @@
  *          call can be performed),
  *         'false' otherwise
  */
-#define mhd_tls_conn_has_data_in(c_tls)       \
-        mhd_TLS_FUNC (_conn_has_data_in)((c_tls))
+MHD_INTERNAL bool
+mhd_tls_multi_conn_has_data_in (struct mhd_TlsMultiConnData *restrict c_tls)
+MHD_FN_PAR_NONNULL_ALL_;
 
 /**
  * Send data to the remote side over TLS connection
@@ -193,41 +209,11 @@
  * @return mhd_SOCKET_ERR_NO_ERROR if send succeed (the @a sent gets
  *         the sent size) or socket error
  */
-#define mhd_tls_conn_send(c_tls,buf_size,buf,sent)      \
-        mhd_TLS_FUNC (_conn_send)((c_tls),(buf_size),(buf),(sent))
+MHD_INTERNAL enum mhd_SocketError
+mhd_tls_multi_conn_send (struct mhd_TlsMultiConnData *restrict c_tls,
+                         size_t buf_size,
+                         const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
+                         size_t *restrict sent)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4);
 
-
-/* ** General information function ** */
-
-/**
- * Result of TLS backend availability check
- */
-enum mhd_TlsBackendAvailable
-{
-  /**
-   * The TLS backend is available and can be used
-   */
-  mhd_TLS_BACKEND_AVAIL_OK = 0
-  ,
-  /**
-   * The TLS backend support is not enabled in this MHD build
-   */
-  mhd_TLS_BACKEND_AVAIL_NOT_SUPPORTED
-  ,
-  /**
-   * The TLS backend supported, but not available
-   */
-  mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE
-};
-
-/**
- * Check whether the requested TLS backend is available
- * @param s the daemon settings
- * @return 'mhd_TLS_BACKEND_AVAIL_OK' if requested backend is available,
- *         error code otherwise
- */
-MHD_INTERNAL enum mhd_TlsBackendAvailable
-mhd_tls_is_backend_available (struct DaemonOptions *s)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
-
-#endif /* ! MHD_TLS_FUNCS_H */
+#endif /* ! MHD_TLS_MULTI_FUNCS_H */
