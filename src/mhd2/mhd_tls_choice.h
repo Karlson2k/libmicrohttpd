@@ -92,7 +92,7 @@
         (mhd_TLS_GNU_ENABLED + mhd_TLS_OPEN_ENABLED)
 
 #if mhd_TLS_NUM_BACKENDS == 0
-#error At least one TLS backend must be enabled is this header is included
+#error At least one TLS backend must be enabled if this header is included
 #endif
 
 #if mhd_TLS_NUM_BACKENDS > 1

@@ -103,9 +103,10 @@
 
 /**
  * Get size size of the connection's TLS settings
+ * @param d_tls the pointer to  the daemon's TLS settings
  */
-#define mhd_tls_conn_get_tls_size()     \
-        mhd_TLS_FUNC (_conn_get_tls_size)()
+#define mhd_tls_conn_get_tls_size(d_tls)     \
+        mhd_TLS_FUNC (_conn_get_tls_size)(d_tls)
 
 /**
  * Initialise connection TLS settings

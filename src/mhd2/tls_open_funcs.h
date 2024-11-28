@@ -112,7 +112,14 @@ struct mhd_ConnSocket; /* Forward declaration */
  * Get size size of the connection's TLS settings
  */
 MHD_INTERNAL size_t
-mhd_tls_open_conn_get_tls_size (void);
+mhd_tls_open_conn_get_tls_size_v (void);
+
+/**
+ * Get size size of the connection's TLS settings
+ * @param d_tls the pointer to  the daemon's TLS settings
+ */
+#define mhd_tls_open_conn_get_tls_size(d_tls) \
+        mhd_tls_open_conn_get_tls_size_v ()
 
 /**
  * Initialise connection TLS settings

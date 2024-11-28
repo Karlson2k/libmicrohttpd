@@ -171,7 +171,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
   tls_data_size = 0;
 #ifdef MHD_ENABLE_HTTPS
   if (mhd_D_HAS_TLS (daemon))
-    tls_data_size = mhd_tls_conn_get_tls_size ();
+    tls_data_size = mhd_tls_conn_get_tls_size (daemon->tls);
 #endif
 
   c = mhd_calloc (1, sizeof (struct MHD_Connection) + tls_data_size);

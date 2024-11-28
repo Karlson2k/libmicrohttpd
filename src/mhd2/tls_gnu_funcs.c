@@ -450,7 +450,7 @@ mhd_tls_gnu_daemon_deinit (struct mhd_TlsGnuDaemonData *restrict d_tls)
 /* ** Connection initialisation / de-initialisation ** */
 
 MHD_INTERNAL size_t
-mhd_tls_gnu_conn_get_tls_size (void)
+mhd_tls_gnu_conn_get_tls_size_v (void)
 {
   return sizeof (struct mhd_TlsGnuConnData);
 }
