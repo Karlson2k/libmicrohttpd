@@ -283,6 +283,9 @@
 #  define MHD_FIXED_FLAGS_ENUM_MHD_APP_SET_ MHD_FLAGS_ENUM_ /* enum can be extended in next MHD versions */
 #endif
 
+#ifndef MHD_UNREACHABLE_
+#  define MHD_UNREACHABLE_      ((void) 0)
+#endif
 /**
  * Automatic string with the name of the current function
  */

@@ -1279,7 +1279,7 @@ int main(void)
 AS_IF([test "x${mhd_cv_cc_kwd_unreachable}" != "xnone"],
   [
     AC_DEFINE_UNQUOTED([MHD_UNREACHABLE_],[$mhd_cv_cc_kwd_unreachable],[Define to keyword used to indicate unreachable code paths])
-    AS_IF([test "x${mhd_cv_cc_kwd_unreachable}" = 'xunreachable()'],
+    AS_IF([test "x${mhd_cv_cc_kwd_unreachable}" = "xunreachable()" && test "x$ac_cv_header_stddef_h" = "xyes"],
       AC_DEFINE([MHD_UNREACHABLE_NEEDS_STDDEF_H],[$mhd_cv_cc_kwd_unreachable],[Define to '1' if MHD_UNREACHABLE_() requires include of <stddef.h> header])
     )
   ]
