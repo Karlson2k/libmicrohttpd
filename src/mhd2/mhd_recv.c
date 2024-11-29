@@ -108,7 +108,6 @@ mhd_recv_tls (struct MHD_Connection *restrict c,
                    & (~(enum mhd_SocketNetState)
                       mhd_SOCKET_NET_STATE_RECV_READY));
   else if ((mhd_SOCKET_ERR_NO_ERROR == res) &&
-           (*received == buf_size) &&
            mhd_tls_conn_has_data_in (c->tls))
     c->tls_has_data_in = mhd_TLS_BUF_HAS_DATA_IN;
 
