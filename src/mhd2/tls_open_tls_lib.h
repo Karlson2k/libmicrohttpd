@@ -54,4 +54,12 @@
 #error OPENSSL_VERSION_PREREQ is not defined
 #endif
 
+#if OPENSSL_VERSION_PREREQ (3,4)
+/**
+ * Defined if functions OSSL_LIB_CTX_get_conf_diagnostics() and
+ * OSSL_LIB_CTX_set_conf_diagnostics are available;
+ */
+#  define mhd_TLS_OPEN_HAS_CONF_DIAG    1
+#endif
+
 #endif /* ! MHD_TLS_OPEN_TLS_LIB_H */

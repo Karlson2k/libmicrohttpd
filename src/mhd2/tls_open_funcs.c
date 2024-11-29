@@ -51,10 +51,6 @@
 
 #include "mhd_public_api.h"
 
-#ifdef  mhd_TLS_OPEN_DH_PARAMS_NEEDS_PKCS3
-#  include "tls_dh_params.h"
-#endif
-
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 #  include <stdio.h> /* For TLS debug printing */
 #endif
@@ -190,7 +186,11 @@ daemon_init_lib_ctx (struct MHD_Daemon *restrict d,
     return MHD_SC_TLS_DAEMON_INIT_FAILED;
   }
 
-  prevent_fallbacks = (0 != OSSL_LIB_CTX_get_conf_diagnostics (d_tls->libctx));
+  prevent_fallbacks = false;
+#ifdef mhd_TLS_OPEN_HAS_CONF_DIAG
+  prevent_fallbacks = prevent_fallbacks ||
+                      (0 != OSSL_LIB_CTX_get_conf_diagnostics (d_tls->libctx));
+#endif
 
   fallback_config = false;
   ERR_clear_error ();
@@ -285,9 +285,11 @@ daemon_init_lib_ctx (struct MHD_Daemon *restrict d,
               mhd_DBG_PRINT_TLS_ERRS ();
           }
         }
+#ifdef mhd_TLS_OPEN_HAS_CONF_DIAG
         if (fallback_config && libctx_inited && ! prevent_fallbacks)
           prevent_fallbacks =
             (0 != OSSL_LIB_CTX_get_conf_diagnostics (d_tls->libctx));
+#endif /* mhd_TLS_OPEN_HAS_CONF_DIAG */
       }
       NCONF_free (conf);
     }
