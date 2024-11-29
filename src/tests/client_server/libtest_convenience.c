@@ -116,7 +116,7 @@ F1zBkvzzl6+HXewGOEjm+YorDMtfADiU/hkkykWq01NG3QSwk7jaKieb5Rlou53d\n\
 IXJQBw0KW5UrgbIFqMjpSZz1jdALBKsV+dw0wvCQ8BVXZm3zZpsV+0E4Z0sdj3TI\n\
 UbkFqQ6GpoxB25UUUlLZhBbtKy7dheuPBk0HowitYlo1kLVA/JiFB4qbdf5X/9Tm\n\
 XRkN+T0orEgy7rBQa7dJN9bdLj+dS5q8\n\
-    -----END ENCRYPTED PRIVATE KEY-----";
+-----END ENCRYPTED PRIVATE KEY-----";
 
   if (MHD_SC_OK !=
       MHD_DAEMON_SET_OPTIONS (
