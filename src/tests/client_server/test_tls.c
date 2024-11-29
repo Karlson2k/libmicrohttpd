@@ -157,6 +157,14 @@ main (int argc, char *argv[])
       .server_runner = &MHDT_server_run_minimal,
     },
 #endif
+#if MHD_USE_OPENSSL
+    {
+      .label = "auto-selected mode, single threaded, forcing OpenSSL",
+      .server_setup = &MHDT_server_setup_openssl,
+      .server_setup_cls = thread1auto,
+      .server_runner = &MHDT_server_run_minimal,
+    },
+#endif
 #if 1
     /* FIXME: remove once MHD_daemon_process_blocking
        has been implemented */

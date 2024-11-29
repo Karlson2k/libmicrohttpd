@@ -172,6 +172,25 @@ MHDT_server_setup_gnutls (const void *cls,
 }
 
 
+const char *
+MHDT_server_setup_openssl (const void *cls,
+                           struct MHD_Daemon *d)
+{
+  const struct MHD_DaemonOptionAndValue *options = cls;
+  const char *err;
+
+  err = MHDT_server_setup_minimal (options,
+                                   d);
+  if (NULL != err)
+    return err;
+  err = server_setup_tls (d,
+                          MHD_TLS_BACKEND_OPENSSL);
+  if (NULL != err)
+    return err;
+  return NULL;
+}
+
+
 void
 MHDT_server_run_minimal (void *cls,
                          int finsig,
