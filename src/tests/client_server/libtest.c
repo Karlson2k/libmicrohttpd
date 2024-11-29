@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <curl/curl.h>
 
 /**
@@ -526,9 +527,16 @@ MHDT_test (MHDT_ServerSetup ss_cb,
     sc = MHD_daemon_start (d);
     if (MHD_SC_OK != sc)
     {
+#if FIXME_STATUS_CODE_TO_STRING_NOT_IMPLEMENTED
       fprintf (stderr,
                "Failed to start server: %s\n",
-               err);
+               MHD_status_code_to_string_lazy (sc));
+#else
+      fprintf (stderr,
+               "Failed to start server: %d\n",
+               sc);
+#endif
+      MHD_daemon_destroy (d);
       return 1;
     }
   }
@@ -560,6 +568,7 @@ MHDT_test (MHDT_ServerSetup ss_cb,
     fprintf (stderr,
              "Failed to start server phase thread: %s\n",
              strerror (errno));
+    MHD_daemon_destroy (d);
     return 77;
   }
   ctx.finsig = p[0];
@@ -572,6 +581,7 @@ MHDT_test (MHDT_ServerSetup ss_cb,
     fprintf (stderr,
              "Failed to start server run thread: %s\n",
              strerror (errno));
+    MHD_daemon_destroy (d);
     return 77;
   }
   for (i = 0; NULL != phases[i].label; i++)
