@@ -29,7 +29,7 @@
 
 #include "mhd_sys_options.h"
 
-#if !defined(NDEBUG)
+#if ! defined(NDEBUG)
 #  include "mhd_assert.h"
 #elif defined (MHD_UNREACHABLE_NEEDS_STDDEF_H)
 #  include <stddef.h>
@@ -49,7 +49,7 @@
 #  endif
 #else
 #  define mhd_UNREACHABLE()     \
-          mhd_assert (0 && "This code should be unreachable")
+        mhd_assert (0 && "This code should be unreachable")
 #endif
 
 #endif /* ! MHD_UNREACHABLE_H */
