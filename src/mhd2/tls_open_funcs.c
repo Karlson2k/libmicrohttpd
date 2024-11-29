@@ -128,7 +128,7 @@ check_app_tls_sessings (struct MHD_Daemon *restrict d,
                         struct DaemonOptions *restrict s)
 {
   mhd_assert (MHD_TLS_BACKEND_NONE != s->tls);
-  mhd_assert ((MHD_TLS_BACKEND_GNUTLS == s->tls) || \
+  mhd_assert ((MHD_TLS_BACKEND_OPENSSL == s->tls) || \
               (MHD_TLS_BACKEND_ANY == s->tls));
   if (NULL == s->tls_cert_key.v_mem_cert)
   {
