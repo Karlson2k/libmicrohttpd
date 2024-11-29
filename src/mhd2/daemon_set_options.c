@@ -104,7 +104,7 @@ MHD_daemon_set_options (
         ++cert_size; /* Space for zero-termination */
         ++key_size;  /* Space for zero-termination */
         if (NULL != option->val.tls_cert_key.v_mem_pass)
-          pass_size = strlen (option->val.tls_cert_key.v_mem_cert);
+          pass_size = strlen (option->val.tls_cert_key.v_mem_pass);
         else
           pass_size = 0;
         if (0 != pass_size)
