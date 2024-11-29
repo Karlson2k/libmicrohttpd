@@ -527,7 +527,7 @@ MHDT_test (MHDT_ServerSetup ss_cb,
     sc = MHD_daemon_start (d);
     if (MHD_SC_OK != sc)
     {
-#if FIXME_STATUS_CODE_TO_STRING_NOT_IMPLEMENTED
+#ifdef FIXME_STATUS_CODE_TO_STRING_NOT_IMPLEMENTED
       fprintf (stderr,
                "Failed to start server: %s\n",
                MHD_status_code_to_string_lazy (sc));
