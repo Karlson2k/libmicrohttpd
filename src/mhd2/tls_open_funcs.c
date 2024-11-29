@@ -107,7 +107,7 @@ mhd_tls_open_global_init_once (void)
 }
 
 
-MHD_INTERNAL bool
+MHD_INTERNAL MHD_FN_PURE_ bool
 mhd_tls_open_is_inited_fine (void)
 {
   return openssl_lib_inited;

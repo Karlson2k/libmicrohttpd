@@ -76,7 +76,8 @@ mhd_tls_gnu_global_deinit (void);
  * Check whether GnuTLS backend was successfully initialised globally
  */
 MHD_INTERNAL bool
-mhd_tls_gnu_is_inited_fine (void);
+mhd_tls_gnu_is_inited_fine (void)
+MHD_FN_PURE_;
 
 
 /* ** Daemon initialisation / de-initialisation ** */

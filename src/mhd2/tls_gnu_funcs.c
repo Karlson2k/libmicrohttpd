@@ -110,7 +110,7 @@ mhd_tls_gnu_global_deinit (void)
 }
 
 
-MHD_INTERNAL bool
+MHD_INTERNAL MHD_FN_PURE_ bool
 mhd_tls_gnu_is_inited_fine (void)
 {
   return gnutls_lib_inited;
