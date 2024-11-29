@@ -678,7 +678,9 @@ MHDT_load_pem (const char *name)
   if (s.st_size > (off_t) SIZE_MAX)
   {
     fprintf (stderr,
-             "File too large to malloc()\n");
+             "File %s too large (%llu bytes) to malloc()\n",
+             path,
+             (unsigned long long) s.st_size);
     (void) close (fd);
     return NULL;
   }
