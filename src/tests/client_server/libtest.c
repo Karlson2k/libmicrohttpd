@@ -675,7 +675,7 @@ MHDT_load_pem (const char *name)
     (void) close (fd);
     return NULL;
   }
-  buf = malloc (s.st_size + 1);
+  buf = malloc (((size_t) s.st_size + 1));
   if (NULL == buf)
   {
     fprintf (stderr,
