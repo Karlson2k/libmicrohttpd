@@ -675,12 +675,13 @@ MHDT_load_pem (const char *name)
     (void) close (fd);
     return NULL;
   }
-  if (s.st_size > (off_t) SIZE_MAX)
+  if (((unsigned long long) s.st_size) >= (unsigned long long) SIZE_MAX)
   {
     fprintf (stderr,
-             "File %s too large (%llu bytes) to malloc()\n",
+             "File %s too large (%llu >= %llu bytes) to malloc()\n",
              path,
-             (unsigned long long) s.st_size);
+             (unsigned long long) s.st_size,
+             (unsigned long long) SIZE_MAX);
     (void) close (fd);
     return NULL;
   }
