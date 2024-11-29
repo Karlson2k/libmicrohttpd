@@ -29,6 +29,7 @@
 #include "conn_tls_check.h"
 
 #include "mhd_assert.h"
+#include "mhd_unreachable.h"
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
@@ -121,7 +122,7 @@ mhd_conn_tls_check (struct MHD_Connection *restrict c)
     break;
   default:
     mhd_assert (0 && "Should be unreachable");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return mhd_CONN_TLS_CHECK_BROKEN;
   }
 

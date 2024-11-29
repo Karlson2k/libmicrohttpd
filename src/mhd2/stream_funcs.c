@@ -28,6 +28,9 @@
 
 #include "stream_funcs.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include <string.h>
 #ifdef MHD_USE_EPOLL
 #  include <sys/epoll.h>
@@ -37,7 +40,6 @@
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
 #include "mhd_response.h"
-#include "mhd_assert.h"
 #include "mhd_mempool.h"
 #include "mhd_str.h"
 #include "mhd_str_macros.h"
@@ -777,7 +779,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     case mhd_SOCKET_ERR_INTR:
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
     }
     break;
   case mhd_CONN_CLOSE_DAEMON_SHUTDOWN:
@@ -815,7 +817,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 
   default:
     mhd_assert (0 && "Unreachable code");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     end_code = MHD_REQUEST_ENDED_COMPLETED_OK;
     close_hard = false;
   }

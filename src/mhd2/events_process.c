@@ -27,6 +27,9 @@
 #include "mhd_sys_options.h"
 #include "events_process.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include "mhd_locks.h"
 
 #include "mhd_socket_type.h"
@@ -1097,7 +1100,7 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     MHD_PANIC ("Daemon data integrity broken");
   }
   if (d->events.act_req.accept)
@@ -1173,7 +1176,7 @@ process_listening_and_itc_only (struct MHD_Daemon *restrict d)
   else
   {
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     MHD_PANIC ("Daemon data integrity broken");
   }
   // TODO: Accept connections

@@ -28,9 +28,11 @@
 
 #include "sys_bool_type.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include "compat_calloc.h"
 #include "sys_malloc.h"
-#include "mhd_assert.h"
 
 #include "mhd_arr_num_elems.h"
 
@@ -168,7 +170,7 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
   default:
   }
   mhd_assert (0 && "Impossible value");
-  MHD_UNREACHABLE_;
+  mhd_UNREACHABLE ();
   return MHD_SC_INTERNAL_ERROR;
 }
 
@@ -243,7 +245,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
   default:
     break;
     mhd_assert (0 && "Should not be reachable");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return MHD_SC_TLS_BACKEND_UNSUPPORTED;
   }
   mhd_assert (NULL != d_tls);
@@ -281,7 +283,7 @@ mhd_tls_multi_daemon_deinit (struct mhd_TlsMultiDaemonData *restrict d_tls)
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
   free (d_tls);
 }
@@ -315,7 +317,7 @@ mhd_tls_multi_conn_get_tls_size (struct mhd_TlsMultiDaemonData *restrict d_tls)
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
 
   return data_size;
@@ -355,7 +357,7 @@ mhd_tls_multi_conn_init (const struct mhd_TlsMultiDaemonData *restrict d_tls,
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
 
   return false;
@@ -390,7 +392,7 @@ mhd_tls_multi_conn_deinit (struct mhd_TlsMultiConnData *restrict c_tls)
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
 }
 
@@ -419,7 +421,7 @@ mhd_tls_multi_conn_handshake (struct mhd_TlsMultiConnData *restrict c_tls)
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
   return mhd_TLS_PROCED_FAILED;
 }
@@ -447,7 +449,7 @@ mhd_tls_multi_conn_shutdown (struct mhd_TlsMultiConnData *restrict c_tls)
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
   return mhd_TLS_PROCED_FAILED;
 }
@@ -487,7 +489,7 @@ mhd_tls_multi_conn_recv (struct mhd_TlsMultiConnData *restrict c_tls,
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
   return mhd_SOCKET_ERR_INTERNAL;
 }
@@ -514,7 +516,7 @@ mhd_tls_multi_conn_has_data_in (struct mhd_TlsMultiConnData *restrict c_tls)
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
   return false;
 }
@@ -552,7 +554,7 @@ mhd_tls_multi_conn_send (struct mhd_TlsMultiConnData *restrict c_tls,
 #endif /* ! MHD_USE_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
   return mhd_SOCKET_ERR_INTERNAL;
 }

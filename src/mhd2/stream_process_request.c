@@ -35,6 +35,9 @@
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include "sys_malloc.h"
 
 #include "mhd_str_types.h"
@@ -47,7 +50,6 @@
 #include "mhd_connection.h"
 
 #include "daemon_logger.h"
-#include "mhd_assert.h"
 #include "mhd_panic.h"
 
 #include "mhd_mempool.h"
@@ -2536,7 +2538,7 @@ parse_cookie_header (struct MHD_Connection *restrict connection,
     break;
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   }
 
@@ -3013,7 +3015,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
     mhd_assert (0 && "Impossible value");
     break;
   }
-  MHD_UNREACHABLE_;
+  mhd_UNREACHABLE ();
   return false;
 }
 
@@ -3076,7 +3078,7 @@ mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
     mhd_assert (0 && "Impossible value");
     break;
   }
-  MHD_UNREACHABLE_;
+  mhd_UNREACHABLE ();
   return false;
 }
 
@@ -3943,7 +3945,7 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
 #endif /* MHD_UPGRADE_SUPPORT */
     default:
       mhd_assert (0);
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       stage = MHD_PROC_RECV_BODY_NORMAL;
     }
 

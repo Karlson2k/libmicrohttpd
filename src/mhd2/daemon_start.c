@@ -67,6 +67,8 @@
 #include "daemon_options.h"
 
 #include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include "mhd_sockets_funcs.h"
 
 #include "mhd_lib_init.h"
@@ -446,7 +448,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       {
       case MHD_AF_NONE:
         mhd_assert (0);
-        MHD_UNREACHABLE_;
+        mhd_UNREACHABLE ();
         return MHD_SC_INTERNAL_ERROR;
       case MHD_AF_AUTO:
 #ifdef HAVE_INET6
@@ -593,7 +595,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       case mhd_SKT_NO_SOCKET:
       default:
         mhd_assert (0);
-        MHD_UNREACHABLE_;
+        mhd_UNREACHABLE ();
         return MHD_SC_INTERNAL_ERROR;
       }
 
@@ -970,7 +972,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
     case mhd_SKT_NO_SOCKET:
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       return MHD_SC_INTERNAL_ERROR;
     }
     d->net.listen.non_block = is_non_block;
@@ -1312,7 +1314,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return MHD_SC_INTERNAL_ERROR;
     break;
   }
@@ -1726,7 +1728,7 @@ allocate_events (struct MHD_Daemon *restrict d)
   default:
     mhd_assert (0 && "Impossible value");
   }
-  MHD_UNREACHABLE_;
+  mhd_UNREACHABLE ();
   return MHD_SC_INTERNAL_ERROR;
 }
 
@@ -1745,7 +1747,7 @@ deallocate_events (struct MHD_Daemon *restrict d)
   if (mhd_POLL_TYPE_NOT_SET_YET == d->events.poll_type)
   {
     mhd_assert (0 && "Wrong workflow");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return;
   }
 #ifdef MHD_USE_SELECT
@@ -1961,7 +1963,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
   default:
     mhd_assert (0 && "Impossible value");
   }
-  MHD_UNREACHABLE_;
+  mhd_UNREACHABLE ();
   return MHD_SC_INTERNAL_ERROR;
 }
 
@@ -2339,7 +2341,7 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
   default:
     mhd_assert (0 && "Impossible value");
   }
-  MHD_UNREACHABLE_;
+  mhd_UNREACHABLE ();
   return MHD_SC_INTERNAL_ERROR;
 }
 
@@ -2617,7 +2619,7 @@ daemon_deinit_threading_and_conn (struct MHD_Daemon *restrict d)
     deinit_workers_pool (d, d->threading.hier.pool.num);
 #else  /* ! MHD_USE_THREADS */
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     (void) 0;
 #endif /* ! MHD_USE_THREADS */
   }
@@ -2687,7 +2689,7 @@ start_individual_daemon_thread (struct MHD_Daemon *restrict d)
   else
   {
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return MHD_SC_INTERNAL_ERROR;
   }
   mhd_assert (mhd_thread_handle_ID_is_valid_handle (d->threading.tid));
@@ -2847,7 +2849,7 @@ daemon_start_threads (struct MHD_Daemon *restrict d)
     }
 #else  /* ! MHD_USE_THREADS */
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return MHD_SC_INTERNAL_ERROR;
 #endif /* ! MHD_USE_THREADS */
   }
@@ -2886,7 +2888,7 @@ daemon_stop_threads (struct MHD_Daemon *restrict d)
     }
 #else  /* ! MHD_USE_THREADS */
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return MHD_SC_INTERNAL_ERROR;
 #endif /* ! MHD_USE_THREADS */
   }

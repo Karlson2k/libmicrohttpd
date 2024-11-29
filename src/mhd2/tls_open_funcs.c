@@ -29,11 +29,13 @@
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include <string.h>
 
 #include "compat_calloc.h"
 #include "sys_malloc.h"
-#include "mhd_assert.h"
 
 #include "mhd_conn_socket.h"
 
@@ -901,7 +903,7 @@ mhd_tls_open_conn_handshake (struct mhd_TlsOpenConnData *restrict c_tls)
     return mhd_TLS_PROCED_RECV_MORE_NEEDED;
   case SSL_ERROR_NONE:
     mhd_assert (0 && "This should not be possible");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   default: /* Handled with all other errors below */
     break;

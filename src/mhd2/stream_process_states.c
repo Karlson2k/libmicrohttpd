@@ -34,6 +34,9 @@
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include "mhd_str_macros.h"
 #include "mhd_socket_error_funcs.h"
 
@@ -70,7 +73,7 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     break;
   case mhd_HTTP_STAGE_REQ_LINE_RECEIVED:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_REQ_HEADERS_RECEIVING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
@@ -78,7 +81,7 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
   case mhd_HTTP_STAGE_HEADERS_RECEIVED:
   case mhd_HTTP_STAGE_HEADERS_PROCESSED:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_CONTINUE_SENDING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
@@ -88,14 +91,14 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     break;
   case mhd_HTTP_STAGE_BODY_RECEIVED:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_FOOTERS_RECEIVING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
     break;
   case mhd_HTTP_STAGE_FOOTERS_RECEIVED:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_FULL_REQ_RECEIVED:
     mhd_assert (0 && "Should not be possible");
@@ -103,11 +106,11 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     break;
   case mhd_HTTP_STAGE_REQ_RECV_FINISHED:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_START_REPLY:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_HEADERS_SENDING:
     /* headers in buffer, keep writing */
@@ -115,7 +118,7 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     break;
   case mhd_HTTP_STAGE_HEADERS_SENT:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
 #ifdef MHD_UPGRADE_SUPPORT
   case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
@@ -138,19 +141,19 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     break;
   case mhd_HTTP_STAGE_CHUNKED_BODY_SENT:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_FOOTERS_SENDING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
   case mhd_HTTP_STAGE_FULL_REPLY_SENT:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
 #ifdef MHD_UPGRADE_SUPPORT
   case mhd_HTTP_STAGE_UPGRADING:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   case mhd_HTTP_STAGE_UPGRADED:
     mhd_assert (0 && "Should not be possible");
@@ -171,7 +174,7 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     break;
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
 }
 
@@ -474,22 +477,22 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       continue;
     case mhd_HTTP_STAGE_UPGRADED:
       mhd_assert (0 && "Should be unreachable");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       break;
     case mhd_HTTP_STAGE_UPGRADED_CLEANING:
       mhd_assert (0 && "Should be unreachable");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       break;
 #endif /* MHD_UPGRADE_SUPPORT */
     case mhd_HTTP_STAGE_PRE_CLOSING:
       return false;
     case mhd_HTTP_STAGE_CLOSED:
       mhd_assert (0 && "Should be unreachable");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       break;
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       break;
     }
     break;
@@ -500,7 +503,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   if (mhd_HTTP_STAGE_PRE_CLOSING == c->stage)
   {
     mhd_assert (0 && "Pre-closing should be already caught in the loop");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     return false;
   }
 

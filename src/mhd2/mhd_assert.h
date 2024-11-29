@@ -78,11 +78,4 @@
 #  endif /* ! HAVE_ASSERT */
 #endif /* NDEBUG */
 
-#ifdef _DEBUG
-#  ifdef MHD_UNREACHABLE_
-#    undef MHD_UNREACHABLE_
-#  endif
-#  define MHD_UNREACHABLE_ (mhd_assert (0 && "Should not be reachable"))
-#endif
-
 #endif /* ! MHD_ASSERT_H */

@@ -71,6 +71,7 @@
 #endif /* _WIN32 */
 
 #include "mhd_assert.h"
+#include "mhd_unreachable.h"
 
 
 #ifdef HAVE_CLOCK_GETTIME
@@ -705,7 +706,7 @@ mhd_monotonic_msec_counter (void)
 #endif /* _WIN32 */
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   }
 

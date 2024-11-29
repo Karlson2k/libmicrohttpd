@@ -34,6 +34,9 @@
 #include "sys_bool_type.h"
 #include "sys_base_types.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include <string.h>
 #ifdef HAVE_TIME_H
 #  include <time.h>
@@ -45,7 +48,6 @@
 #include "mhd_connection.h"
 
 #include "daemon_logger.h"
-#include "mhd_assert.h"
 
 #include "mhd_str.h"
 #include "http_status_str.h"
@@ -324,7 +326,7 @@ setup_reply_properties (struct MHD_Connection *restrict c)
     case mhd_RESPONSE_CONTENT_DATA_INVALID:
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
       break;
     }
@@ -958,7 +960,7 @@ preprocess_dcc_action (struct MHD_Connection *restrict c,
     break;
   }
   mhd_assert (0 && "Impossible value");
-  MHD_UNREACHABLE_;
+  mhd_UNREACHABLE ();
   mhd_STREAM_ABORT (c,
                     mhd_CONN_CLOSE_INT_ERROR,
                     "Impossible code path");
@@ -1017,7 +1019,7 @@ read_response_file (struct MHD_Connection *restrict c,
     return false;
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
     return false;
   }
@@ -1131,7 +1133,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
     else
     {
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
       c->rp.rsp_cntn_read_pos = r->cntn_size;
     }
@@ -1169,7 +1171,7 @@ mhd_stream_prep_unchunked_body (struct MHD_Connection *restrict c)
   else
   {
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
     c->rp.rsp_cntn_read_pos = r->cntn_size;
   }

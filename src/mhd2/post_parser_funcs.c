@@ -29,6 +29,9 @@
 
 #include "post_parser_funcs.h"
 
+#include "mhd_assert.h"
+#include "mhd_unreachable.h"
+
 #include "mhd_post_parser.h"
 
 #include <string.h>
@@ -399,7 +402,7 @@ init_post_parse_data (struct MHD_Connection *restrict c)
   case MHD_HTTP_POST_ENCODING_OTHER:
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
   }
 }
 
@@ -1324,11 +1327,11 @@ parse_post_urlenc (struct MHD_Connection *restrict c,
       continue; /* Process the next char */
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       break;
     }
     mhd_assert (0 && "Should be unreachable");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   }
 
@@ -1761,7 +1764,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                       mhd_assert (0 && "broken quoting must be detected " \
                                   "earlier by " \
                                   "mhd_str_starts_with_token_req_param()");
-                      MHD_UNREACHABLE_;
+                      mhd_UNREACHABLE ();
                       mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
                       continue;
                     }
@@ -1783,7 +1786,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                 mhd_assert (mhd_STR_STARTS_W_TOKEN_NO_TOKEN == res);
                 mhd_assert (0 && "The presence of the token was "
                             "checked earlier");
-                MHD_UNREACHABLE_;
+                mhd_UNREACHABLE ();
               }
 
               if (hdr_has_name)
@@ -1798,7 +1801,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                     mhd_assert (0 && "broken quoting must be detected " \
                                 "earlier by " \
                                 "mhd_str_starts_with_token_req_param()");
-                    MHD_UNREACHABLE_;
+                    mhd_UNREACHABLE ();
                     mf->st = mhd_POST_MPART_ST_FORMAT_ERROR;
                     continue;
                   }
@@ -2067,11 +2070,11 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       return true;
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       break;
     }
     mhd_assert (0 && "Should be unreachable");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     break;
   }
 
@@ -2289,7 +2292,7 @@ parse_post_text (struct MHD_Connection *restrict c,
       continue; /* Process the next char */
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       enc_broken = true;
       break;
     }
@@ -2423,7 +2426,7 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
     case MHD_HTTP_POST_ENCODING_OTHER:
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
       p_data->parse_result =
         MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
       c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
@@ -2568,7 +2571,7 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
   case mhd_POST_UENC_ST_AT_AMPRSND:
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     p_data->parse_result = MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     return false;
   }
@@ -2705,7 +2708,7 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
   case mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL:
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     p_data->parse_result = MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     return false;
   }
@@ -2837,7 +2840,7 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
   case mhd_POST_TEXT_ST_AT_CR:
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     p_data->parse_result = MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     return false;
   }
@@ -2905,7 +2908,7 @@ check_post_leftovers (struct MHD_Connection *restrict c)
   case MHD_HTTP_POST_ENCODING_OTHER:
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     p_data->parse_result =
       MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
     c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;

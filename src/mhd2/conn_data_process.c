@@ -36,6 +36,7 @@
 #include "sys_base_types.h"
 
 #include "mhd_assert.h"
+#include "mhd_unreachable.h"
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
@@ -70,7 +71,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
       return false; /* Connection is broken */
     default:
       mhd_assert (0 && "Impossible value");
-      MHD_UNREACHABLE_;
+      mhd_UNREACHABLE ();
     }
   }
 #endif /* MHD_ENABLE_HTTPS */

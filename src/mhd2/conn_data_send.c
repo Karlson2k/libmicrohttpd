@@ -36,6 +36,7 @@
 #include "mhd_str_macros.h"
 
 #include "mhd_assert.h"
+#include "mhd_unreachable.h"
 
 #include "mhd_connection.h"
 #include "mhd_response.h"
@@ -324,12 +325,12 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
   case mhd_HTTP_STAGE_UPGRADED_CLEANING:
 #endif /* MHD_UPGRADE_SUPPORT */
     mhd_assert (0 && "Should be unreachable");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     res = mhd_SOCKET_ERR_INTERNAL;
     break;
   default:
     mhd_assert (0 && "Impossible value");
-    MHD_UNREACHABLE_;
+    mhd_UNREACHABLE ();
     res = mhd_SOCKET_ERR_INTERNAL;
     break;
   }
