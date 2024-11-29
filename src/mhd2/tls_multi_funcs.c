@@ -193,6 +193,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
   if (NULL == d_tls)
     return MHD_SC_DAEMON_MALLOC_FAILURE;
 
+  res = MHD_SC_INTERNAL_ERROR; /* Mute compiler warning, the value should not be used */
   switch (s->tls)
   {
   case MHD_TLS_BACKEND_ANY:
@@ -200,18 +201,16 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
     {
       size_t i;
       enum mhd_TlsMultiRoute backends[] = {
-        mhd_TLS_MULTI_ROUTE_NONE  /* Not used */
 #ifdef MHD_USE_GNUTLS
-        ,
-        mhd_TLS_MULTI_ROUTE_GNU
+        mhd_TLS_MULTI_ROUTE_GNU,
 #endif
 #ifdef MHD_USE_OPENSSL
-        ,
-        mhd_TLS_MULTI_ROUTE_OPEN
+        mhd_TLS_MULTI_ROUTE_OPEN,
 #endif
+        mhd_TLS_MULTI_ROUTE_NONE  /* Not used */
       };
       /* Try backends one-by-one */
-      for (i = 1; i < mhd_ARR_NUM_ELEMS (backends); ++i)
+      for (i = 0; i < mhd_ARR_NUM_ELEMS (backends) - 1; ++i)
       {
         res = tls_daemon_init_try (backends[i],
                                    d,
@@ -252,7 +251,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
     break;
     mhd_assert (0 && "Should not be reachable");
     mhd_UNREACHABLE ();
-    return MHD_SC_TLS_BACKEND_UNSUPPORTED;
+    res = MHD_SC_TLS_BACKEND_UNSUPPORTED;
   }
   mhd_assert (NULL != d_tls);
   if (MHD_SC_OK == res)

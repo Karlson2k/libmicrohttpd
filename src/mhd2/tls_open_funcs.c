@@ -657,7 +657,8 @@ daemon_init_cert (struct MHD_Daemon *restrict d,
   enum MHD_StatusCode ret;
   BIO *m_bio;
   EVP_PKEY *pr_key;
-  int res;
+  int res_i;
+  long res_l;
 
   mhd_assert (NULL != d_tls->libctx);
   mhd_assert (NULL != d_tls->ctx);
@@ -672,7 +673,7 @@ daemon_init_cert (struct MHD_Daemon *restrict d,
 
   /* Check and cache the certificates chain.
      This also prevents automatic chain re-building for each session. */
-  res =
+  res_l =
     SSL_CTX_build_cert_chain (
       d_tls->ctx,
       SSL_BUILD_CHAIN_FLAG_CHECK /* Use only certificates in the chain */
@@ -680,14 +681,14 @@ daemon_init_cert (struct MHD_Daemon *restrict d,
       | SSL_BUILD_CHAIN_FLAG_NO_ROOT /* The root should not be sent */
       | SSL_BUILD_CHAIN_FLAG_IGNORE_ERROR /* Allow the root CA to be not trusted */
       );
-  if (0 >= res)
+  if (0 >= res_l)
   {
     mhd_DBG_PRINT_TLS_ERRS ();
     mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
                  "Failed rebuild certificate chain");
     return MHD_SC_TLS_DAEMON_INIT_FAILED;
   }
-  if (2 == res)
+  if (2 == res_l)
     mhd_DBG_PRINT_TLS_ERRS ();
 
   m_bio = BIO_new_mem_buf (s->tls_cert_key.v_mem_key,
@@ -714,10 +715,10 @@ daemon_init_cert (struct MHD_Daemon *restrict d,
     return MHD_SC_TLS_DAEMON_INIT_FAILED;
   }
 
-  res = SSL_CTX_use_PrivateKey (d_tls->ctx,
-                                pr_key);
+  res_i = SSL_CTX_use_PrivateKey (d_tls->ctx,
+                                  pr_key);
   EVP_PKEY_free (pr_key); /* The key has been "copied" or failed */
-  if (1 != res)
+  if (1 != res_i)
   {
     mhd_DBG_PRINT_TLS_ERRS ();
     mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
