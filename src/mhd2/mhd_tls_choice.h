@@ -171,6 +171,23 @@
 #endif
 
 
+/* ** Functions replacement macros to simplify the code ** */
+
+#ifndef MHD_USE_GNUTLS
+/**
+ * Check whether GnuTLS backend was successfully initialised globally
+ */
+#  define mhd_tls_gnu_is_inited_fine()   (! ! 0)
+#endif
+
+#ifndef MHD_USE_OPENSSL
+/**
+ * Check whether OpenSSL backend was successfully initialised globally
+ */
+#  define mhd_tls_open_is_inited_fine() (! ! 0)
+#endif
+
+
 /* ** Functions names and structures names macros ** */
 
 /**
