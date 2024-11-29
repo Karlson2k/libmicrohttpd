@@ -675,7 +675,7 @@ MHDT_load_pem (const char *name)
     (void) close (fd);
     return NULL;
   }
-  if (s.st_size > SIZE_MAX)
+  if (s.st_size > (off_t) SIZE_MAX)
   {
     fprintf (stderr,
              "File too large to malloc()\n");
@@ -694,7 +694,7 @@ MHDT_load_pem (const char *name)
   if (-1 ==
       read (fd,
             buf,
-            s.st_size))
+            (size_t) s.st_size))
   {
     fprintf (stderr,
              "Failed to read %s: %s\n",
