@@ -675,6 +675,13 @@ MHDT_load_pem (const char *name)
     (void) close (fd);
     return NULL;
   }
+  if (s.st_size > SIZE_MAX)
+  {
+    fprintf (stderr,
+             "File too large to malloc()\n");
+    (void) close (fd);
+    return NULL;
+  }
   buf = malloc (((size_t) s.st_size + 1));
   if (NULL == buf)
   {
