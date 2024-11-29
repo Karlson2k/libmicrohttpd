@@ -3695,8 +3695,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoFixed
    * of the library depending on conditions.
    * Some of the features can be disabled or selected at build-time. */
   /**
-   * Get whether HTTPS is supported and type of TLS backend(s) available if
-   * HTTPS is supported.
+   * Get whether HTTPS and which types of TLS backend(s) supported by
+   * this build.
    * The result is placed in @a v_tls member.
    */
   MHD_LIB_INFO_FIXED_TYPE_TLS = 100
@@ -3812,20 +3812,24 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_LibInfoFixedITCType
 
 
 /**
- * The types of the TLS backend supported
+ * The types of the TLS backend supported/available/enabled
  * @note the enum can be extended in future versions with new members
  */
-struct MHD_LibInfoFixedTLSType
+struct MHD_LibInfoTLSType
 {
   /**
-   * The TLS is supported.
+   * The TLS is supported/enabled.
    * Set to #MHD_YES if any other member is #MHD_YES.
    */
   enum MHD_Bool tls_supported;
   /**
-   * The TLS is supported by GnuTLS backend.
+   * The GnuTLS backend is supported/available/enabled.
    */
-  enum MHD_Bool tls_gnutls;
+  enum MHD_Bool backend_gnutls;
+  /**
+   * The OpenSSL backend is supported/available/enabled.
+   */
+  enum MHD_Bool backend_openssl;
 };
 
 /**
@@ -3862,9 +3866,9 @@ union MHD_LibInfoFixedData
    */
   enum MHD_LibInfoFixedITCType v_itc;
   /**
-   * The types of the TLS backend supported
+   * The types of the TLS backend supported by the build
    */
-  struct MHD_LibInfoFixedTLSType v_tls;
+  struct MHD_LibInfoTLSType v_tls;
 };
 
 /**
@@ -3923,6 +3927,17 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
   MHD_LIB_INFO_DYNAMIC_INITED = 0
   ,
 
+  /**
+   * Get whether HTTPS and which types of TLS backend(s) currently available.
+   * If any MHD daemonis active (created and not destroyed, not nessesary
+   * running) the result reflects the current backends availability.
+   * If no MHD daemon is active, then this function would try to temporarly
+   * enable backends to check for their availability.
+   * The result is placed in @a v_tls member.
+   */
+  MHD_LIB_INFO_DYNAMIC_TYPE_TLS = 100
+  ,
+
   /* * Sentinel * */
   /**
    * The sentinel value.
@@ -3943,6 +3958,11 @@ union MHD_LibInfoDynamicData
    * The boolean value
    */
   enum MHD_Bool v_bool;
+
+  /**
+   * The types of the TLS backends available
+   */
+  struct MHD_LibInfoTLSType v_tls;
 
   /**
    * Unused member.
