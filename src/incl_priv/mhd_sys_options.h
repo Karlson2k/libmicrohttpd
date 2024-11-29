@@ -421,7 +421,10 @@
 #define __STDC_WANT_LIB_EXT1__ 1
 #endif /* HAVE_C11_GMTIME_S */
 
-#if ! defined(_DEBUG) && ! defined(NDEBUG)
+/* Ensure that exactly one of the two macros is always defined */
+#if defined(NDEBUG) && defined(_DEBUG)
+#error Both _DEBUG and NDEBUG are defined
+#elif ! defined(_DEBUG) && ! defined(NDEBUG)
 #  ifndef DEBUG /* Used by some toolchains */
 #    define NDEBUG 1 /* Use NDEBUG by default */
 #  else  /* DEBUG */
