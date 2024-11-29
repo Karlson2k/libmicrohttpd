@@ -30,7 +30,8 @@ check_PROGRAMS = \
 
 if MHD_ENABLE_HTTPS
 check_PROGRAMS += \
-  test_tls
+  test_tls \
+  test_cert_tls
 endif
 
 TESTS = $(check_PROGRAMS)
@@ -59,8 +60,28 @@ test_tls_SOURCES = \
 test_tls_LDADD = \
   libmhdt.la
 
+test_cert_tls_SOURCES = \
+  test_cert_tls.c
+test_cert_tls_LDADD = \
+  libmhdt.la
 
 test_postprocessor_SOURCES = \
   test_postprocessor.c
 test_postprocessor_LDADD = \
   libmhdt.la
+
+EXTRA_DIST = \
+  data/client2-of-ica-chain.pem \
+  data/client2-of-ica-private-key.pem \
+  data/client2-of-ica-signed-cert.pem \
+  data/client-of-ica-chain.pem \
+  data/client-of-ica-private-key.pem \
+  data/client-of-ica-signed-cert.pem \
+  data/client-of-rca-private-key.pem \
+  data/client-of-rca-signed-cert.pem \
+  data/ica-chain.pem \
+  data/ica-private-key.pem \
+  data/ica-signed-cert.pem \
+  data/rca-private-key.pem \
+  data/rca-signed-cert.pem \
+  data/rca-unsigned-cert.pem

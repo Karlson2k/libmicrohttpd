@@ -294,14 +294,13 @@ main (int argc, char *argv[])
     },
   };
   unsigned int i;
+  int ret = 0;
 
   (void) argc; /* Unused. Silence compiler warning. */
   (void) argv; /* Unused. Silence compiler warning. */
 
   for (i = 0; NULL != configs[i].server_setup; i++)
   {
-    int ret;
-
     fprintf (stderr,
              "Running TLS tests with server setup '%s'\n",
              configs[i].label);
@@ -316,8 +315,8 @@ main (int argc, char *argv[])
                "Test failed with server of type '%s' (%u)\n",
                configs[i].label,
                i);
-      return ret;
+      break;
     }
   }
-  return 0;
+  return ret;
 }

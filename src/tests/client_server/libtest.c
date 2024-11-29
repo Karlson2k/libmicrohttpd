@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include <curl/curl.h>
 
 /**
  * A semaphore.
@@ -419,6 +420,7 @@ cleanup:
                               &res));
     if (! cctxs[i].status)
       ret = false;
+    curl_slist_free_all (cctxs[i].pc.hosts);
   }
   test_check (0 == close (p[0]));
   test_check (0 == close (p[1]));
@@ -481,7 +483,7 @@ MHDT_test (MHDT_ServerSetup ss_cb,
            void *ss_cb_cls,
            MHDT_ServerRunner run_cb,
            void *run_cb_cls,
-           const struct MHDT_Phase *phases)
+           struct MHDT_Phase *phases)
 {
   struct ServerContext ctx = {
     .run_cb = run_cb,
@@ -574,17 +576,23 @@ MHDT_test (MHDT_ServerSetup ss_cb,
   }
   for (i = 0; NULL != phases[i].label; i++)
   {
+    struct MHDT_Phase *pi = &phases[i];
+    struct MHDT_PhaseContext *pc
+      = pi->use_tls
+      ? &pc_https
+      : &pc_http;
+    pc->phase = &phases[i];
+    pc->hosts = NULL;
     fprintf (stderr,
              "Running test phase '%s'\n",
-             phases[i].label);
-    if (! run_client_phase (&phases[i],
-                            phases[i].use_tls
-                            ? &pc_https
-                            : &pc_http))
+             pi->label);
+    if (! run_client_phase (pi,
+                            pc))
     {
       res = 1;
       goto cleanup;
     }
+    pc->hosts = NULL;
     /* client is done with phase */
     semaphore_up (&ctx.client_sem);
     /* wait for server to have moved to new phase */
@@ -621,4 +629,64 @@ cleanup:
   test_check (0 == close (p[0]));
   test_check (0 == close (p[1]));
   return res;
+}
+
+
+char *
+MHDT_load_pem (const char *name)
+{
+  char path[256];
+  int fd;
+  struct stat s;
+  char *buf;
+
+  snprintf (path,
+            sizeof (path),
+            "data/%s.pem",
+            name);
+  fd = open (path,
+             O_RDONLY);
+  if (-1 == fd)
+  {
+    fprintf (stderr,
+             "Failed to open %s: %s\n",
+             path,
+             strerror (errno));
+    return NULL;
+  }
+  if (0 !=
+      fstat (fd,
+             &s))
+  {
+    fprintf (stderr,
+             "Failed to fstat %s: %s\n",
+             path,
+             strerror (errno));
+    (void) close (fd);
+    return NULL;
+  }
+  buf = malloc (s.st_size + 1);
+  if (NULL == buf)
+  {
+    fprintf (stderr,
+             "Failed to malloc(): %s\n",
+             strerror (errno));
+    (void) close (fd);
+    return NULL;
+  }
+  if (-1 ==
+      read (fd,
+            buf,
+            s.st_size))
+  {
+    fprintf (stderr,
+             "Failed to read %s: %s\n",
+             path,
+             strerror (errno));
+    free (buf);
+    (void) close (fd);
+    return NULL;
+  }
+  (void) close (fd);
+  return buf;
 }

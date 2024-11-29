@@ -68,6 +68,7 @@ openssl ca \
         -passin 'pass:masterword' \
         -config ca.conf
 
+
 rm client-of-rca-csr.pem
 
 # Setup ICA directory structure
@@ -101,7 +102,8 @@ openssl ca \
         -extensions v3_intermediate_ca \
         -out ica-signed-cert.pem \
         -passin 'pass:masterword' \
-        -config ca.conf
+        -config ca.conf \
+        -outform PEM
 
 rm ica-csr.pem
 
@@ -136,12 +138,15 @@ openssl ca \
         -section ICA_default \
         -out client-of-ica-signed-cert.pem \
         -passin 'pass:icaword' \
-        -config ca.conf
+        -config ca.conf \
+        -outform PEM
 
 rm client-of-ica-csr.pem
 
+cat rca-signed-cert.pem ica-signed-cert.pem client-of-ica-signed-cert.pem > client-of-ica-chain.pem
 
-
+# Check result
+openssl verify -verbose -CAfile rca-signed-cert.pem client-of-ica-chain.pem
 
 # create 2nd ICA client private key
 openssl genpkey \
@@ -167,6 +172,12 @@ openssl ca \
         -section ICA_default \
         -out client2-of-ica-signed-cert.pem \
         -passin 'pass:icaword' \
-        -config ca.conf
+        -config ca.conf \
+        -outform PEM
 
 rm client2-of-ica-csr.pem
+
+cat rca-signed-cert.pem ica-signed-cert.pem client2-of-ica-signed-cert.pem > client2-of-ica-chain.pem
+
+# Check result
+openssl verify -verbose -CAfile rca-signed-cert.pem client2-of-ica-chain.pem

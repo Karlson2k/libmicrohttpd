@@ -35,6 +35,14 @@
 #endif
 #include "microhttpd2.h"
 
+
+/**
+ * A phase defines some server and client-side
+ * behaviors to execute.
+ */
+struct MHDT_Phase;
+
+
 /**
  * Information about the current phase.
  */
@@ -46,9 +54,21 @@ struct MHDT_PhaseContext
   const char *base_url;
 
   /**
+   * Data structure to keep around during the request because
+   * Curl.
+   */
+  struct curl_slist *hosts;
+
+  /**
    * Specific client we are running.
    */
   unsigned int client_id;
+
+  /**
+   * More details about the phase we are running.
+   */
+  struct MHDT_Phase *phase;
+
 };
 
 
@@ -62,7 +82,102 @@ struct MHDT_PhaseContext
  */
 typedef const char *
 (*MHDT_ClientLogic)(const void *cls,
-                    const struct MHDT_PhaseContext *pc);
+                    struct MHDT_PhaseContext *pc);
+
+
+struct MHDT_Phase
+{
+
+  /**
+   * Name of the phase, for debugging/logging.
+   */
+  const char *label;
+
+  /**
+   * Logic for the MHD server for this phase.
+   */
+  MHD_RequestCallback server_cb;
+
+  /**
+   * Closure for @e server_cb.
+   */
+  void *server_cb_cls;
+
+  /**
+   * Logic for the CURL client for this phase.
+   */
+  MHDT_ClientLogic client_cb;
+
+  /**
+   * Closure for @e client_cb.
+   */
+  const void *client_cb_cls;
+
+  /**
+   * How long is the phase allowed to run at most before
+   * timing out. 0 for no timeout.
+   */
+  unsigned int timeout_ms;
+
+  /**
+   * How many clients should be run in parallel.
+   * 0 to run just one client.
+   */
+  unsigned int num_clients;
+
+  /**
+   * Set to true if clients should setup the connection to use TLS.
+   */
+  bool use_tls;
+
+  /**
+   * Set to true if clients should check server cert.
+   */
+  bool check_server_cert;
+
+  /**
+   * Client certificate to present to the server, NULL for none.
+   */
+  const char *client_cert;
+
+  /**
+   * Client private key to use, NULL for none.
+   */
+  const char *client_priv;
+
+  /**
+   * Server certificate to present to the client, NULL for default.
+   */
+  const char *server_cert;
+
+  /**
+   * Server private key to use, NULL for default.
+   */
+  const char *server_priv;
+};
+
+
+/**
+ * Load PEM file from data/ folder and return data in it.
+ *
+ * @param name name of PEM file to load
+ * @return NULL on error
+ */
+char *
+MHDT_load_pem (const char *name);
+
+
+/**
+ * Run request against the root URL of the
+ * hostname given in @a cls.
+ *
+ * @param cls closure with hostname to use
+ * @param pc context for the client
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_client_get_host (const void *cls,
+                      struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -75,7 +190,7 @@ typedef const char *
  */
 const char *
 MHDT_client_get_root (const void *cls,
-                      const struct MHDT_PhaseContext *pc);
+                      struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -90,7 +205,7 @@ MHDT_client_get_root (const void *cls,
  */
 const char *
 MHDT_client_get_with_query (const void *cls,
-                            const struct MHDT_PhaseContext *pc);
+                            struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -104,7 +219,7 @@ MHDT_client_get_with_query (const void *cls,
  */
 const char *
 MHDT_client_set_header (const void *cls,
-                        const struct MHDT_PhaseContext *pc);
+                        struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -119,7 +234,7 @@ MHDT_client_set_header (const void *cls,
  */
 const char *
 MHDT_client_expect_header (const void *cls,
-                           const struct MHDT_PhaseContext *pc);
+                           struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -132,7 +247,7 @@ MHDT_client_expect_header (const void *cls,
  */
 const char *
 MHDT_client_put_data (const void *cls,
-                      const struct MHDT_PhaseContext *pc);
+                      struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -145,7 +260,7 @@ MHDT_client_put_data (const void *cls,
  */
 const char *
 MHDT_client_chunk_data (const void *cls,
-                        const struct MHDT_PhaseContext *pc);
+                        struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -257,58 +372,7 @@ struct MHDT_PostInstructions
 const char *
 MHDT_client_do_post (
   const void *cls,
-  const struct MHDT_PhaseContext *pc);
-
-
-/**
- * A phase defines some server and client-side
- * behaviors to execute.
- */
-struct MHDT_Phase
-{
-
-  /**
-   * Name of the phase, for debugging/logging.
-   */
-  const char *label;
-
-  /**
-   * Logic for the MHD server for this phase.
-   */
-  MHD_RequestCallback server_cb;
-
-  /**
-   * Closure for @e server_cb.
-   */
-  void *server_cb_cls;
-
-  /**
-   * Logic for the CURL client for this phase.
-   */
-  MHDT_ClientLogic client_cb;
-
-  /**
-   * Closure for @e client_cb.
-   */
-  const void *client_cb_cls;
-
-  /**
-   * How long is the phase allowed to run at most before
-   * timing out. 0 for no timeout.
-   */
-  unsigned int timeout_ms;
-
-  /**
-   * How many clients should be run in parallel.
-   * 0 to run just one client.
-   */
-  unsigned int num_clients;
-
-  /**
-   * Set to true if clients should setup the connection to use TLS.
-   */
-  bool use_tls;
-};
+  struct MHDT_PhaseContext *pc);
 
 
 /**
@@ -650,6 +714,6 @@ MHDT_test (MHDT_ServerSetup ss_cb,
            void *ss_cb_cls,
            MHDT_ServerRunner run_cb,
            void *run_cb_cls,
-           const struct MHDT_Phase *phases);
+           struct MHDT_Phase *phases);
 
 #endif

@@ -231,11 +231,13 @@ check_status (CURL *c,
  *
  * @param[in,out] c curl handle to manipulate
  * @param base_url base URL to set
- * @return true on success, false on failure (@a c will be cleaned up in this case)
+ * @param[in,out] pc phase context with further options
+ * @return NULL on success, error message on failure (@a c will be cleaned up in this case)
  */
-static bool
+static const char *
 set_url (CURL *c,
-         const char *base_url)
+         const char *base_url,
+         struct MHDT_PhaseContext *pc)
 {
   if (CURLE_OK !=
       curl_easy_setopt (c,
@@ -243,7 +245,7 @@ set_url (CURL *c,
                         base_url))
   {
     curl_easy_cleanup (c);
-    return false;
+    return "Failed to set URL";
   }
   if (CURLE_OK !=
       curl_easy_setopt (c,
@@ -251,48 +253,152 @@ set_url (CURL *c,
                         1))
   {
     curl_easy_cleanup (c);
-    return false;
+    return "Failed to set verbosity";
+  }
+  {
+    /* Force curl to do the request to 127.0.0.1 regardless of
+       hostname */
+    const char *host;
+    const char *end;
+    char ri[1024];
+
+    if (0 == strncasecmp (base_url,
+                          "https://",
+                          strlen ("https://")))
+      host = &base_url[strlen ("https://")];
+    else
+      host = &base_url[strlen ("http://")];
+    end = strchr (host, '/');
+    if (NULL == end)
+      end = host + strlen (host);
+    snprintf (ri,
+              sizeof (ri),
+              "%.*s:127.0.0.1",
+              (int) (end - host),
+              host);
+    pc->hosts = curl_slist_append (NULL,
+                                   ri);
+    if (CURLE_OK !=
+        curl_easy_setopt (c,
+                          CURLOPT_RESOLVE,
+                          pc->hosts))
+    {
+      curl_easy_cleanup (c);
+      return "Failed to override DNS";
+    }
   }
   if (0 == strncasecmp (base_url,
                         "https://",
                         strlen ("https://")))
   {
-    /* disable certificate checking */
-    if ( (CURLE_OK !=
-          curl_easy_setopt (c,
-                            CURLOPT_SSL_VERIFYPEER,
-                            0L)) ||
-         (CURLE_OK !=
-          curl_easy_setopt (c,
-                            CURLOPT_SSL_VERIFYHOST,
-                            0L)) )
+    struct MHDT_Phase *phase = pc->phase;
+
+    if (phase->check_server_cert)
     {
-      curl_easy_cleanup (c);
-      return false;
+      if (CURLE_OK !=
+          curl_easy_setopt (c,
+                            CURLOPT_CAINFO,
+                            "data/rca-signed-cert.pem"))
+      {
+        curl_easy_cleanup (c);
+        return "Failed to override root CA";
+      }
+    }
+    else
+    {
+      /* disable certificate checking */
+      if ( (CURLE_OK !=
+            curl_easy_setopt (c,
+                              CURLOPT_SSL_VERIFYPEER,
+                              0L)) ||
+           (CURLE_OK !=
+            curl_easy_setopt (c,
+                              CURLOPT_SSL_VERIFYHOST,
+                              0L)) )
+      {
+        curl_easy_cleanup (c);
+        return "Failed to disable X509 server certificate checks";
+      }
+    }
+    if (NULL != phase->client_cert)
+    {
+      if (CURLE_OK !=
+          curl_easy_setopt (c,
+                            CURLOPT_SSLCERT,
+                            phase->client_cert))
+      {
+        curl_easy_cleanup (c);
+        return "Failed to set client certificate";
+      }
     }
   }
-  return true;
+  return NULL;
+}
+
+
+const char *
+MHDT_client_get_host (const void *cls,
+                      struct MHDT_PhaseContext *pc)
+{
+  const char *host = cls;
+  const char *err;
+  size_t alen = strlen (host);
+  CURL *c;
+  size_t blen = strlen (pc->base_url);
+  char u[alen + blen + 1];
+  const char *slash = strchr (pc->base_url,
+                              '/');
+  const char *colon;
+
+  if (NULL == slash)
+    return "'/' missing in base URL";
+  colon = strchr (slash,
+                  ':');
+  if (NULL == colon)
+    return "':' missing in base URL";
+  snprintf (u,
+            sizeof (u),
+            "https://%s%s",
+            host,
+            colon);
+  c = curl_easy_init ();
+  if (NULL == c)
+    return "Failed to initialize Curl handle";
+  err = set_url (c,
+                 u,
+                 pc);
+  if (NULL != err)
+    return err;
+  PERFORM_REQUEST (c);
+  CHECK_STATUS (c,
+                MHD_HTTP_STATUS_OK);
+  curl_easy_cleanup (c);
+  return NULL;
 }
 
 
 const char *
 MHDT_client_get_root (
   const void *cls,
-  const struct MHDT_PhaseContext *pc)
+  struct MHDT_PhaseContext *pc)
 {
   const char *text = cls;
   CURL *c;
+  const char *err;
   DECLARE_WB (text);
 
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (! set_url (c,
-                 pc->base_url))
-    return "Failed to set URL for curl request";
+  err = set_url (c,
+                 pc->base_url,
+                 pc);
+  if (NULL != err)
+    return err;
   SETUP_WB (c);
   PERFORM_REQUEST (c);
-  CHECK_STATUS (c, MHD_HTTP_STATUS_OK);
+  CHECK_STATUS (c,
+                MHD_HTTP_STATUS_OK);
   curl_easy_cleanup (c);
   CHECK_WB (text);
   return NULL;
@@ -302,9 +408,10 @@ MHDT_client_get_root (
 const char *
 MHDT_client_get_with_query (
   const void *cls,
-  const struct MHDT_PhaseContext *pc)
+  struct MHDT_PhaseContext *pc)
 {
   const char *args = cls;
+  const char *err;
   size_t alen = strlen (args);
   CURL *c;
   size_t blen = strlen (pc->base_url);
@@ -320,9 +427,11 @@ MHDT_client_get_with_query (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (! set_url (c,
-                 u))
-    return "Failed to set URL for curl request";
+  err = set_url (c,
+                 u,
+                 pc);
+  if (NULL != err)
+    return err;
   PERFORM_REQUEST (c);
   CHECK_STATUS (c,
                 MHD_HTTP_STATUS_NO_CONTENT);
@@ -334,9 +443,10 @@ MHDT_client_get_with_query (
 const char *
 MHDT_client_set_header (
   const void *cls,
-  const struct MHDT_PhaseContext *pc)
+  struct MHDT_PhaseContext *pc)
 {
   const char *hdr = cls;
+  const char *err;
   CURL *c;
   CURLcode res;
   struct curl_slist *slist;
@@ -344,9 +454,11 @@ MHDT_client_set_header (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (! set_url (c,
-                 pc->base_url))
-    return "Failed to set URL for curl request";
+  err = set_url (c,
+                 pc->base_url,
+                 pc);
+  if (NULL != err)
+    return err;
   slist = curl_slist_append (NULL,
                              hdr);
   if (CURLE_OK !=
@@ -374,10 +486,11 @@ MHDT_client_set_header (
 
 const char *
 MHDT_client_expect_header (const void *cls,
-                           const struct MHDT_PhaseContext *pc)
+                           struct MHDT_PhaseContext *pc)
 {
 #ifdef HAVE_LIBCRUL_NEW_HDR_API
   const char *hdr = cls;
+  const char *err;
   size_t hlen = strlen (hdr) + 1;
   char key[hlen];
   const char *colon = strchr (hdr, ':');
@@ -395,9 +508,11 @@ MHDT_client_expect_header (const void *cls,
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (! set_url (c,
-                 pc->base_url))
-    return "Failed to set URL for curl request";
+  err = set_url (c,
+                 pc->base_url,
+                 pc);
+  if (NULL != err)
+    return err;
   PERFORM_REQUEST (c);
   CHECK_STATUS (c,
                 MHD_HTTP_STATUS_NO_CONTENT);
@@ -499,9 +614,10 @@ read_cb (void *ptr,
 const char *
 MHDT_client_put_data (
   const void *cls,
-  const struct MHDT_PhaseContext *pc)
+  struct MHDT_PhaseContext *pc)
 {
   const char *text = cls;
+  const char *err;
   struct ReadBuffer rb = {
     .buf = text,
     .len = strlen (text)
@@ -511,9 +627,11 @@ MHDT_client_put_data (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (! set_url (c,
-                 pc->base_url))
-    return "Failed to set URL for curl request";
+  err = set_url (c,
+                 pc->base_url,
+                 pc);
+  if (NULL != err)
+    return err;
   if (CURLE_OK !=
       curl_easy_setopt (c,
                         CURLOPT_UPLOAD,
@@ -557,9 +675,10 @@ MHDT_client_put_data (
 const char *
 MHDT_client_chunk_data (
   const void *cls,
-  const struct MHDT_PhaseContext *pc)
+  struct MHDT_PhaseContext *pc)
 {
   const char *text = cls;
+  const char *err;
   struct ReadBuffer rb = {
     .buf = text,
     .len = strlen (text),
@@ -570,9 +689,11 @@ MHDT_client_chunk_data (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (! set_url (c,
-                 pc->base_url))
-    return "Failed to set URL for curl request";
+  err = set_url (c,
+                 pc->base_url,
+                 pc);
+  if (NULL != err)
+    return err;
   if (CURLE_OK !=
       curl_easy_setopt (c,
                         CURLOPT_UPLOAD,
@@ -608,9 +729,10 @@ MHDT_client_chunk_data (
 const char *
 MHDT_client_do_post (
   const void *cls,
-  const struct MHDT_PhaseContext *pc)
+  struct MHDT_PhaseContext *pc)
 {
   const struct MHDT_PostInstructions *pi = cls;
+  const char *err;
   CURL *c;
   struct curl_slist *request_hdr = NULL;
 
@@ -626,9 +748,11 @@ MHDT_client_do_post (
   c = curl_easy_init ();
   if (NULL == c)
     return "Failed to initialize Curl handle";
-  if (! set_url (c,
-                 pc->base_url))
-    return "Failed to set URL for curl request";
+  err = set_url (c,
+                 pc->base_url,
+                 pc);
+  if (NULL != err)
+    return err;
   if (CURLE_OK !=
       curl_easy_setopt (c,
                         CURLOPT_POST,
