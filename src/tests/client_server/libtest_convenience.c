@@ -267,7 +267,7 @@ MHDT_server_run_blocking (void *cls,
                strerror (errno));
       break;
     }
-#if FIXME
+#ifdef FIXME
     if (MHD_SC_OK !=
         MHD_daemon_process_blocking (d,
                                      1000))
