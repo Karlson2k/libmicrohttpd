@@ -136,6 +136,8 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
   {
 #ifdef MHD_USE_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
+    if (! mhd_tls_gnu_is_inited_fine ())
+      return MHD_SC_TLS_BACKEND_UNAVAILABLE;
     res = mhd_tls_gnu_daemon_init (d,
                                    s,
                                    &(d_tls->data.gnutls));
@@ -152,6 +154,8 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
 #endif
 #ifdef MHD_USE_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
+    if (! mhd_tls_open_is_inited_fine ())
+      return MHD_SC_TLS_BACKEND_UNAVAILABLE;
     res = mhd_tls_open_daemon_init (d,
                                     s,
                                     &(d_tls->data.openssl));
@@ -220,6 +224,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
     break;
 #ifdef MHD_USE_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
+    mhd_assert (mhd_tls_gnu_is_inited_fine ()); /* Must be checked earlier */
     res = tls_daemon_init_try (mhd_TLS_MULTI_ROUTE_GNU,
                                d,
                                s,
@@ -228,6 +233,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
 #endif /* MHD_USE_GNUTLS */
 #ifdef MHD_USE_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
+    mhd_assert (mhd_tls_open_is_inited_fine ()); /* Must be checked earlier */
     res = tls_daemon_init_try (mhd_TLS_MULTI_ROUTE_OPEN,
                                d,
                                s,
