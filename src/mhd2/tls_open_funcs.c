@@ -453,10 +453,8 @@ daemon_init_ctx (struct MHD_Daemon *restrict d,
   SSL_CTX_set_default_passwd_cb (d_tls->ctx,
                                  &null_passwd_cb);
 
-  // TODO: regenerate certificates
   // TODO: make the setting configurable
-  // FIXME: this is a bad workaround!
-  SSL_CTX_set_security_level (d_tls->ctx, 0); /* Required to accept current test CA */
+  /* SSL_CTX_set_security_level (d_tls->ctx, 0); */
 
   /* recv()- and send()-related options */
   (void) SSL_CTX_set_mode (d_tls->ctx,
