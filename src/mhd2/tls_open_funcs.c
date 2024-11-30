@@ -638,7 +638,6 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
 {
   enum MHD_StatusCode ret;
   BIO *m_bio;
-  X509 *cert;
 
   mhd_assert (NULL != d_tls->libctx);
   mhd_assert (NULL != d_tls->ctx);
