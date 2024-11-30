@@ -550,10 +550,10 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
 
         do
         {
-          X509 *c_cert; /* Certifying certificate */
-          c_cert = X509_new_ex (d_tls->libctx,
-                                NULL);
-          if (NULL == c_cert)
+          X509 *inter_ca; /* Certifying certificate */
+          inter_ca = X509_new_ex (d_tls->libctx,
+                                  NULL);
+          if (NULL == inter_ca)
           {
             mhd_DBG_PRINT_TLS_ERRS ();
             mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
@@ -563,7 +563,7 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
           else
           {
             if (NULL == PEM_read_bio_X509 (m_bio,
-                                           &cert,
+                                           &inter_ca,
                                            &null_passwd_cb,
                                            NULL))
             {
@@ -574,7 +574,7 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
               {
                 /* End of data */
                 ERR_clear_error ();
-                X509_free (c_cert); /* Empty, not needed */
+                X509_free (inter_ca); /* Empty, not needed */
 
                 mhd_assert (MHD_SC_OK == ret);
                 return MHD_SC_OK; /* Success exit point */
@@ -588,7 +588,7 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
             else
             {
               if (SSL_CTX_add0_chain_cert (d_tls->ctx,
-                                           c_cert))
+                                           inter_ca))
               {
                 /* Success, do not free the certificate as
                  * function '_add0_' was used to add it. */
@@ -604,7 +604,7 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
                 ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
               }
             }
-            X509_free (c_cert); /* Failed, the object is not needed */
+            X509_free (inter_ca); /* Failed, the object is not needed */
             mhd_assert (MHD_SC_OK != ret);
           }
         } while (MHD_SC_OK == ret);
