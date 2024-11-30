@@ -652,7 +652,7 @@ MHDT_load_pem (const char *name)
 
   snprintf (path,
             sizeof (path),
-            "data/%s.pem",
+            "data/%s",
             name);
   fd = open (path,
              O_RDONLY);

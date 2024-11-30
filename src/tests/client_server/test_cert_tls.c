@@ -29,32 +29,17 @@
 int
 main (int argc, char *argv[])
 {
-  char *client_of_rca_private_key
-    = MHDT_load_pem ("client-of-rca-private-key");
-  char *client_of_rca_signed_cert
-    = MHDT_load_pem ("client-of-rca-signed-cert");
-  char *client_of_ica_private_key
-    = MHDT_load_pem ("client-of-ica-private-key");
-  char *client_of_ica_signed_cert
-    = MHDT_load_pem ("client-of-ica-signed-cert");
-  char *client_of_ica_chain
-    = MHDT_load_pem ("client-of-ica-chain");
+  char *srv_certs_chain
+    = MHDT_load_pem ("chain.crt");
+  char *srv_cert_key
+    = MHDT_load_pem ("test-server-key.pem");
   struct MHD_DaemonOptionAndValue rca_options[] = {
     MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
     MHD_D_OPTION_WM_WORKER_THREADS (1),
     MHD_D_OPTION_TLS (MHD_TLS_BACKEND_ANY),
-    MHD_D_OPTION_TLS_CERT_KEY (client_of_rca_signed_cert,
-                               client_of_rca_private_key,
-                               "clientword"),
-    MHD_D_OPTION_TERMINATE ()
-  };
-  struct MHD_DaemonOptionAndValue ica_options[] = {
-    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
-    MHD_D_OPTION_WM_WORKER_THREADS (1),
-    MHD_D_OPTION_TLS (MHD_TLS_BACKEND_ANY),
-    MHD_D_OPTION_TLS_CERT_KEY (client_of_ica_chain,
-                               client_of_ica_private_key,
-                               "iclientword"),
+    MHD_D_OPTION_TLS_CERT_KEY (srv_certs_chain,
+                               srv_cert_key,
+                               NULL),
     MHD_D_OPTION_TERMINATE ()
   };
   struct ServerType
@@ -67,7 +52,7 @@ main (int argc, char *argv[])
     struct MHDT_Phase phase;
   } configs[] = {
     {
-      .label = "rca_server",
+      .label = "certs_chain",
       .server_setup = &MHDT_server_setup_minimal,
       .server_setup_cls = rca_options,
       .server_runner = &MHDT_server_run_minimal,
@@ -76,25 +61,7 @@ main (int argc, char *argv[])
         .server_cb = &MHDT_server_reply_text,
         .server_cb_cls = (void *) "Hello world",
         .client_cb = &MHDT_client_get_host,
-        .client_cb_cls = "client.ca.gnu",
-        .timeout_ms = 2500,
-        .use_tls = true,
-        .check_server_cert = true
-      }
-
-
-    },
-    {
-      .label = "ica_server",
-      .server_setup = &MHDT_server_setup_minimal,
-      .server_setup_cls = ica_options,
-      .server_runner = &MHDT_server_run_minimal,
-      .phase = {
-        .label = "simple ICA get",
-        .server_cb = &MHDT_server_reply_text,
-        .server_cb_cls = (void *) "Hello world",
-        .client_cb = &MHDT_client_get_host,
-        .client_cb_cls = "client.ica.gnu",
+        .client_cb_cls = "localhost",
         .timeout_ms = 2500,
         .use_tls = true,
         .check_server_cert = true
@@ -135,10 +102,7 @@ main (int argc, char *argv[])
       break;
     }
   }
-  free (client_of_rca_signed_cert);
-  free (client_of_rca_private_key);
-  free (client_of_ica_chain);
-  free (client_of_ica_signed_cert);
-  free (client_of_ica_private_key);
+  free (srv_cert_key);
+  free (srv_certs_chain);
   return ret;
 }

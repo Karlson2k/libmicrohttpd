@@ -298,7 +298,7 @@ set_url (CURL *c,
       if (CURLE_OK !=
           curl_easy_setopt (c,
                             CURLOPT_CAINFO,
-                            "data/rca-signed-cert.pem"))
+                            "data/root-ca.crt"))
       {
         curl_easy_cleanup (c);
         return "Failed to override root CA";
