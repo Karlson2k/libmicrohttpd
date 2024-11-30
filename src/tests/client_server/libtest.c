@@ -695,7 +695,7 @@ MHDT_load_pem (const char *name)
     return NULL;
   }
   if (-1 ==
-      read (fd,
+      read (fd, // FIXME: read() should be called in loop to handle partial reads
             buf,
             (size_t) s.st_size))
   {
@@ -708,5 +708,6 @@ MHDT_load_pem (const char *name)
     return NULL;
   }
   (void) close (fd);
+  buf[(size_t) s.st_size] = 0;
   return buf;
 }
