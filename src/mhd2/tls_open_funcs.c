@@ -493,7 +493,7 @@ daemon_deinit_ctx (struct mhd_TlsOpenDaemonData *restrict d_tls)
 
 
 /**
- * Load provided certificates chain
+ * Load the certificates chain from the OpenSSL BIO
  * @param d the daemon handle
  * @param d_tls the daemon TLS settings
  * @param s the application-provided settings
@@ -501,26 +501,12 @@ daemon_deinit_ctx (struct mhd_TlsOpenDaemonData *restrict d_tls)
  *         error code otherwise
  */
 static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
-daemon_load_certs_chain (struct MHD_Daemon *restrict d,
-                         struct mhd_TlsOpenDaemonData *restrict d_tls,
-                         struct DaemonOptions *restrict s)
+daemon_load_certs_chain_obio (struct MHD_Daemon *restrict d,
+                              struct mhd_TlsOpenDaemonData *restrict d_tls,
+                              BIO *restrict bio)
 {
   enum MHD_StatusCode ret;
-  BIO *m_bio;
   X509 *cert;
-
-  mhd_assert (NULL != d_tls->libctx);
-  mhd_assert (NULL != d_tls->ctx);
-
-  ERR_clear_error ();
-
-  m_bio = BIO_new_mem_buf (s->tls_cert_key.v_mem_cert,
-                           -1);
-  if (NULL == m_bio)
-  {
-    mhd_DBG_PRINT_TLS_ERRS ();
-    return MHD_SC_DAEMON_MALLOC_FAILURE;
-  }
 
   ret = MHD_SC_OK;
 
@@ -530,7 +516,7 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
                       NULL);
   if (NULL != cert)
   {
-    if (NULL != PEM_read_bio_X509_AUX (m_bio,
+    if (NULL != PEM_read_bio_X509_AUX (bio,
                                        &cert,
                                        &null_passwd_cb,
                                        NULL))
@@ -560,7 +546,7 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
           }
           else
           {
-            if (NULL == PEM_read_bio_X509 (m_bio,
+            if (NULL == PEM_read_bio_X509 (bio,
                                            &inter_ca,
                                            &null_passwd_cb,
                                            NULL))
@@ -632,8 +618,44 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
                  "Failed to create new certificate object");
     ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
   }
-  BIO_free (m_bio);
   mhd_assert (MHD_SC_OK != ret);
+  return ret;
+}
+
+
+/**
+ * Load the certificates chain based on application-provided settings
+ * @param d the daemon handle
+ * @param d_tls the daemon TLS settings
+ * @param s the application-provided settings
+ * @return #MHD_SC_OK on success,
+ *         error code otherwise
+ */
+static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
+daemon_load_certs_chain (struct MHD_Daemon *restrict d,
+                         struct mhd_TlsOpenDaemonData *restrict d_tls,
+                         struct DaemonOptions *restrict s)
+{
+  enum MHD_StatusCode ret;
+  BIO *m_bio;
+  X509 *cert;
+
+  mhd_assert (NULL != d_tls->libctx);
+  mhd_assert (NULL != d_tls->ctx);
+
+  ERR_clear_error ();
+
+  m_bio = BIO_new_mem_buf (s->tls_cert_key.v_mem_cert,
+                           -1);
+  if (NULL == m_bio)
+  {
+    mhd_DBG_PRINT_TLS_ERRS ();
+    return MHD_SC_DAEMON_MALLOC_FAILURE;
+  }
+  ret = daemon_load_certs_chain_obio (d,
+                                      d_tls,
+                                      m_bio);
+  BIO_free (m_bio);
   return ret;
 }
 
