@@ -42,6 +42,28 @@ main (int argc, char *argv[])
                                NULL),
     MHD_D_OPTION_TERMINATE ()
   };
+#ifdef MHD_USE_GNUTLS
+  struct MHD_DaemonOptionAndValue rca_options_gnu[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TLS (MHD_TLS_BACKEND_GNUTLS),
+    MHD_D_OPTION_TLS_CERT_KEY (srv_certs_chain,
+                               srv_cert_key,
+                               NULL),
+    MHD_D_OPTION_TERMINATE ()
+  };
+#endif
+#ifdef MHD_USE_OPENSSL
+  struct MHD_DaemonOptionAndValue rca_options_open[] = {
+    MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
+    MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_TLS (MHD_TLS_BACKEND_OPENSSL),
+    MHD_D_OPTION_TLS_CERT_KEY (srv_certs_chain,
+                               srv_cert_key,
+                               NULL),
+    MHD_D_OPTION_TERMINATE ()
+  };
+#endif
   struct ServerType
   {
     const char *label;
@@ -69,6 +91,46 @@ main (int argc, char *argv[])
 
 
     },
+#ifdef MHD_USE_GNUTLS
+    {
+      .label = "certs_chain",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = rca_options_gnu,
+      .server_runner = &MHDT_server_run_minimal,
+      .phase = {
+        .label = "simple RCA get",
+        .server_cb = &MHDT_server_reply_text,
+        .server_cb_cls = (void *) "Hello world",
+        .client_cb = &MHDT_client_get_host,
+        .client_cb_cls = "localhost",
+        .timeout_ms = 2500,
+        .use_tls = true,
+        .check_server_cert = true
+      }
+
+
+    },
+#endif
+#ifdef MHD_USE_OPENSSL
+    {
+      .label = "certs_chain",
+      .server_setup = &MHDT_server_setup_minimal,
+      .server_setup_cls = rca_options_open,
+      .server_runner = &MHDT_server_run_minimal,
+      .phase = {
+        .label = "simple RCA get",
+        .server_cb = &MHDT_server_reply_text,
+        .server_cb_cls = (void *) "Hello world",
+        .client_cb = &MHDT_client_get_host,
+        .client_cb_cls = "localhost",
+        .timeout_ms = 2500,
+        .use_tls = true,
+        .check_server_cert = true
+      }
+
+
+    },
+#endif
     {
       .label = "END"
     }
