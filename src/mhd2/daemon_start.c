@@ -2491,14 +2491,13 @@ init_workers_pool (struct MHD_Daemon *restrict d,
       if (MHD_SC_OK == res)
         continue; /* Process the next worker */
 
+      /* Below is a clean-up of the current slot */
+
 #ifdef MHD_USE_EPOLL
       if (mhd_POLL_TYPE_EPOLL == worker->events.poll_type)
         deinit_epoll (worker);
 #endif /* MHD_USE_EPOLL */
-
-      /* Below is the clean-up of the current slot */
     }
-    free (worker);
     break;
   }
   if (num_workers == i)
