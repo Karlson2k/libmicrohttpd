@@ -69,6 +69,8 @@ mhd_tls_open_global_init_once (void);
 
 /**
  * Check whether OpenSSL backend was successfully initialised globally
+ * @return 'true' if backend has been successfully initialised,
+ *         'false' if backend cannot be used
  */
 MHD_INTERNAL bool
 mhd_tls_open_is_inited_fine (void)

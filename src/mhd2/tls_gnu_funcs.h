@@ -74,6 +74,8 @@ mhd_tls_gnu_global_deinit (void);
 
 /**
  * Check whether GnuTLS backend was successfully initialised globally
+ * @return 'true' if backend has been successfully initialised,
+ *         'false' if backend cannot be used
  */
 MHD_INTERNAL bool
 mhd_tls_gnu_is_inited_fine (void)
