@@ -521,110 +521,101 @@ daemon_load_certs_chain_obio (struct MHD_Daemon *restrict d,
    * the lib context */
   cert = X509_new_ex (d_tls->libctx,
                       NULL);
-  if (NULL != cert)
-  {
-    if (NULL != PEM_read_bio_X509_AUX (bio,
-                                       &cert,
-                                       &null_passwd_cb,
-                                       NULL))
-    {
-      if (0 < SSL_CTX_use_certificate (d_tls->ctx,
-                                       cert))
-      {
-        if (0 != ERR_peek_error ())
-          mhd_DBG_PRINT_TLS_ERRS ();
-
-        /* The object successfully "copied" to CTX,
-         * the original object is not needed anymore. */
-        X509_free (cert);
-        cert = NULL;
-
-        do
-        {
-          X509 *inter_ca; /* Certifying certificate */
-          inter_ca = X509_new_ex (d_tls->libctx,
-                                  NULL);
-          if (NULL == inter_ca)
-          {
-            mhd_DBG_PRINT_TLS_ERRS ();
-            mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
-                         "Failed to create new chain certificate object");
-            ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
-          }
-          else
-          {
-            if (NULL == PEM_read_bio_X509 (bio,
-                                           &inter_ca,
-                                           &null_passwd_cb,
-                                           NULL))
-            {
-              unsigned long err;
-              err = ERR_peek_last_error ();
-              if ((ERR_LIB_PEM == ERR_GET_LIB (err)) &&
-                  (PEM_R_NO_START_LINE == ERR_GET_REASON (err)))
-              {
-                /* End of data */
-                ERR_clear_error ();
-                X509_free (inter_ca); /* Empty, not needed */
-
-                mhd_assert (MHD_SC_OK == ret);
-                return MHD_SC_OK; /* Success exit point */
-              }
-              mhd_DBG_PRINT_TLS_ERRS ();
-              mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
-                           "Failed to load next object in the certificates " \
-                           "chain");
-              ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
-            }
-            else
-            {
-              if (SSL_CTX_add0_chain_cert (d_tls->ctx,
-                                           inter_ca))
-              {
-                /* Success, do not free the certificate as
-                 * function '_add0_' was used to add it. */
-                /* Read the next certificate in the chain. */
-                continue;
-              }
-              else
-              {
-                mhd_DBG_PRINT_TLS_ERRS ();
-                mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
-                             "Failed to add the new certificate object "
-                             "to the chain");
-                ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
-              }
-            }
-            X509_free (inter_ca); /* Failed, the object is not needed */
-            mhd_assert (MHD_SC_OK != ret);
-          }
-        } while (MHD_SC_OK == ret);
-      }
-      else
-      {
-        mhd_DBG_PRINT_TLS_ERRS ();
-        mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
-                     "Failed to set the certificate");
-        ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
-      }
-    }
-    else
-    {
-      mhd_DBG_PRINT_TLS_ERRS ();
-      mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
-                   "Failed to process the certificate");
-      ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
-    }
-    if (NULL != cert)
-      X509_free (cert);
-  }
-  else
+  if (NULL == cert)
   {
     mhd_DBG_PRINT_TLS_ERRS ();
     mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
                  "Failed to create new certificate object");
+    return MHD_SC_TLS_DAEMON_INIT_FAILED;
+  }
+
+  if (NULL == PEM_read_bio_X509_AUX (bio,
+                                     &cert,
+                                     &null_passwd_cb,
+                                     NULL))
+  {
+    mhd_DBG_PRINT_TLS_ERRS ();
+    mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
+                 "Failed to process the certificate");
     ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
   }
+  else
+  {
+    if (0 >= SSL_CTX_use_certificate (d_tls->ctx,
+                                      cert))
+    {
+      mhd_DBG_PRINT_TLS_ERRS ();
+      mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
+                   "Failed to set the certificate");
+      ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
+    }
+    else
+    {
+      if (0 != ERR_peek_error ())
+        mhd_DBG_PRINT_TLS_ERRS ();
+    }
+  }
+  /* Free certificate: if it was successfully read, it has been "copied" to CTX */
+  X509_free (cert);
+  if (MHD_SC_OK != ret)
+    return ret;
+
+  do
+  {
+    X509 *inter_ca; /* Certifying certificate */
+    inter_ca = X509_new_ex (d_tls->libctx,
+                            NULL);
+    if (NULL == inter_ca)
+    {
+      mhd_DBG_PRINT_TLS_ERRS ();
+      mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
+                   "Failed to create new chain certificate object");
+      return MHD_SC_TLS_DAEMON_INIT_FAILED;
+    }
+    if (NULL == PEM_read_bio_X509 (bio,
+                                   &inter_ca,
+                                   &null_passwd_cb,
+                                   NULL))
+    {
+      unsigned long err;
+      err = ERR_peek_last_error ();
+      if ((ERR_LIB_PEM == ERR_GET_LIB (err)) &&
+          (PEM_R_NO_START_LINE == ERR_GET_REASON (err)))
+      {
+        /* End of data */
+        ERR_clear_error ();
+        X509_free (inter_ca); /* Empty, not needed */
+
+        mhd_assert (MHD_SC_OK == ret);
+        return MHD_SC_OK; /* Success exit point */
+      }
+      mhd_DBG_PRINT_TLS_ERRS ();
+      mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
+                   "Failed to load next object in the certificates " \
+                   "chain");
+      ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
+    }
+    else
+    {
+      if (SSL_CTX_add0_chain_cert (d_tls->ctx,
+                                   inter_ca))
+      {
+        /* Success, do not free the certificate as
+         * function '_add0_' was used to add it. */
+        /* Read the next certificate in the chain. */
+        continue;
+      }
+
+      mhd_DBG_PRINT_TLS_ERRS ();
+      mhd_LOG_MSG (d, MHD_SC_TLS_DAEMON_INIT_FAILED, \
+                   "Failed to add the new certificate object "
+                   "to the chain");
+      ret = MHD_SC_TLS_DAEMON_INIT_FAILED;
+    }
+
+    X509_free (inter_ca); /* Failed, the object is not needed */
+    mhd_assert (MHD_SC_OK != ret);
+  } while (MHD_SC_OK == ret);
   mhd_assert (MHD_SC_OK != ret);
   return ret;
 }
