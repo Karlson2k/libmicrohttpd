@@ -45,6 +45,7 @@ libmhdt_la_SOURCES = \
   libtest_convenience.c \
   libtest_convenience_client_request.c \
   libtest_convenience_server_reply.c
+# TODO: fix flags, use configure-detected
 libmhdt_la_LIBADD = \
   -lpthread \
   -lcurl \
@@ -70,18 +71,11 @@ test_postprocessor_SOURCES = \
 test_postprocessor_LDADD = \
   libmhdt.la
 
+# TODO: fix out-of-tree 'make check'
 EXTRA_DIST = \
-  data/client2-of-ica-chain.pem \
-  data/client2-of-ica-private-key.pem \
-  data/client2-of-ica-signed-cert.pem \
-  data/client-of-ica-chain.pem \
-  data/client-of-ica-private-key.pem \
-  data/client-of-ica-signed-cert.pem \
-  data/client-of-rca-private-key.pem \
-  data/client-of-rca-signed-cert.pem \
-  data/ica-chain.pem \
-  data/ica-private-key.pem \
-  data/ica-signed-cert.pem \
-  data/rca-private-key.pem \
-  data/rca-signed-cert.pem \
-  data/rca-unsigned-cert.pem
+  root-ca.crt \
+  inter1-ca.crt \
+  inter2-ca.crt \
+  test-server.crt \
+  test-server-key.pem \
+  chain.crt
