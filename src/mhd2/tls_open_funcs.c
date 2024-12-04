@@ -694,8 +694,8 @@ daemon_init_cert (struct MHD_Daemon *restrict d,
     SSL_CTX_build_cert_chain (
       d_tls->ctx,
       SSL_BUILD_CHAIN_FLAG_CHECK /* Use only certificates in the chain */
-      | SSL_BUILD_CHAIN_FLAG_UNTRUSTED /* Intermediate certs does not need to be trusted */
-      | SSL_BUILD_CHAIN_FLAG_NO_ROOT /* The root should not be sent */
+      | SSL_BUILD_CHAIN_FLAG_UNTRUSTED /* Intermediate CA certs does not need to be trusted */
+      | SSL_BUILD_CHAIN_FLAG_NO_ROOT /* The root CA should not be added to the chain */
       | SSL_BUILD_CHAIN_FLAG_IGNORE_ERROR /* Allow the root CA to be not trusted */
       );
   if (0 >= res_l)
