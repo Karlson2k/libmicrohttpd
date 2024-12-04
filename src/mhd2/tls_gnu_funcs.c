@@ -404,6 +404,9 @@ mhd_tls_gnu_daemon_init (struct MHD_Daemon *restrict d,
   mhd_StatusCodeInt res;
   struct mhd_TlsGnuDaemonData *restrict d_tls;
 
+  /* Successful initialisation must be checked earlier */
+  mhd_assert (gnutls_lib_inited);
+
   res = check_app_tls_sessings (d, s);
   if (MHD_SC_OK != res)
     return res;

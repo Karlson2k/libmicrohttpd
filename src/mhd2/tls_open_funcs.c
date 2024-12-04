@@ -766,6 +766,9 @@ mhd_tls_open_daemon_init (struct MHD_Daemon *restrict d,
   mhd_StatusCodeInt res;
   struct mhd_TlsOpenDaemonData *restrict d_tls;
 
+  /* Successful initialisation must be checked earlier */
+  mhd_assert (openssl_lib_inited);
+
   res = check_app_tls_sessings (d, s);
   if (MHD_SC_OK != res)
     return res;
