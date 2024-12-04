@@ -113,6 +113,47 @@ mhd_tls_multi_global_re_init (void)
 
 /* ** Daemon initialisation / de-initialisation ** */
 
+MHD_INTERNAL MHD_FN_PURE_ bool
+mhd_tls_multi_is_edge_trigg_supported (struct DaemonOptions *s)
+{
+  switch (s->tls)
+  {
+  case MHD_TLS_BACKEND_NONE:
+    mhd_UNREACHABLE ();
+    return false;
+  case MHD_TLS_BACKEND_ANY:
+#ifdef MHD_USE_GNUTLS
+    if (mhd_tls_gnu_is_edge_trigg_supported (s)
+        && mhd_tls_gnu_is_inited_fine ())
+      return true;
+#endif
+#ifdef MHD_USE_OPENSSL
+    if (mhd_tls_open_is_edge_trigg_supported (s)
+        && mhd_tls_open_is_inited_fine ())
+      return true;
+#endif
+    return false;
+  case MHD_TLS_BACKEND_GNUTLS:
+#ifdef MHD_USE_GNUTLS
+    /* Ignore "backend inited" status here,
+       it will be checked on daemon TLS init */
+    return mhd_tls_gnu_is_edge_trigg_supported (s);
+#endif
+    break;
+  case MHD_TLS_BACKEND_OPENSSL:
+#ifdef MHD_USE_OPENSSL
+    /* Ignore "backend inited" status here,
+       it will be checked on daemon TLS init */
+    return mhd_tls_open_is_edge_trigg_supported (s);
+#endif
+    break;
+  default:
+    mhd_UNREACHABLE ();
+  }
+  return false;
+}
+
+
 /**
  * Initialise selected TLS backend for the daemon
  * @param route the selected TLS backend

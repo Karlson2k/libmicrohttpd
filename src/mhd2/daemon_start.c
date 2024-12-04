@@ -1208,19 +1208,33 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 
   mhd_assert (mhd_POLL_TYPE_EXT != chosen_type);
 
-  fallback_syscall_allowed = false;
   if (mhd_POLL_TYPE_NOT_SET_YET == chosen_type)
   {
+#ifdef MHD_USE_EPOLL
+    bool edge_trig_allowed;
+    edge_trig_allowed = true;
+#  ifdef MHD_ENABLE_HTTPS
+    if ((edge_trig_allowed) &&
+        (MHD_TLS_BACKEND_NONE != s->tls))
+      edge_trig_allowed = mhd_tls_is_edge_trigg_supported (s);
+#  endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_USE_EPOLL */
+    fallback_syscall_allowed = true;
+
     if (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int))
+    {
       chosen_type = mhd_POLL_TYPE_EXT;
+    }
 #ifdef MHD_USE_EPOLL
     else if (MHD_WM_EXTERNAL_SINGLE_FD_WATCH == s->work_mode.mode)
-      chosen_type = mhd_POLL_TYPE_EPOLL; /* without fallback */
-    else if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION != d->wmode_int)
     {
-      fallback_syscall_allowed = true;
-      chosen_type = mhd_POLL_TYPE_EPOLL; /* with possible fallback */
+      fallback_syscall_allowed = false;
+      chosen_type = mhd_POLL_TYPE_EPOLL; /* without fallback */
     }
+    else if ((mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION !=
+              d->wmode_int) &&
+             (edge_trig_allowed))
+      chosen_type = mhd_POLL_TYPE_EPOLL; /* with possible fallback */
 #endif
     else
     {
@@ -1233,9 +1247,8 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #endif
     }
   }
-  mhd_assert ((! fallback_syscall_allowed) \
-              || (mhd_POLL_TYPE_EPOLL == chosen_type));
-
+  else
+    fallback_syscall_allowed = false;
 
   /* Try 'epoll' if possible */
 #ifdef MHD_USE_EPOLL

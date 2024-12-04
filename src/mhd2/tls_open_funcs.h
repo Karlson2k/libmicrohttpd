@@ -81,6 +81,15 @@ struct MHD_Daemon;      /* Forward declaration */
 struct DaemonOptions;   /* Forward declaration */
 
 /**
+ * Check whether OpenSSL backend supports edge-triggered sockets polling
+ * @param s the daemon settings
+ * @return 'true' if the backend supports edge-triggered sockets polling,
+ *         'false' if edge-triggered sockets polling cannot be used
+ */
+#define mhd_tls_open_is_edge_trigg_supported(s) (! ! 0)
+
+
+/**
  * Allocate and initialise daemon TLS parameters
  * @param d the daemon handle
  * @param s the daemon settings

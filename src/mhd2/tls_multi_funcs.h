@@ -85,6 +85,16 @@ struct MHD_Daemon;      /* Forward declaration */
 struct DaemonOptions;   /* Forward declaration */
 
 /**
+ * Check whether MultiTLS backend supports edge-triggered sockets polling
+ * @param s the daemon settings
+ * @return 'true' if the backend supports edge-triggered sockets polling,
+ *         'false' if edge-triggered sockets polling cannot be used
+ */
+MHD_INTERNAL bool
+mhd_tls_multi_is_edge_trigg_supported (struct DaemonOptions *s)
+MHD_FN_PURE_;
+
+/**
  * Allocate and initialise daemon TLS parameters
  * @param d the daemon handle
  * @param s the daemon settings
