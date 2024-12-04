@@ -76,14 +76,15 @@
 /**
  * Allocate and initialise daemon TLS parameters
  * @param d the daemon handle
+ * @param et if 'true' then sockets polling uses edge-triggering
  * @param s the daemon settings
  * @param p_d_tls the pointer to variable to set the pointer to
  *                the daemon's TLS settings (allocated by this function)
  * @return #MHD_SC_OK on success (p_d_tls set to the allocated settings),
  *         error code otherwise
  */
-#define mhd_tls_daemon_init(d,s,p_d_tls)        \
-        mhd_TLS_FUNC (_daemon_init)((d),(s),(p_d_tls))
+#define mhd_tls_daemon_init(d,et,s,p_d_tls)        \
+        mhd_TLS_FUNC (_daemon_init)((d),(et),(s),(p_d_tls))
 
 /**
  * De-initialise daemon TLS parameters (and free memory allocated for TLS

@@ -1422,10 +1422,10 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_TLS_CONF_BAD_CERT = 60023
   ,
   /**
-   * The application requested a TLS cipher suite which is not
-   * supported by the selected backend.
+   * The application requested a daemon setting that cannot be used with
+   * selected TLS backend
    */
-  MHD_SC_TLS_CIPHERS_INVALID = 60024
+  MHD_SC_TLS_BACKEND_DAEMON_INCOMPATIBLE_SETTINGS = 60024
   ,
   /**
    * The response header name has forbidden characters or token

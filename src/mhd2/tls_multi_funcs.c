@@ -165,13 +165,18 @@ mhd_tls_multi_is_edge_trigg_supported (struct DaemonOptions *s)
  *         error code otherwise
  */
 static MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_OUT_ (4) mhd_StatusCodeInt
+MHD_FN_PAR_OUT_ (5) mhd_StatusCodeInt
 tls_daemon_init_try (enum mhd_TlsMultiRoute route,
                      struct MHD_Daemon *restrict d,
+                     bool sk_edge_trigg,
                      struct DaemonOptions *restrict s,
                      struct mhd_TlsMultiDaemonData *restrict d_tls)
 {
   mhd_StatusCodeInt res;
+
+#ifndef MHD_USE_OPENSSL
+  (void) sk_edge_trigg; /* Unused, mute compiler warning */
+#endif /* ! MHD_USE_OPENSSL */
 
   switch (route)
   {
@@ -180,6 +185,7 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
     if (! mhd_tls_gnu_is_inited_fine ())
       return MHD_SC_TLS_BACKEND_UNAVAILABLE;
     res = mhd_tls_gnu_daemon_init (d,
+                                   sk_edge_trigg,
                                    s,
                                    &(d_tls->data.gnutls));
     if (MHD_SC_OK == res)
@@ -198,6 +204,7 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
     if (! mhd_tls_open_is_inited_fine ())
       return MHD_SC_TLS_BACKEND_UNAVAILABLE;
     res = mhd_tls_open_daemon_init (d,
+                                    sk_edge_trigg,
                                     s,
                                     &(d_tls->data.openssl));
     if (MHD_SC_OK == res)
@@ -221,8 +228,9 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
 
 
 MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_OUT_ (3) mhd_StatusCodeInt
+MHD_FN_PAR_OUT_ (4) mhd_StatusCodeInt
 mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
+                           bool sk_edge_trigg,
                            struct DaemonOptions *restrict s,
                            struct mhd_TlsMultiDaemonData **restrict p_d_tls)
 {
@@ -255,6 +263,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
       {
         res = tls_daemon_init_try (backends[i],
                                    d,
+                                   sk_edge_trigg,
                                    s,
                                    d_tls);
         if (MHD_SC_OK == res)
@@ -267,6 +276,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
     mhd_assert (mhd_tls_gnu_is_inited_fine ()); /* Must be checked earlier */
     res = tls_daemon_init_try (mhd_TLS_MULTI_ROUTE_GNU,
                                d,
+                               sk_edge_trigg,
                                s,
                                d_tls);
     break;
@@ -276,6 +286,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
     mhd_assert (mhd_tls_open_is_inited_fine ()); /* Must be checked earlier */
     res = tls_daemon_init_try (mhd_TLS_MULTI_ROUTE_OPEN,
                                d,
+                               sk_edge_trigg,
                                s,
                                d_tls);
 #endif /* MHD_USE_OPENSSL */

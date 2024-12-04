@@ -397,9 +397,9 @@ daemon_deinit_priorities_cache (struct mhd_TlsGnuDaemonData *restrict d_tls)
 
 MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_ (3) mhd_StatusCodeInt
-mhd_tls_gnu_daemon_init (struct MHD_Daemon *restrict d,
-                         struct DaemonOptions *restrict s,
-                         struct mhd_TlsGnuDaemonData **restrict p_d_tls)
+mhd_tls_gnu_daemon_init3 (struct MHD_Daemon *restrict d,
+                          struct DaemonOptions *restrict s,
+                          struct mhd_TlsGnuDaemonData **restrict p_d_tls)
 {
   mhd_StatusCodeInt res;
   struct mhd_TlsGnuDaemonData *restrict d_tls;

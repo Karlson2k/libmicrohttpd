@@ -1526,6 +1526,7 @@ daemon_init_tls (struct MHD_Daemon *restrict d,
     }
   }
   ret = mhd_tls_daemon_init (d,
+                             mhd_D_HAS_EDGE_TRIGG (d),
                              s,
                              &(d->tls));
   mhd_assert ((MHD_SC_OK == ret) || (NULL == d->tls));

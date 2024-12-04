@@ -991,6 +991,13 @@ struct MHD_Daemon
 #  define mhd_D_IS_USING_EPOLL(d) (0)
 #endif
 
+/**
+ * Check whether the daemon has edge-triggered sockets polling
+ */
+#define mhd_D_HAS_EDGE_TRIGG(d) \
+        ((mhd_WM_INT_EXTERNAL_EVENTS_EDGE == (d)->wmode_int) || \
+         mhd_D_IS_USING_EPOLL (d))
+
 #ifdef MHD_USE_THREADS
 #  define mhd_D_HAS_THREADS(d) mhd_WM_INT_HAS_THREADS ((d)->wmode_int)
 #else

@@ -119,12 +119,14 @@ mhd_tls_open_is_inited_fine (void)
 /**
  * Check application-provided daemon TLS settings
  * @param d the daemon handle
+ * @param sk_edge_trigg the sockets polling uses edge-triggering
  * @param s the application-provided settings
  * @return #MHD_SC_OK on success,
  *         error code otherwise
  */
 static MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 check_app_tls_sessings (struct MHD_Daemon *restrict d,
+                        bool sk_edge_trigg,
                         struct DaemonOptions *restrict s)
 {
   mhd_assert (MHD_TLS_BACKEND_NONE != s->tls);
@@ -137,6 +139,14 @@ check_app_tls_sessings (struct MHD_Daemon *restrict d,
     return MHD_SC_TLS_CONF_BAD_CERT;
   }
   mhd_assert (NULL != s->tls_cert_key.v_mem_key);
+
+  if (sk_edge_trigg)
+  {
+    mhd_LOG_MSG (d, MHD_SC_TLS_BACKEND_DAEMON_INCOMPATIBLE_SETTINGS, \
+                 "Edge-triggered sockets polling cannot be used "
+                 "with OpenSSL backend");
+    return MHD_SC_TLS_BACKEND_DAEMON_INCOMPATIBLE_SETTINGS;
+  }
 
   return MHD_SC_OK;
 }
@@ -758,8 +768,9 @@ daemon_init_cert (struct MHD_Daemon *restrict d,
 
 
 MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_OUT_ (3) mhd_StatusCodeInt
+MHD_FN_PAR_OUT_ (4) mhd_StatusCodeInt
 mhd_tls_open_daemon_init (struct MHD_Daemon *restrict d,
+                          bool sk_edge_trigg,
                           struct DaemonOptions *restrict s,
                           struct mhd_TlsOpenDaemonData **restrict p_d_tls)
 {
@@ -769,7 +780,7 @@ mhd_tls_open_daemon_init (struct MHD_Daemon *restrict d,
   /* Successful initialisation must be checked earlier */
   mhd_assert (openssl_lib_inited);
 
-  res = check_app_tls_sessings (d, s);
+  res = check_app_tls_sessings (d, sk_edge_trigg, s);
   if (MHD_SC_OK != res)
     return res;
 

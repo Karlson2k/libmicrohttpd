@@ -94,6 +94,7 @@ struct DaemonOptions;   /* Forward declaration */
 /**
  * Allocate and initialise daemon TLS parameters
  * @param d the daemon handle
+ * @param sk_edge_trigg if 'true' then sockets polling uses edge-triggering
  * @param s the daemon settings
  * @param p_d_tls the pointer to variable to set the pointer to
  *                the daemon's TLS settings (allocated by this function)
@@ -102,9 +103,10 @@ struct DaemonOptions;   /* Forward declaration */
  */
 MHD_INTERNAL mhd_StatusCodeInt
 mhd_tls_open_daemon_init (struct MHD_Daemon *restrict d,
+                          bool sk_edge_trigg,
                           struct DaemonOptions *restrict s,
                           struct mhd_TlsOpenDaemonData **restrict p_d_tls)
-MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (3);
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (4);
 
 /**
  * De-initialise daemon TLS parameters (and free memory allocated for TLS
