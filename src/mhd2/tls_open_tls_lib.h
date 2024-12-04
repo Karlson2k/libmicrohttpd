@@ -39,6 +39,7 @@
 #define OPENSSL_NO_DEPRECATED   1
 
 #include <openssl/opensslv.h>
+#include <openssl/opensslconf.h>
 #include <openssl/crypto.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>

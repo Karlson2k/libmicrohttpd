@@ -335,6 +335,7 @@ static const unsigned char alpn_codes_list[] = {
   8u, 'h', 't', 't', 'p', '/', '1', '.', '0' /* Registered value for HTTP/1.0 */
 };
 
+#ifndef OPENSSL_NO_NEXTPROTONEG
 /**
  * Provide the list of supported protocols for NPN extension
  * @param sess the TLS session (ignored)
@@ -355,6 +356,8 @@ get_npn_list (SSL *sess,
   return SSL_TLSEXT_ERR_OK;
 }
 
+
+#endif /* ! OPENSSL_NO_NEXTPROTONEG */
 
 /**
  * Select protocol from the provided list for ALPN extension
@@ -430,10 +433,12 @@ daemon_init_ctx (struct MHD_Daemon *restrict d,
   // TODO: add configuration option
   // ctx_opts |= SSL_OP_CIPHER_SERVER_PREFERENCE;
 
+#ifndef OPENSSL_NO_KTLS
   /* Enable kernel TLS */ // TODO: add configuration option
   ctx_opts |= SSL_OP_ENABLE_KTLS;
-#ifdef SSL_OP_ENABLE_KTLS_TX_ZEROCOPY_SENDFILE
+#  ifdef SSL_OP_ENABLE_KTLS_TX_ZEROCOPY_SENDFILE
   ctx_opts |= SSL_OP_ENABLE_KTLS_TX_ZEROCOPY_SENDFILE;
+#  endif
 #endif
 
   /* HTTP defines strict framing for the client-side data,
@@ -472,9 +477,11 @@ daemon_init_ctx (struct MHD_Daemon *restrict d,
   SSL_CTX_set_alpn_select_cb (d_tls->ctx,
                               &select_alpn_prot,
                               NULL);
+#ifndef OPENSSL_NO_NEXTPROTONEG
   SSL_CTX_set_next_protos_advertised_cb (d_tls->ctx,
                                          &get_npn_list,
                                          NULL);
+#endif /* ! OPENSSL_NO_NEXTPROTONEG */
 
   return MHD_SC_OK;
 }
