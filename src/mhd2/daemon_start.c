@@ -1147,6 +1147,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
                                   struct DaemonOptions *restrict s)
 {
   enum mhd_IntPollType chosen_type;
+  bool fallback_syscall_allowed;
 
   mhd_assert ((mhd_POLL_TYPE_NOT_SET_YET == d->events.poll_type) || \
               (mhd_WM_INT_EXTERNAL_EVENTS_EDGE == d->wmode_int) || \
@@ -1158,11 +1159,13 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
                   ((mhd_POLL_TYPE_EXT == d->events.poll_type) || \
                    (mhd_POLL_TYPE_EPOLL == d->events.poll_type))));
 
-  /* Check whether the provided parameter is in the range of expected values */
+  /* Check whether the provided parameter is in the range of expected values.
+     Only block unsupported values. */
   switch (s->poll_syscall)
   {
   case MHD_SPS_AUTO:
     chosen_type = mhd_POLL_TYPE_NOT_SET_YET;
+    /* The used value is chosen below */
     break;
   case MHD_SPS_SELECT:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
@@ -1205,13 +1208,19 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 
   mhd_assert (mhd_POLL_TYPE_EXT != chosen_type);
 
+  fallback_syscall_allowed = false;
   if (mhd_POLL_TYPE_NOT_SET_YET == chosen_type)
   {
     if (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int))
       chosen_type = mhd_POLL_TYPE_EXT;
 #ifdef MHD_USE_EPOLL
+    else if (MHD_WM_EXTERNAL_SINGLE_FD_WATCH == s->work_mode.mode)
+      chosen_type = mhd_POLL_TYPE_EPOLL; /* without fallback */
     else if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION != d->wmode_int)
+    {
+      fallback_syscall_allowed = true;
       chosen_type = mhd_POLL_TYPE_EPOLL; /* with possible fallback */
+    }
 #endif
     else
     {
@@ -1224,6 +1233,9 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #endif
     }
   }
+  mhd_assert ((! fallback_syscall_allowed) \
+              || (mhd_POLL_TYPE_EPOLL == chosen_type));
+
 
   /* Try 'epoll' if possible */
 #ifdef MHD_USE_EPOLL
@@ -1237,15 +1249,16 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 
     if (MHD_SC_OK != epoll_res)
     {
-      if ((MHD_SPS_EPOLL == s->poll_syscall) ||
-          (MHD_WM_EXTERNAL_SINGLE_FD_WATCH == s->work_mode.mode))
+      if (! fallback_syscall_allowed)
         return epoll_res; /* Cannot init epoll, but epoll is required */
       chosen_type = mhd_POLL_TYPE_NOT_SET_YET; /* Choose again */
     }
   }
   mhd_assert ((mhd_POLL_TYPE_EPOLL != d->events.poll_type) || \
               (0 < d->events.data.epoll.e_fd));
-#endif /* MHD_USE_EPOLL */
+#else  /* ! MHD_USE_EPOLL */
+  (void) fallback_syscall_allowed; /* Mute compiler warning */
+#endif /* ! MHD_USE_EPOLL */
 
   if (mhd_POLL_TYPE_NOT_SET_YET == chosen_type)
   {
