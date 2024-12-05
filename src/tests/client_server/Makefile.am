@@ -73,9 +73,11 @@ test_postprocessor_LDADD = \
 
 # TODO: fix out-of-tree 'make check'
 EXTRA_DIST = \
-  root-ca.crt \
-  inter1-ca.crt \
-  inter2-ca.crt \
-  test-server.crt \
-  test-server-key.pem \
-  chain.crt
+  data/root-ca.crt \
+  data/inter1-ca.crt \
+  data/inter2-ca.crt \
+  data/test-server.crt \
+  data/test-server-key.pem \
+  data/check_certs.sh \
+  data/make_chain.sh \
+  data/chain.crt
