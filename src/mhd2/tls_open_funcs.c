@@ -915,24 +915,30 @@ mhd_tls_open_conn_handshake (struct mhd_TlsOpenConnData *restrict c_tls)
   {
   case SSL_ERROR_WANT_READ:
     /* OpenSSL does not distinguish between "interrupted" and "try again" codes.
-       This is very bad when edge triggered polling is used as is is not clear
-       whether the "recv-ready" flag should be cleared.
-       If the flag is cleared, but it should not (because the process has been
-       "interrupted") then already pending data could be never processed.
+       Based on OpenSSL result it is unclear whether the "recv-ready" flag
+       should be reset or not.
+       If edge-triggered sockets polling is used and the flag is cleared, but
+       it should not (because the process has been "interrupted") then already
+       pending data could be never processed.
        If the flag is not cleared, but it should be cleared (because all
-       received data has been processed) then it would create busy-waiting loop.
-       Use clear of "ready" flag as safer, but not ideal solution. */
+       received data has been processed) then it would create busy-waiting loop
+       with edge-triggered sockets polling.
+       Temporal solution: disallow edge-triggered sockets polling with OpenSSL
+       backend and use clear of "ready" flag. */
     // TODO: replace "BIO" with custom version and track returned errors.
     return mhd_TLS_PROCED_SEND_MORE_NEEDED;
   case SSL_ERROR_WANT_WRITE:
     /* OpenSSL does not distinguish between "interrupted" and "try again" codes.
-       This is very bad when edge triggered polling is used as is is not clear
-       whether the "send-ready" flag should be cleared.
-       If the flag is cleared, but it should not (because the process has been
-       "interrupted") then already pending data could be never sent.
-       If the flag is not cleared, but it should be cleared (because the network
-       is busy) then it would create busy-waiting loop.
-       Use clear of "ready" flag as safer, but not ideal solution. */
+       Based on OpenSSL result it is unclear whether the "send-ready" flag
+       should be reset or not.
+       If edge-triggered sockets polling is used and the flag is cleared, but
+       it should not (because the process has been "interrupted") then already
+       pending data could be never sent.
+       If the flag is not cleared, but it should be cleared (because all
+       received data has been processed) then it would create busy-waiting loop
+       with edge-triggered sockets polling.
+       Temporal solution: disallow edge-triggered sockets polling with OpenSSL
+       backend and use clear of "ready" flag. */
     // TODO: replace "BIO" with custom version and track returned errors.
     return mhd_TLS_PROCED_RECV_MORE_NEEDED;
   case SSL_ERROR_NONE:
@@ -985,25 +991,31 @@ mhd_tls_open_conn_shutdown (struct mhd_TlsOpenConnData *restrict c_tls)
   {
   case SSL_ERROR_WANT_READ:
     /* OpenSSL does not distinguish between "interrupted" and "try again" codes.
-       This is very bad when edge triggered polling is used as is is not clear
-       whether the "recv-ready" flag should be cleared.
-       If the flag is cleared, but it should not (because the process has been
-       "interrupted") then already pending data could be never processed.
+       Based on OpenSSL result it is unclear whether the "recv-ready" flag
+       should be reset or not.
+       If edge-triggered sockets polling is used and the flag is cleared, but
+       it should not (because the process has been "interrupted") then already
+       pending data could be never processed.
        If the flag is not cleared, but it should be cleared (because all
-       received data has been processed) then it would create busy-waiting loop.
-       Use clear of "ready" flag as safer, but not ideal solution. */
+       received data has been processed) then it would create busy-waiting loop
+       with edge-triggered sockets polling.
+       Temporal solution: disallow edge-triggered sockets polling with OpenSSL
+       backend and use clear of "ready" flag. */
     // TODO: replace "BIO" with custom version and track returned errors.
     return mhd_TLS_PROCED_SEND_MORE_NEEDED;
   case SSL_ERROR_WANT_WRITE:
     c_tls->shut_tls_wr_sent = true;
     /* OpenSSL does not distinguish between "interrupted" and "try again" codes.
-       This is very bad when edge triggered polling is used as is is not clear
-       whether the "send-ready" flag should be cleared.
-       If the flag is cleared, but it should not (because the process has been
-       "interrupted") then already pending data could be never sent.
-       If the flag is not cleared, but it should be cleared (because the network
-       is busy) then it would create busy-waiting loop.
-       Use clear of "ready" flag as safer, but not ideal solution. */
+       Based on OpenSSL result it is unclear whether the "send-ready" flag
+       should be reset or not.
+       If edge-triggered sockets polling is used and the flag is cleared, but
+       it should not (because the process has been "interrupted") then already
+       pending data could be never sent.
+       If the flag is not cleared, but it should be cleared (because all
+       received data has been processed) then it would create busy-waiting loop
+       with edge-triggered sockets polling.
+       Temporal solution: disallow edge-triggered sockets polling with OpenSSL
+       backend and use clear of "ready" flag. */
     // TODO: replace "BIO" with custom version and track returned errors.
     return mhd_TLS_PROCED_RECV_MORE_NEEDED;
   case SSL_ERROR_NONE:
@@ -1059,13 +1071,16 @@ mhd_tls_open_conn_recv (struct mhd_TlsOpenConnData *restrict c_tls,
     return mhd_SOCKET_ERR_NO_ERROR;   /* Success exit point */
   case SSL_ERROR_WANT_READ:
     /* OpenSSL does not distinguish between "interrupted" and "try again" codes.
-       This is very bad when edge triggered polling is used as is is not clear
-       whether the "recv-ready" flag should be cleared.
-       If the flag is cleared, but it should not (because the process has been
-       "interrupted") then already pending data could be never processed.
+       Based on OpenSSL result it is unclear whether the "recv-ready" flag
+       should be reset or not.
+       If edge-triggered sockets polling is used and the flag is cleared, but
+       it should not (because the process has been "interrupted") then already
+       pending data could be never processed.
        If the flag is not cleared, but it should be cleared (because all
-       received data has been processed) then it would create busy-waiting loop.
-       Use clear of "ready" flag as safer, but not ideal solution. */
+       received data has been processed) then it would create busy-waiting loop
+       with edge-triggered sockets polling.
+       Temporal solution: disallow edge-triggered sockets polling with OpenSSL
+       backend and use clear of "ready" flag. */
     // TODO: replace "BIO" with custom version and track returned errors.
     return mhd_SOCKET_ERR_AGAIN;
   case SSL_ERROR_NONE:
@@ -1133,13 +1148,16 @@ mhd_tls_open_conn_send (struct mhd_TlsOpenConnData *restrict c_tls,
   {
   case SSL_ERROR_WANT_WRITE:
     /* OpenSSL does not distinguish between "interrupted" and "try again" codes.
-       This is very bad when edge triggered polling is used as is is not clear
-       whether the "send-ready" flag should be cleared.
-       If the flag is cleared, but it should not (because the process has been
-       "interrupted") then already pending data could be never sent.
-       If the flag is not cleared, but it should be cleared (because the network
-       is busy) then it would create busy-waiting loop.
-       Use clear of "ready" flag as safer, but not ideal solution. */
+       Based on OpenSSL result it is unclear whether the "send-ready" flag
+       should be reset or not.
+       If edge-triggered sockets polling is used and the flag is cleared, but
+       it should not (because the process has been "interrupted") then already
+       pending data could be never sent.
+       If the flag is not cleared, but it should be cleared (because all
+       received data has been processed) then it would create busy-waiting loop
+       with edge-triggered sockets polling.
+       Temporal solution: disallow edge-triggered sockets polling with OpenSSL
+       backend and use clear of "ready" flag. */
     // TODO: replace "BIO" with custom version and track returned errors.
     return mhd_SOCKET_ERR_AGAIN;
   case SSL_ERROR_NONE:
