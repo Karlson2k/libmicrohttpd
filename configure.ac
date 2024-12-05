@@ -7407,46 +7407,54 @@ AS_UNSET([fin_lib_LDFLAGS])
 
 AS_VAR_IF([os_is_windows], ["yes"],
   [os_ver_msg="
-  Target W32 ver:    ${mhd_w32_ver_msg}"], [AS_UNSET([[os_ver_msg]])])
+  Target W32 ver   : ${mhd_w32_ver_msg}"], [AS_UNSET([[os_ver_msg]])])
 
-
-AC_MSG_NOTICE([GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
-  Target directory:  ${prefix}
-  Cross-compiling:   ${cross_compiling}
-  Operating System:  ${mhd_host_os}${os_ver_msg}
-  Threading lib:     ${USE_THREADS}
-  Inter-thread comm: ${use_itc}
+AC_MSG_NOTICE([[GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
+  [ Target platform ]
+  Target directory : ${prefix}
+  Cross-compiling  : ${cross_compiling}
+  Operating System : ${mhd_host_os}${os_ver_msg}
+  Threading lib    : ${USE_THREADS}
   Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
-  select() support:  ${enable_select}
-  poll() support:    ${enable_poll=no}
-  epoll support:     ${enable_epoll=no}
-  sendfile used:     ${found_sendfile}
-  HTTPS support:     ${MSG_HTTPS}
-  TLS backends:      ${MSG_TLS_BACKENDS}
-  Logging support:   ${enable_log_messages}
-  Verbose auto replies: ${enable_http_messages}
-  Cookie parser:     ${enable_cookie}
-  POST parser:       ${enable_postparser}
-  Basic auth.:       ${enable_bauth}
-  Digest auth.:      ${enable_dauth}
+
+  [ Libary options and features ]
+  Inter-thread comm: ${use_itc}
+  select() support : ${enable_select}
+  poll() support   : ${enable_poll=no}
+  epoll support    : ${enable_epoll=no}
+  sendfile()       : ${found_sendfile}
+  HTTPS support    : ${MSG_HTTPS}
+  TLS backends     : ${MSG_TLS_BACKENDS}
+  Cookie parser    : ${enable_cookie}
+  POST parser      : ${enable_postparser}
+  Basic auth.      : ${enable_bauth}
+  Digest auth.     : ${enable_dauth}
   Digest auth. defaults: ${dauth_defs_MSG}
-  MD5:               ${enable_md5_MSG}
-  SHA-256:           ${enable_sha256_MSG}
-  SHA-512/256:       ${enable_sha512_256_MSG}
-  HTTP "Upgrade":    ${enable_httpupgrade}
-  Compact code:      ${enable_compact_code} (${compact_code_MSG})
-  Use thread names:  ${enable_thread_names}
+  MD5              : ${enable_md5_MSG}
+  SHA-256          : ${enable_sha256_MSG}
+  SHA-512/256      : ${enable_sha512_256_MSG}
+  HTTP "Upgrade"   : ${enable_httpupgrade}
+  Logging support  : ${enable_log_messages}
+  Verbose auto replies: ${enable_http_messages}
+
+  [ Code build options ]
+  Compact code     : ${enable_compact_code} (${compact_code_MSG})
+  Use thread names : ${enable_thread_names}
   Use debug asserts: ${use_asserts_MSG=no}
-  Use sanitizers:    ${enabled_sanitizers:=no}
-  Build static lib:  ${enable_static}
-  Build shared lib:  ${enable_shared}
-  Build docs:        ${enable_doc}
-  Build examples:    ${enable_examples}
-  Build tools:       ${enable_tools}
+  Use sanitizers   : ${enabled_sanitizers:=no}
+
+  [ Build items ]
+  Build static lib : ${enable_static}
+  Build shared lib : ${enable_shared}
+  Build docs       : ${enable_doc}
+  Build examples   : ${enable_examples}
+  Build tools      : ${enable_tools}
+
+  [ Test-suite settings ]
   Test with libcurl: ${MSG_CURL}
-  Heavy tests:       ${use_heavy_tests_MSG}
-  Fuzzing tests:     ${run_zzuf_tests_MSG=no}
-])
+  Heavy tests      : ${use_heavy_tests_MSG}
+  Fuzzing tests    : ${run_zzuf_tests_MSG=no}
+]])
 
 licence_num="0"
 AS_VAR_IF([have_gnutls],["yes"],
@@ -7462,9 +7470,10 @@ AS_CASE([$licence_num],
   [AC_MSG_ERROR(internal error: unexpected licence version)]
 )
 
-AC_MSG_NOTICE([
-  Licence:           ${licence_descr}
-])
+AC_MSG_NOTICE([[
+  [ Licence due to TLS backends used ]
+  Library licence  : ${licence_descr}
+]])
 
 AS_IF([test "x$enable_bauth" != "xyes" || \
    test "x$enable_dauth" != "xyes" || \
