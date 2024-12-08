@@ -1438,6 +1438,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
   ,
   /**
+   * The pointer to the response object is NULL
+   */
+  MHD_SC_RESP_POINTER_NULL = 60060
+  ,
+  /**
    * The provided MHD_Action is invalid
    */
   MHD_SC_ACTION_INVALID = 60080

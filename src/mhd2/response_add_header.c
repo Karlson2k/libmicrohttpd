@@ -119,7 +119,6 @@ response_add_header_int (struct MHD_Response *response,
 
 
 MHD_EXTERN_
-MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3) enum MHD_StatusCode
 MHD_response_add_header (struct MHD_Response *response,
@@ -129,6 +128,8 @@ MHD_response_add_header (struct MHD_Response *response,
   bool need_unlock;
   enum MHD_StatusCode res;
 
+  if (NULL == response)
+    return MHD_SC_RESP_POINTER_NULL;
   if (response->frozen)
     return MHD_SC_TOO_LATE;
 

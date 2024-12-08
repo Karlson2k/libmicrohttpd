@@ -1438,6 +1438,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
   ,
   /**
+   * The pointer to the response object is NULL
+   */
+  MHD_SC_RESP_POINTER_NULL = 60060
+  ,
+  /**
    * The provided MHD_Action is invalid
    */
   MHD_SC_ACTION_INVALID = 60080
@@ -6147,7 +6152,7 @@ MHD_FN_PAR_NONNULL_ (1);
 /**
  * Add a header line to the response.
  *
- * @param response response to add a header to
+ * @param response response to add a header to, NULL is tolerated
  * @param name the name of the header to add,
  *             an internal copy of the string will be made
  * @param value the value of the header to add,
@@ -6160,7 +6165,6 @@ MHD_EXTERN_ enum MHD_StatusCode
 MHD_response_add_header (struct MHD_Response *MHD_RESTRICT response,
                          const char *name,
                          const char *value)
-MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 

@@ -1658,7 +1658,7 @@ MHD_FN_PAR_NONNULL_ (1);
 /**
  * Add a header line to the response.
  *
- * @param response response to add a header to
+ * @param response response to add a header to, NULL is tolerated
  * @param name the name of the header to add,
  *             an internal copy of the string will be made
  * @param value the value of the header to add,
@@ -1671,7 +1671,6 @@ MHD_EXTERN_ enum MHD_StatusCode
 MHD_response_add_header (struct MHD_Response *MHD_RESTRICT response,
                          const char *name,
                          const char *value)
-MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3);
 
