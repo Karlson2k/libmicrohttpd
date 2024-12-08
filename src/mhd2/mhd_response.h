@@ -264,6 +264,13 @@ struct mhd_ResponseConfiguration
    * Response is internal-only error response
    */
   bool int_err_resp;
+
+#ifdef MHD_ENABLE_BAUTH
+  /**
+   * Response has Basic Auth "challenge" header
+   */
+  bool has_bauth;
+#endif /* MHD_ENABLE_BAUTH */
 };
 
 /**

@@ -203,7 +203,7 @@ libmicrohttpd_la_SOURCES += \
 endif
 endif
 
-if ENABLE_BAUTH
+if MHD_ENABLE_BAUTH
 libmicrohttpd_la_SOURCES += \
   basicauth.c basicauth.h
 endif
@@ -306,7 +306,7 @@ check_PROGRAMS += \
   test_dauth_userdigest \
   test_dauth_userhash
 endif
-if ENABLE_BAUTH
+if MHD_ENABLE_BAUTH
 check_PROGRAMS += \
   test_str_base64
 endif

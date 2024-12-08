@@ -102,6 +102,9 @@ post_parser_files = \
   mhd_post_parser.h         mhd_post_result.h         mhd_postfield_int.h \
   post_parser_funcs.c       post_parser_funcs.h
 
+basic_auth_sources = \
+  response_add_bauth.c
+
 upgrade_files = \
   mhd_upgrade.h \
   upgrade_prep.c            upgrade_prep.h \
@@ -128,6 +131,10 @@ tls_open_files = \
 
 if HAVE_POST_PARSER
   libmicrohttpd2_la_SOURCES += $(post_parser_files)
+endif
+
+if MHD_ENABLE_BAUTH
+  libmicrohttpd2_la_SOURCES += $(basic_auth_sources)
 endif
 
 if MHD_UPGRADE_SUPPORT

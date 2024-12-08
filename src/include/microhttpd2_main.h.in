@@ -3432,34 +3432,49 @@ struct MHD_BasicAuthInfo
 };
 
 /**
- * Send a response to request basic authentication from the client.
+ * Add Basic Authentication "challenge" to the response.
+ *
+ * The response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * If access to any resource should be limited to specific users, authenticated
+ * by Basic Authentication mechanism, and the request for this resource does not
+ * have Basic Authentication information (see #MHD_BasicAuthInfo), then response
+ * with Basic Authentication "challenge" should be sent. This works as
+ * an indication that Basic Authentication should be used for the access.
  *
  * See RFC 7617, section-2 for details.
  *
- * At most one action can be created for any request.
- *
- * @param connection the MHD connection structure
- * @param realm the realm presented to the client
- * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
- *                    be added, indicating for client that UTF-8 encoding
- *                    is preferred
  * @param response the reply to send; should contain the "access denied"
  *                 body;
  *                 note: this function sets the "WWW Authenticate" header and
  *                 the caller should not set this header;
- *                 the response must have #MHD_HTTP_STATUS_FORBIDDEN status
- *                 code, must not have #MHD_R_O_REUSABLE enabled;
- *                 the NULL is tolerated (the result is NULL)
- * @return pointer to the action on success,
- *         NULL on failure
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_SC_RESP_POINTER_NULL)
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @return #MHD_SC_OK if succeed,
+ *         #MHD_SC_TOO_LATE if the response has been already "frozen" (used to
+ *         create an action),
+ *         #MHD_SC_RESP_HEADERS_CONFLICT if Basic Authentication "challenge"
+ *         has been added already,
+ *         #MHD_SC_RESP_POINTER_NULL if @a response is NULL,
+ *         #MHD_SC_RESP_HTTP_CODE_NOT_SUITABLE is response status code is wrong,
+ *         #MHD_SC_RESP_HEADER_VALUE_INVALID if realm is zero-length or has CR
+ *         or LF characters,
+ *         #MHD_SC_RESPONSE_HEADER_MALLOC_FAILED if memory allocation failed,
+ *         or other error code if failed
  * @ingroup authentication
  */
-MHD_EXTERN_ const struct MHD_Action *
-MHD_action_basic_auth_required_response (
-  struct MHD_Connection *connection,
-  const char *realm,
-  enum MHD_Bool prefer_utf8,
-  struct MHD_Response *response);
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_response_add_basic_auth_challenge (
+  struct MHD_Response *MHD_RESTRICT response,
+  const char *MHD_RESTRICT realm,
+  enum MHD_Bool prefer_utf8)
+MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
 
 
 /* ********************** (f) Introspection ********************** */

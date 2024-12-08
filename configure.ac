@@ -5361,13 +5361,17 @@ AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP Basic authentication]])
 AC_ARG_ENABLE([bauth],
-		[AS_HELP_STRING([--disable-bauth],[disable HTTP Basic Authentication support])],
-		[enable_bauth=${enableval}],
-		[enable_bauth=yes])
+  [AS_HELP_STRING([--disable-bauth],[disable HTTP Basic Authentication support])],
+  [],
+  [enable_bauth="yes"]
+)
 AS_IF([[test "x$enable_bauth" != "xno"]],
-  [ enable_bauth=yes
-    AC_DEFINE([BAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Basic Auth support.]) ])
-AM_CONDITIONAL([ENABLE_BAUTH], [test "x$enable_bauth" != "xno"])
+  [
+    enable_bauth="yes"
+    AC_DEFINE([MHD_ENABLE_BAUTH],[1],[Define to '1' if libmicrohttpd should be compiled with Basic Auth support.])
+  ]
+)
+AM_CONDITIONAL([MHD_ENABLE_BAUTH], [test "x$enable_bauth" = "xyes"])
 AC_MSG_RESULT([[$enable_bauth]])
 
 # optional: HTTP Digest Auth support. Enabled by default

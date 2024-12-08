@@ -1438,9 +1438,19 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_RESP_HEADER_VALUE_INVALID = 60051
   ,
   /**
+   * An attempt to add header conflicting with other response header
+   */
+  MHD_SC_RESP_HEADERS_CONFLICT = 60052
+  ,
+  /**
    * The pointer to the response object is NULL
    */
   MHD_SC_RESP_POINTER_NULL = 60060
+  ,
+  /**
+   * The response HTTP status code is not suitable
+   */
+  MHD_SC_RESP_HTTP_CODE_NOT_SUITABLE = 60061
   ,
   /**
    * The provided MHD_Action is invalid
