@@ -2038,7 +2038,9 @@ mhd_str_unquote (const char *quoted,
 
 #if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
 
-MHD_INTERNAL size_t
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (1,2)
+MHD_FN_PAR_OUT_SIZE_ (3,4) size_t
 mhd_str_quote (const char *unquoted,
                size_t unquoted_len,
                char *result,

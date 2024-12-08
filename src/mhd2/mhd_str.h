@@ -736,7 +736,8 @@ MHD_INTERNAL size_t
 mhd_str_quote (const char *unquoted,
                size_t unquoted_len,
                char *result,
-               size_t buf_size);
+               size_t buf_size)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (1,2) MHD_FN_PAR_OUT_SIZE_ (3,4);
 
 #endif /* DAUTH_SUPPORT || BAUTH_SUPPORT */
 
