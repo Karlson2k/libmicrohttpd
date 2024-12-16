@@ -9426,7 +9426,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoFixedType
    * @sa #MHD_REQUEST_INFO_DYNAMIC_HTTP_METHOD_STR
    * @ingroup request
    */
-  MHD_REQUEST_INFO_FIXED_HTTP_METHOD = 4
+  MHD_REQUEST_INFO_FIXED_HTTP_METHOD = 5
   ,
 
   /* * Sentinel * */
@@ -9487,10 +9487,11 @@ union MHD_RequestInfoFixedData
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_request_get_info_fixed_sz (struct MHD_Request *request,
-                               enum MHD_RequestInfoFixedType info_type,
-                               union MHD_RequestInfoFixedData *return_value,
-                               size_t return_value_size)
+MHD_request_get_info_fixed_sz (
+  struct MHD_Request *MHD_RESTRICT request,
+  enum MHD_RequestInfoFixedType info_type,
+  union MHD_RequestInfoFixedData *MHD_RESTRICT return_value,
+  size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
 MHD_FN_PURE_;
@@ -9739,10 +9740,11 @@ union MHD_RequestInfoDynamicData
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_request_get_info_dynamic_sz (struct MHD_Request *request,
-                                 enum MHD_RequestInfoDynamicType info_type,
-                                 union MHD_RequestInfoDynamicData *return_value,
-                                 size_t return_value_size)
+MHD_request_get_info_dynamic_sz (
+  struct MHD_Request *MHD_RESTRICT request,
+  enum MHD_RequestInfoDynamicType info_type,
+  union MHD_RequestInfoDynamicData *MHD_RESTRICT return_value,
+  size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
 MHD_FN_PURE_;
