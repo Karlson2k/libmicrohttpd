@@ -7421,7 +7421,7 @@ AC_MSG_NOTICE([[GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   Threading lib    : ${USE_THREADS}
   Shutdown of listening socket triggers select: ${mhd_cv_host_shtdwn_trgr_select}
 
-  [ Libary options and features ]
+  [ Library features and options ]
   Inter-thread comm: ${use_itc}
   select() support : ${enable_select}
   poll() support   : ${enable_poll=no}
