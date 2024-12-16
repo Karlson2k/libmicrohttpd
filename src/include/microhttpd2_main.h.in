@@ -3476,6 +3476,134 @@ MHD_response_add_basic_auth_challenge (
   enum MHD_Bool prefer_utf8)
 MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
 
+#ifndef MHD_NO_STATIC_INLINE
+
+/**
+ * Create action to reply with Basic Authentication "challenge".
+ *
+ * The @a response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * If access to any resource should be limited to specific users, authenticated
+ * by Basic Authentication mechanism, and the request for this resource does not
+ * have Basic Authentication information (see #MHD_BasicAuthInfo), then response
+ * with Basic Authentication "challenge" should be sent. This works as
+ * an indication that Basic Authentication should be used for the access.
+ *
+ * See RFC 7617, section-2 for details.
+ *
+ * @param response the reply to send; should contain the "access denied"
+ *                 body;
+ *                 note: this function adds the "WWW Authenticate" header in
+ *                 the response and the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_action_abort_request())
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @param abort_if_failed if set to #MHD_NO the response will be used even if
+ *                        failed to add Basic Authentication "challenge",
+ *                        if not set to #MHD_NO the request will be aborted
+ *                        if the "challenge" could not be added.
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak;
+ *         NULL if failed or if any action has been already created for
+ *         the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
+ * @ingroup authentication
+ */
+MHD_STATIC_INLINE_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+const struct MHD_Action *
+MHD_action_basic_auth_challenge (struct MHD_Request *MHD_RESTRICT request,
+                                 struct MHD_Response *MHD_RESTRICT response,
+                                 const char *MHD_RESTRICT realm,
+                                 enum MHD_Bool prefer_utf8,
+                                 enum MHD_Bool abort_if_failed)
+{
+  if ((MHD_SC_OK !=
+       MHD_response_add_basic_auth_challenge (response, realm, prefer_utf8))
+      && (MHD_NO != abort_if_failed))
+  {
+    MHD_response_destroy (response);
+    return MHD_action_abort_request (request);
+  }
+  return MHD_action_from_response (request, response);
+}
+
+
+MHD_STATIC_INLINE_END_
+
+
+/**
+ * Create action to reply with Basic Authentication "challenge".
+ *
+ * The @a response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * If the @a response object cannot be extended with the "challenge",
+ * the @a response will be used to reply without the "challenge".
+ *
+ * @param response the reply to send; should contain the "access denied"
+ *                 body;
+ *                 note: this function adds the "WWW Authenticate" header in
+ *                 the response and the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_action_abort_request())
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak;
+ *         NULL if failed or if any action has been already created for
+ *         the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
+ * @ingroup authentication
+ */
+#define MHD_action_basic_auth_challenge_p(request,response,realm,prefer_utf8) \
+        MHD_action_basic_auth_challenge ((request), (response), (realm), \
+                                         (prefer_utf8), MHD_NO)
+
+/**
+ * Create action to reply with Basic Authentication "challenge".
+ *
+ * The @a response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * If the @a response object cannot be extended with the "challenge",
+ * the @a response will be used to reply without the "challenge".
+ *
+ * @param response the reply to send; should contain the "access denied"
+ *                 body;
+ *                 note: this function adds the "WWW Authenticate" header in
+ *                 the response and the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_action_abort_request())
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak;
+ *         NULL if failed or if any action has been already created for
+ *         the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
+ * @ingroup authentication
+ */
+#define MHD_action_basic_auth_challenge_a(request,response,realm,prefer_utf8) \
+        MHD_action_basic_auth_challenge ((request), (response), (realm), \
+                                         (prefer_utf8), MHD_YES)
+
+#endif /* ! MHD_NO_STATIC_INLINE */
 
 /* ********************** (f) Introspection ********************** */
 
