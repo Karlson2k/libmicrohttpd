@@ -420,7 +420,7 @@ mhd_upgrade_prep_for_action (struct MHD_Request *restrict req,
                              bool is_upload_act)
 {
   struct MHD_Connection *const c =
-    mhd_cntnr_ptr (req, struct MHD_Connection, rq);
+    mhd_CNTNR_PTR (req, struct MHD_Connection, rq);
 
   mhd_assert (mhd_HTTP_STAGE_HEADERS_PROCESSED <= c->stage);
   mhd_assert (mhd_HTTP_STAGE_FULL_REQ_RECEIVED >= c->stage);

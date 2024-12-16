@@ -20,7 +20,7 @@
 
 /**
  * @file src/mhd2/mhd_cntnr_ptr.h
- * @brief  The definition of mhd_cntnr_ptr() macro.
+ * @brief  The definition of mhd_CNTNR_PTR() macro.
  * @author Karlson2k (Evgeny Grin)
  */
 
@@ -45,7 +45,7 @@
  * @param membr_name the name of the member pointed by @a membr_ptr
  * @return the pointer to the outer structure
  */
-#define mhd_cntnr_ptr(membr_ptr,cntnr_type,membr_name)      \
+#define mhd_CNTNR_PTR(membr_ptr,cntnr_type,membr_name)      \
         ((cntnr_type*) (void*)                              \
          (((char*) (0 ?                                     \
                     (&(((cntnr_type*) NULL)->membr_name)) : \
