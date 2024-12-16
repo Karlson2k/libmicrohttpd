@@ -404,8 +404,9 @@ mhd_stream_get_no_space_err_status_code (struct MHD_Connection *restrict c,
     method_size = 0; /* Do not recommend shorter request method */
   else
   {
-    mhd_assert (NULL != c->rq.method);
-    method_size = strlen (c->rq.method);
+    mhd_assert (NULL != c->rq.method.cstr);
+    method_size = c->rq.method.len;
+    mhd_assert (method_size == strlen (c->rq.method.cstr));
   }
 
   if ((size_t) MHD_MAX_REASONABLE_HEADERS_SIZE_ < opt_headers_size)

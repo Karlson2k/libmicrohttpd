@@ -447,17 +447,13 @@
 /**
  * Detect standard HTTP request method
  *
- * @param connection the connection
- * @param method the pointer to HTTP request method string
- * @param len the length of @a method in bytes
+ * @param connection the connection to process
  */
-static MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_IN_SIZE_ (3,2) void
-parse_http_std_method (struct MHD_Connection *restrict connection,
-                       size_t len,
-                       const char *restrict method)
+static MHD_FN_PAR_NONNULL_ALL_ void
+parse_http_std_method (struct MHD_Connection *restrict connection)
 {
-  const char *const m = method; /**< short alias */
+  const char *const restrict m = connection->rq.method.cstr; /**< short alias */
+  const size_t len =  connection->rq.method.len; /**< short alias */
   mhd_assert (NULL != m);
   mhd_assert (0 != len);
 
@@ -620,7 +616,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
 
   mhd_assert (mhd_HTTP_STAGE_INIT == c->stage || \
               mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
-  mhd_assert (NULL == c->rq.method || \
+  mhd_assert (NULL == c->rq.method.cstr || \
               mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
   mhd_assert (mhd_HTTP_METHOD_NO_METHOD == c->rq.http_mthd || \
               mhd_HTTP_STAGE_REQ_LINE_RECEIVING == c->stage);
@@ -644,7 +640,8 @@ get_request_line_inner (struct MHD_Connection *restrict c)
        See RFC 9112, section 2.2 */
     bool is_empty_line;
     mhd_assert (mhd_HTTP_STAGE_INIT == c->stage);
-    mhd_assert (NULL == c->rq.method);
+    mhd_assert (0 == c->rq.method.len);
+    mhd_assert (NULL == c->rq.method.cstr);
     mhd_assert (NULL == c->rq.url);
     mhd_assert (0 == c->rq.url_len);
     mhd_assert (NULL == c->rq.hdrs.rq_line.rq_tgt);
@@ -797,7 +794,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
     {
       /* Handle the end of the request line */
 
-      if (NULL != c->rq.method)
+      if (NULL != c->rq.method.cstr)
       {
         if (wsp_in_uri)
         {
@@ -964,7 +961,7 @@ get_request_line_inner (struct MHD_Connection *restrict c)
           (! wsp_blocks))
       {
         /* Found first whitespace char of the new whitespace block */
-        if (NULL == c->rq.method)
+        if (NULL == c->rq.method.cstr)
         {
           /* Found the end of the HTTP method string */
           mhd_assert (0 == c->rq.hdrs.rq_line.last_ws_start);
@@ -979,8 +976,9 @@ get_request_line_inner (struct MHD_Connection *restrict c)
             return true; /* Error in the request */
           }
           read_buffer[p] = 0; /* Zero-terminate the request method string */
-          c->rq.method = read_buffer;
-          parse_http_std_method (c, p, c->rq.method);
+          c->rq.method.cstr = read_buffer;
+          c->rq.method.len = p;
+          parse_http_std_method (c);
         }
         else
         {
@@ -2177,10 +2175,10 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
                      (uint_fast64_t) c->rq.skipped_broken_lines);
   }
 
-  mhd_assert (c->rq.method < c->read_buffer);
+  mhd_assert (c->rq.method.cstr < c->read_buffer);
   if (! process_footers)
   {
-    c->rq.header_size = (size_t) (c->read_buffer - c->rq.method);
+    c->rq.header_size = (size_t) (c->read_buffer - c->rq.method.cstr);
     mhd_assert (NULL != c->rq.field_lines.start);
     c->rq.field_lines.size =
       (size_t) ((c->read_buffer - c->rq.field_lines.start) - 1);

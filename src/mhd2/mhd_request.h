@@ -341,7 +341,7 @@ struct MHD_Request
   /**
    * Request method.  Should be GET/POST/etc.  Allocated in pool.
    */
-  const char *method;
+  struct MHD_String method;
 
   /**
    * The request method as enum.

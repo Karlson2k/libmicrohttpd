@@ -73,7 +73,8 @@ respond_with_error_len (struct MHD_Connection *c,
 
   mhd_DLINKEDL_INIT_LIST (&(c->rq), fields);
   c->rq.version = NULL;
-  c->rq.method = NULL;
+  c->rq.method.len = 0;
+  c->rq.method.cstr = NULL;
   c->rq.url = NULL;
   c->continue_message_write_offset = 0;
   if (0 != c->read_buffer_size)
