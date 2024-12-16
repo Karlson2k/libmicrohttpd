@@ -139,13 +139,48 @@
 /* *INDENT-ON* */
 #endif /* __cplusplus */
 
-#include "microhttpd2_portability.h"
+MHD_C_DECLRATIONS_START_HERE_
 
 /**
- * Current version of the library.
- * Packed BCD: 0x01093001 = 1.9.30-1.
+ * Current version of the library in packed BCD form.
+ * (For example, version 1.9.30-1 would be 0x01093001)
  */
 #define MHD_VERSION 0x01990001
+
+#include "microhttpd2_portability.h"
+
+/* If generic headers don't work on your platform, include headers which define
+   'va_list', 'size_t', 'uint_least16_t', 'uint_fast32_t', 'uint_fast64_t',
+   'struct sockaddr', and then "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before
+   including "microhttpd2.h".
+   When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined the following "standard"
+   includes won't be used (which might be a good idea, especially on platforms
+   where they do not exist).
+   */
+#ifndef MHD_HAVE_SYS_HEADERS_INCLUDED
+#  include <stdarg.h>
+#  ifndef MHD_SYS_BASE_TYPES_H
+/* Headers for uint_fastXX_t, size_t */
+#    include <stdint.h>
+#    include <stddef.h>
+#    include <sys/types.h> /* This header is actually optional */
+#  endif
+#  ifndef MHD_SYS_SOCKET_TYPES_H
+/* Headers for 'struct sockaddr' */
+#    if ! defined(_WIN32) || defined(__CYGWIN__)
+#      include <sys/socket.h>
+#    else
+/* Prevent conflict of <winsock.h> and <winsock2.h> */
+#      if ! defined(_WINSOCK2API_) && ! defined(_WINSOCKAPI_)
+#        ifndef WIN32_LEAN_AND_MEAN
+/* Do not use unneeded parts of W32 headers. */
+#          define WIN32_LEAN_AND_MEAN 1
+#        endif /* !WIN32_LEAN_AND_MEAN */
+#        include <winsock2.h>
+#      endif
+#    endif
+#  endif
+#endif
 
 #ifndef MHD_BOOL_DEFINED
 
@@ -219,6 +254,26 @@ struct MHD_StringNullable
 
 #define MHD_STRINGS_DEFINED 1
 #endif /* ! MHD_STRINGS_DEFINED */
+
+
+#ifndef MHD_INVALID_SOCKET
+#  if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
+#    define MHD_SOCKETS_KIND_POSIX 1
+/**
+ * MHD_Socket is a type for socket FDs
+ */
+typedef int MHD_Socket;
+#    define MHD_INVALID_SOCKET (-1)
+#  else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#    define MHD_SOCKETS_KIND_WINSOCK 1
+/**
+ * MHD_Socket is a type for socket FDs
+ */
+typedef SOCKET MHD_Socket;
+#    define MHD_INVALID_SOCKET (INVALID_SOCKET)
+#  endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
+#endif /* MHD_INVALID_SOCKET */
+
 
 /**
  * Constant used to indicate unknown size (use when creating a response).

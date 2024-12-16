@@ -1,41 +1,28 @@
-MHD_C_DECLRATIONS_START_HERE_
+/*
+  This file is part of GNU libmicrohttpd
+  Copyright (C) 2024 Evgeny Grin (Karlson2k)
+
+  GNU libmicrohttpd is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
+
+  GNU libmicrohttpd is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+*/
+
+#ifndef MICROHTTPD2_PORTABILITY_H
+#define MICROHTTPD2_PORTABILITY_H 1
+
 /* *INDENT-OFF* */
 
-
-// FIXME: Move this block to the main header for higher visibility?
-
-/* If generic headers don't work on your platform, include headers which define
-   'va_list', 'size_t', 'uint_least16_t', 'uint_fast32_t', 'uint_fast64_t',
-   'struct sockaddr', and then "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before
-   including "microhttpd2.h".
-   When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined the following "standard"
-   includes won't be used (which might be a good idea, especially on platforms
-   where they do not exist).
-   */
-#ifndef MHD_HAVE_SYS_HEADERS_INCLUDED
-#  include <stdarg.h>
-#  ifndef MHD_SYS_BASE_TYPES_H
-     /* Headers for uint_fastXX_t, size_t */
-#    include <stdint.h>
-#    include <stddef.h>
-#    include <sys/types.h> /* This header is actually optional */
-#  endif
-#  ifndef MHD_SYS_SOCKET_TYPES_H
-     /* Headers for 'struct sockaddr' */
-#    if !defined(_WIN32) || defined(__CYGWIN__)
-#      include <sys/socket.h>
-#    else
-     /* Prevent conflict of <winsock.h> and <winsock2.h> */
-#      if !defined(_WINSOCK2API_) && !defined(_WINSOCKAPI_)
-#        ifndef WIN32_LEAN_AND_MEAN
-       /* Do not use unneeded parts of W32 headers. */
-#          define WIN32_LEAN_AND_MEAN 1
-#        endif /* !WIN32_LEAN_AND_MEAN */
-#        include <winsock2.h>
-#      endif
-#    endif
-#  endif
-#endif
 
 #ifndef __cplusplus
 #  define MHD_STATIC_CAST_(type,value) \
@@ -60,23 +47,6 @@ MHD_C_DECLRATIONS_START_HERE_
 #    define MHD_EXTERN_ extern __declspec(dllimport)
 #  endif
 #endif
-
-// FIXME: Move this block to the main header for higher visibility? Users should know what is the 'MHD_Socket'
-
-#ifndef MHD_INVALID_SOCKET
-/**
- * MHD_Socket is type for socket FDs
- */
-#  if ! defined(_WIN32) || defined(_SYS_TYPES_FD_SET)
-#    define MHD_SOCKETS_KIND_POSIX 1
-typedef int MHD_Socket;
-#    define MHD_INVALID_SOCKET (-1)
-#  else /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
-#    define MHD_SOCKETS_KIND_WINSOCK 1
-typedef SOCKET MHD_Socket;
-#    define MHD_INVALID_SOCKET (INVALID_SOCKET)
-#  endif /* !defined(_WIN32) || defined(_SYS_TYPES_FD_SET) */
-#endif /* MHD_INVALID_SOCKET */
 
 
 /* Compiler macros for internal needs */
@@ -849,3 +819,5 @@ typedef SOCKET MHD_Socket;
 #ifndef MHD_FN_PAR_CSTR_
 #  define MHD_FN_PAR_CSTR_(param_num)   /* empty */
 #endif /* ! MHD_FN_PAR_CSTR_ */
+
+#endif /* ! MICROHTTPD2_PORTABILITY_H */
