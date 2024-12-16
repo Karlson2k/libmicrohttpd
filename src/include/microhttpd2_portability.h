@@ -392,6 +392,16 @@ typedef SOCKET MHD_Socket;
 #  endif
 #endif /*!  MHD_NO__PRAGMA */
 
+#ifndef MHD_NOWARN_EXPRESSION_
+#  if MHD_GNUC_MINV (2,8)
+#    define MHD_NOWARN_EXPRESSION_         __extension__
+/* Indicate that MHD_NOWARN_EXPRESSION macro is functional */
+#    define MHD_HAS_NOWARN_EXPRESSION_    1
+#  else
+#    define MHD_NOWARN_EXPRESSION_         /* empty */
+#  endif
+#endif
+
 #ifndef MHD_WARN_PUSH_
 #  define MHD_WARN_PUSH_        /* empty */
 #endif
@@ -421,9 +431,23 @@ typedef SOCKET MHD_Socket;
 #endif
 #ifndef MHD_NOWARN_UNUSED_FUNC_
 #  define MHD_NOWARN_UNUSED_FUNC_       /* empty */
+#else
+/* Indicate that MHD_NOWARN_UNUSED_FUNC_ macro is functional */
+#  define MHD_HAS_NOWARN_UNUSED_FUNC_   1
 #endif
 #ifndef MHD_RESTORE_WARN_UNUSED_FUNC_
 #  define MHD_RESTORE_WARN_UNUSED_FUNC_ /* empty */
+#endif
+
+#ifdef MHD_HAS_NOWARN_UNUSED_FUNC_
+#  define MHD_STATIC_INLINE_ \
+  MHD_NOWARN_UNUSED_FUNC_ static MHD_INLINE
+#  define MHD_STATIC_INLINE_END_ \
+  MHD_RESTORE_WARN_UNUSED_FUNC_
+#else
+#  define MHD_STATIC_INLINE_ \
+  MHD_NOWARN_EXPRESSION_ static MHD_INLINE
+#  define MHD_STATIC_INLINE_END_         /* empty */
 #endif
 
 /**
