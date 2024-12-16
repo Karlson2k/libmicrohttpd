@@ -125,6 +125,8 @@ typedef SOCKET MHD_Socket;
 #endif
 
 #define MHD_C_MINV_99     MHD_C_MINV (199901)
+#define MHD_C_MINV_11     MHD_C_MINV (201112)
+#define MHD_C_MINV_23     MHD_C_MINV (202311)
 
 
 #ifndef __cplusplus
@@ -274,23 +276,24 @@ typedef SOCKET MHD_Socket;
 
 
 /* Use variable-length arrays? */
-#if ! defined(MHD_NO_VLA)
-#  if ! defined(MHD_USE_VLA)
-#    if MHD_C_MINV_99 && (! defined(__STDC_NO_VLA__))
-#      if defined(__GNUC__) || defined(__clang__)
-#        define MHD_USE_VLA     1
-#      elif defined(_MSC_VER)
-#        define MHD_NO_VLA      1
-#      else
-/* Assume 'not supported' */
-#        define MHD_NO_VLA      1
-#      endif
+#if ! defined(MHD_NO_VLA_TYPES)
+#  if ! defined(MHD_USE_VLA_TYPES)
+#    if MHD_C_MINV_23
+#      define MHD_USE_VLA_TYPES 1
+#    elif defined(__STDC_NO_VLA__)
+#      define MHD_NO_VLA_TYPES  1
+#    elif defined(_MSC_VER)
+#      define MHD_NO_VLA_TYPES  1
+#    elif MHD_C_MINV_99 && \
+          (defined(__GNUC__) || defined(__clang__) || defined(__llvm__))
+#      define MHD_USE_VLA_TYPES 1
 #    else
-#      define MHD_NO_VLA        1
+/* Assume 'not supported' */
+#      define MHD_NO_VLA_TYPES  1
 #    endif
 #  endif
-#elif defined(MHD_USE_VLA)
-#error MHD_USE_VLA and MHD_NO_VLA are both defined
+#elif defined(MHD_USE_VLA_TYPES)
+#error MHD_USE_VLA_TYPES and MHD_NO_VLA_TYPES are both defined
 #endif /* MHD_NO_VARARG_MACROS */
 
 #if ! defined(MHD_INLINE)
@@ -760,15 +763,11 @@ typedef SOCKET MHD_Socket;
 /* Override detected value of MHD_FN_PAR_DYN_ARR_SIZE_() by defining it
  * before including the header */
 #ifndef MHD_FN_PAR_DYN_ARR_SIZE_
-#  if MHD_C_MINV_99
-#    if MHD_USE_VLA
-#      define MHD_FN_PAR_DYN_ARR_SIZE_(size)  static size
-#    else
-#      define MHD_FN_PAR_DYN_ARR_SIZE_(size)  1
-#    endif
-#  else  /* ! MHD_C_MINV_99 */
-#    define MHD_FN_PAR_DYN_ARR_SIZE_(size)    1
-#  endif /* ! MHD_C_MINV_99 */
+#  if MHD_USE_VLA_TYPES
+#    define MHD_FN_PAR_DYN_ARR_SIZE_(size)  static size
+#  else
+#    define MHD_FN_PAR_DYN_ARR_SIZE_(size)  1
+#  endif
 #endif /* MHD_FN_PAR_DYN_ARR_SIZE_ */
 
 /* Override detected value of MHD_FN_PAR_FIX_ARR_SIZE_() by defining it
