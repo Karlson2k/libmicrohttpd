@@ -240,7 +240,7 @@ struct MHD_String
 struct MHD_StringNullable
 {
   /**
-   * Number of characters in @e str, not counting 0-termination.
+   * Number of characters in @e cstr, not counting 0-termination.
    * If @a cstr is NULL, it must be zero.
    */
   size_t len;
