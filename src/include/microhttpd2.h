@@ -5244,8 +5244,8 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
  *
  * @param request request to get values from
  * @param kind what kind of value are we looking for
- * @param key the header to look for, empty to lookup 'trailing' value
- *            without a key
+ * @param key the name of the value looking for (used for case-insensetive
+              match), empty to lookup 'trailing' value without a key
  * @return NULL if no such item was found
  * @ingroup request
  */
