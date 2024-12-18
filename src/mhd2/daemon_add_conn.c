@@ -178,9 +178,9 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
   if (NULL == c)
   {
     mhd_LOG_MSG (daemon, \
-                 MHD_SC_CONNECTION_MALLOC_FAILURE, \
+                 MHD_SC_CONNECTION_MEM_ALLOC_FAILURE, \
                  "Failed to allocate memory for the new connection");
-    ret = MHD_SC_CONNECTION_MALLOC_FAILURE;
+    ret = MHD_SC_CONNECTION_MEM_ALLOC_FAILURE;
   }
   else
   {
@@ -211,9 +211,9 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
       if (NULL == c->sk.addr.data)
       {
         mhd_LOG_MSG (daemon, \
-                     MHD_SC_CONNECTION_MALLOC_FAILURE, \
+                     MHD_SC_CONNECTION_MEM_ALLOC_FAILURE, \
                      "Failed to allocate memory for the new connection");
-        ret = MHD_SC_CONNECTION_MALLOC_FAILURE;
+        ret = MHD_SC_CONNECTION_MEM_ALLOC_FAILURE;
       }
       else
         memcpy (c->sk.addr.data,
@@ -304,9 +304,9 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
   connection->pool = mdh_pool_create (daemon->conns.cfg.mem_pool_size);
   if (NULL == connection->pool)
   { /* 'pool' creation failed */
-    mhd_LOG_MSG (daemon, MHD_SC_POOL_MALLOC_FAILURE, \
+    mhd_LOG_MSG (daemon, MHD_SC_POOL_MEM_ALLOC_FAILURE, \
                  "Failed to allocate memory for the connection memory pool.");
-    res = MHD_SC_POOL_MALLOC_FAILURE;
+    res = MHD_SC_POOL_MEM_ALLOC_FAILURE;
   }
   else
   { /* 'pool' creation succeed */

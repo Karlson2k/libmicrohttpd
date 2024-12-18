@@ -657,7 +657,7 @@ daemon_load_certs_chain (struct MHD_Daemon *restrict d,
   if (NULL == m_bio)
   {
     mhd_DBG_PRINT_TLS_ERRS ();
-    return MHD_SC_DAEMON_MALLOC_FAILURE;
+    return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
   }
   ret = daemon_load_certs_chain_obio (d,
                                       d_tls,
@@ -723,7 +723,7 @@ daemon_init_cert (struct MHD_Daemon *restrict d,
   if (NULL == m_bio)
   {
     mhd_DBG_PRINT_TLS_ERRS ();
-    return MHD_SC_DAEMON_MALLOC_FAILURE;
+    return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
   }
   pr_key =
     PEM_read_bio_PrivateKey_ex (m_bio,
@@ -788,7 +788,7 @@ mhd_tls_open_daemon_init (struct MHD_Daemon *restrict d,
           mhd_calloc (1, sizeof (struct mhd_TlsOpenDaemonData));
   *p_d_tls = d_tls;
   if (NULL == d_tls)
-    return MHD_SC_DAEMON_MALLOC_FAILURE;
+    return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
 
   res = daemon_init_lib_ctx (d,
                              d_tls,

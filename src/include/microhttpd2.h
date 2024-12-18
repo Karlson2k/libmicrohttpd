@@ -516,19 +516,19 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Failed to allocate memory for the daemon resources.
    * TODO: combine similar error codes for daemon
    */
-  MHD_SC_DAEMON_MALLOC_FAILURE = 30081
+  MHD_SC_DAEMON_MEM_ALLOC_FAILURE = 30081
   ,
   /**
    * We failed to allocate memory for the connection.
    * (May be transient.)
    */
-  MHD_SC_CONNECTION_MALLOC_FAILURE = 30082
+  MHD_SC_CONNECTION_MEM_ALLOC_FAILURE = 30082
   ,
   /**
    * We failed to allocate memory for the connection's memory pool.
    * (May be transient.)
    */
-  MHD_SC_POOL_MALLOC_FAILURE = 30083
+  MHD_SC_POOL_MEM_ALLOC_FAILURE = 30083
   ,
   /**
    * We failed to forward data from a Web socket to the
@@ -542,7 +542,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * the request.  Likely the request fields are too large to leave
    * enough room.
    */
-  MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ = 30130
+  MHD_SC_CONNECTION_POOL_NO_MEM_REQ = 30130
   ,
   /**
    * Failed to allocate memory from our memory pool to store GET parameter.
@@ -992,7 +992,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * Failed to allocate memory for the thread pool.
    */
-  MHD_SC_THREAD_POOL_MALLOC_FAILURE = 50090
+  MHD_SC_THREAD_POOL_MEM_ALLOC_FAILURE = 50090
   ,
   /**
    * We failed to allocate mutex for thread pool worker.
@@ -1286,7 +1286,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * Unable to allocate memory for the response header
    */
-  MHD_SC_RESPONSE_HEADER_MALLOC_FAILED = 50540
+  MHD_SC_RESPONSE_HEADER_MEM_ALLOC_FAILED = 50540
   ,
   /**
    * Failed to switch TCP_NODELAY option for the socket
@@ -8027,7 +8027,7 @@ struct MHD_BasicAuthInfo
  *         #MHD_SC_RESP_HTTP_CODE_NOT_SUITABLE is response status code is wrong,
  *         #MHD_SC_RESP_HEADER_VALUE_INVALID if realm is zero-length or has CR
  *         or LF characters,
- *         #MHD_SC_RESPONSE_HEADER_MALLOC_FAILED if memory allocation failed,
+ *         #MHD_SC_RESPONSE_HEADER_MEM_ALLOC_FAILED if memory allocation failed,
  *         or other error code if failed
  * @ingroup authentication
  */

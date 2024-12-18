@@ -2077,11 +2077,11 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
         mhd_assert (hdr_name.cstr < hdr_value.cstr);
 
         if (! process_footers)
-          mhd_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ, \
+          mhd_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_NO_MEM_REQ, \
                        "Failed to allocate memory in the connection memory " \
                        "pool to store header.");
         else
-          mhd_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_MALLOC_FAILURE_REQ, \
+          mhd_LOG_MSG (c->daemon, MHD_SC_CONNECTION_POOL_NO_MEM_REQ, \
                        "Failed to allocate memory in the connection memory " \
                        "pool to store footer.");
 

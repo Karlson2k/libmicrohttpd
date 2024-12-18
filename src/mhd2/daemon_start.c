@@ -2464,9 +2464,9 @@ init_workers_pool (struct MHD_Daemon *restrict d,
   if (workers_pool_size / num_workers != sizeof(struct MHD_Daemon))
   { /* Overflow */
     mhd_LOG_MSG ( \
-      d, MHD_SC_THREAD_POOL_MALLOC_FAILURE, \
+      d, MHD_SC_THREAD_POOL_MEM_ALLOC_FAILURE, \
       "The size of the thread pool is too large.");
-    return MHD_SC_THREAD_POOL_MALLOC_FAILURE;
+    return MHD_SC_THREAD_POOL_MEM_ALLOC_FAILURE;
   }
 
 #ifndef NDEBUG
@@ -2478,9 +2478,9 @@ init_workers_pool (struct MHD_Daemon *restrict d,
   if (NULL == d->threading.hier.pool.workers)
   {
     mhd_LOG_MSG ( \
-      d, MHD_SC_THREAD_POOL_MALLOC_FAILURE, \
+      d, MHD_SC_THREAD_POOL_MEM_ALLOC_FAILURE, \
       "Failed to allocate memory for the thread pool.");
-    return MHD_SC_THREAD_POOL_MALLOC_FAILURE;
+    return MHD_SC_THREAD_POOL_MEM_ALLOC_FAILURE;
   }
 
   conn_per_daemon = d->conns.cfg.count_limit / num_workers;

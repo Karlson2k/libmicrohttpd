@@ -367,7 +367,7 @@ daemon_init_priorities_cache (struct MHD_Daemon *restrict d,
     if (GNUTLS_E_SUCCESS == res)
       break;
     if (GNUTLS_E_MEMORY_ERROR == res)
-      return MHD_SC_DAEMON_MALLOC_FAILURE;
+      return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
   }
 
   if (i < mhd_ARR_NUM_ELEMS (tlsgnulib_base_priorities))
@@ -415,7 +415,7 @@ mhd_tls_gnu_daemon_init3 (struct MHD_Daemon *restrict d,
           mhd_calloc (1, sizeof (struct mhd_TlsGnuDaemonData));
   *p_d_tls = d_tls;
   if (NULL == d_tls)
-    return MHD_SC_DAEMON_MALLOC_FAILURE;
+    return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
 
   res = daemon_init_credentials (d,
                                  d_tls,

@@ -60,7 +60,7 @@ MHD_daemon_set_options (
           free (settings->bind_sa.v_sa);
         settings->bind_sa.v_sa = malloc (option->val.bind_sa.v_sa_len);
         if (NULL == settings->bind_sa.v_sa)
-          return MHD_SC_DAEMON_MALLOC_FAILURE;
+          return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
         memcpy (settings->bind_sa.v_sa, option->val.bind_sa.v_sa,
                 option->val.bind_sa.v_sa_len);
         settings->bind_sa.v_sa_len = option->val.bind_sa.v_sa_len;
@@ -113,7 +113,7 @@ MHD_daemon_set_options (
           free (settings->tls_cert_key.v_mem_cert); // TODO: Support multiple certificates!!
         settings->tls_cert_key.v_mem_cert = malloc (cert_size + key_size + pass_size);
         if (NULL == settings->tls_cert_key.v_mem_cert)
-          return MHD_SC_DAEMON_MALLOC_FAILURE;
+          return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
         memcpy (settings->tls_cert_key.v_mem_cert,
                 option->val.tls_cert_key.v_mem_cert,
                 cert_size);
@@ -220,7 +220,7 @@ MHD_daemon_set_options (
         settings->random_entropy.v_buf =
           malloc (option->val.random_entropy.v_buf_size);
         if (NULL == settings->random_entropy.v_buf)
-          return MHD_SC_DAEMON_MALLOC_FAILURE;
+          return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
         memcpy (settings->random_entropy.v_buf,
                 option->val.random_entropy.v_buf,
                 option->val.random_entropy.v_buf_size);

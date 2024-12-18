@@ -73,7 +73,7 @@ response_add_basic_auth_challenge_int (struct MHD_Response *restrict response,
                     + hdr_name_len + 1 + hval_maxlen + 1);
 
   if (NULL == new_hdr)
-    return MHD_SC_RESPONSE_HEADER_MALLOC_FAILED;
+    return MHD_SC_RESPONSE_HEADER_MEM_ALLOC_FAILED;
 
   /* Set the name of the header */
   memcpy ((char *) (new_hdr + 1),

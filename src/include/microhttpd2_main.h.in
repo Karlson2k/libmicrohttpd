@@ -3465,7 +3465,7 @@ struct MHD_BasicAuthInfo
  *         #MHD_SC_RESP_HTTP_CODE_NOT_SUITABLE is response status code is wrong,
  *         #MHD_SC_RESP_HEADER_VALUE_INVALID if realm is zero-length or has CR
  *         or LF characters,
- *         #MHD_SC_RESPONSE_HEADER_MALLOC_FAILED if memory allocation failed,
+ *         #MHD_SC_RESPONSE_HEADER_MEM_ALLOC_FAILED if memory allocation failed,
  *         or other error code if failed
  * @ingroup authentication
  */

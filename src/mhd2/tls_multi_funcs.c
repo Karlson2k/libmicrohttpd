@@ -240,7 +240,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
           mhd_calloc (1,
                       sizeof (struct mhd_TlsMultiDaemonData));
   if (NULL == d_tls)
-    return MHD_SC_DAEMON_MALLOC_FAILURE;
+    return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
 
   res = MHD_SC_INTERNAL_ERROR; /* Mute compiler warning, the value should not be used */
   switch (s->tls)

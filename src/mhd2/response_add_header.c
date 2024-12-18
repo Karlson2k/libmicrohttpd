@@ -112,7 +112,7 @@ response_add_header_int (struct MHD_Response *response,
 
   if (! response_add_header_no_check (response, name_len, name,
                                       value_len, value))
-    return MHD_SC_RESPONSE_HEADER_MALLOC_FAILED;
+    return MHD_SC_RESPONSE_HEADER_MEM_ALLOC_FAILED;
 
   return MHD_SC_OK;
 }
