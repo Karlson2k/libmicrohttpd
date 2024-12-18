@@ -3301,85 +3301,88 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_SockPollSyscall
 
 
 /**
- * Protocol strictness enforced by MHD on clients.
- * All levels have different parsing settings for the headers.
+ * Protocol strictness levels enforced by MHD on clients.
+ * Each level applies different parsing settings for HTTP headers and other
+ * protocol elements.
  */
 enum MHD_FIXED_ENUM_APP_SET_ MHD_ProtocolStrictLevel
 {
 
   /* * Basic levels * */
   /**
-   * Sane level of protocol enforcement for production use.
-   * A balance between extra security and broader compatibility,
-   * as allowed by RFCs for HTTP servers.
+   * A sane default level of protocol enforcement for production use.
+   * Provides a balance between enhanced security and broader compatibility,
+   * as permitted by RFCs for HTTP servers.
    */
   MHD_PSL_DEFAULT = 0
   ,
   /**
-   * Be strict about the protocol (as opposed to as tolerant as
-   * possible), within the limits set by RFCs for HTTP servers.
-   * This level (and more strict) forbids use of bare LF as
-   * CRLF. It also rejects requests with both "Transfer-Encoding:"
-   * and "Content-Length:".
-   * It is suitable for public servers.
+   * Apply stricter protocol interpretation while remaining within
+   * RFC-defined limits for HTTP servers.
+   *
+   * At this level (and stricter), using a bare LF instead of CRLF is forbidden,
+   * and requests that include both a "Transfer-Encoding:" and
+   * a "Content-Length:" headers are rejected.
+   *
+   * Suitable for public servers.
    */
   MHD_PSL_STRICT = 1
   ,
   /**
-   * Be particularly permissive about the protocol, within
-   * the limits set by RFCs for HTTP servers.
+   * Be more permissive in interpreting the protocol, while still
+   * operating within the RFC-defined limits for HTTP servers.
    */
   MHD_PSL_PERMISSIVE = -1
   ,
   /* * Special levels * */
   /**
-   * Stricter protocol interpretation, even stricter then allowed
-   * by RFCs for HTTP servers.
-   * However it should be absolutely compatible with clients
-   * following at least RFCs' "MUST" type of requirements
-   * for HTTP clients.
-   * For chunked encoding parsing this level (and more strict)
-   * forbids whitespace in chunk extension.
-   * For cookies parsing this (and more strict) level rejects
-   * cookie in full even if a single value is encoded incorrectly
-   * in it.
-   * This level is recommended for testing clients against
-   * MHD. Also can be used for security-centric application,
-   * however it is slight violation of RFCs' requirements.
+   * A stricter protocol interpretation than what is allowed by RFCs for HTTP
+   * servers. However, it should remain fully compatible with clients correctly
+   * following all RFC "MUST" requirements for HTTP clients.
+   *
+   * For chunked encoding, this level (and more restrictive ones) forbids
+   * whitespace in chunk extensions.
+   * For cookie parsing, this level (and more restrictive ones) rejects
+   * the entire cookie if even a single value within it is incorrectly encoded.
+   *
+   * Recommended for testing clients against MHD. Can also be used for
+   * security-centric applications, though doing so slightly violates
+   * relevant RFC requirements for HTTP servers.
    */
   MHD_PSL_VERY_STRICT = 2
   ,
   /**
-   * The most strict interpretation of the HTTP protocol,
-   * much stricter that defined for HTTP servers by RFC.
-   * However it should be absolutely compatible with clients
-   * following RFCs' "SHOULD" and "MUST" types of requirements
-   * for HTTP clients.
+   * The strictest interpretation of the HTTP protocol, even stricter than
+   * allowed by RFCs for HTTP servers.
+   * However, it should remain fully compatible with clients complying with both
+   * RFC "SHOULD" and "MUST" requirements for HTTP clients.
+   *
    * This level can be used for testing clients against MHD.
-   * It is not recommended for any public services as it may
-   * reject legitimate clients (clients not following "SHOULD"
-   * type of RFC requirements).
+   * It is not recommended for public services, as it may reject legitimate
+   * clients that do not follow RFC "SHOULD" requirements.
    */
   MHD_PSL_EXTRA_STRICT = 3
   ,
   /**
-   * More relaxed protocol interpretation, violating RFCs'
-   * "SHOULD" type of restrictions for HTTP servers.
-   * For cookies parsing this (and more permissive) level
-   * allows whitespaces in cookie values.
-   * This level can be used in isolated environments.
+   * A more relaxed protocol interpretation that violates some RFC "SHOULD"
+   * restrictions for HTTP servers.
+   * For cookie parsing, this level (and more permissive levels) allows
+   * whitespace in cookie values.
+   *
+   * This level may be used in isolated environments.
    */
   MHD_PSL_VERY_PERMISSIVE = -2
   ,
   /**
-   * The most flexible protocol interpretation, beyond
-   * RFCs' "MUST" type of restrictions for HTTP server.
-   * The level allow HTTP/1.1 requests without "Host:" header.
-   * For cookies parsing this level adds allowance of
-   * whitespaces before and after '=' character.
-   * This level is not recommended unless it is absolutely
-   * necessary to communicate with some client(s) with
-   * badly broken HTTP implementation.
+   * The most flexible protocol interpretation, going beyond RFC "MUST"
+   * requirements for HTTP servers.
+   *
+   * This level allows HTTP/1.1 requests without a "Host:" header.
+   * For cookie parsing, whitespace is allowed before and after
+   * the '=' character.
+   *
+   * Not recommended unless absolutely necessary to communicate with clients
+   * that have severely broken HTTP implementations.
    */
   MHD_PSL_EXTRA_PERMISSIVE = -3,
 };
