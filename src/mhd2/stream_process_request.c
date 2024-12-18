@@ -577,7 +577,7 @@ static MHD_FN_PAR_NONNULL_ALL_ bool
 get_request_line_inner (struct MHD_Connection *restrict c)
 {
   size_t p; /**< The current processing position */
-  const int discp_lvl = c->daemon->req_cfg.strictnees;
+  const int discp_lvl = c->daemon->req_cfg.strictness;
   /* Allow to skip one or more empty lines before the request line.
      RFC 9112, section 2.2 */
   const bool skip_empty_lines = (1 >= discp_lvl);
@@ -1404,7 +1404,7 @@ send_redirect_fixed_rq_target (struct MHD_Connection *restrict c)
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_stream_get_request_line (struct MHD_Connection *restrict c)
 {
-  const int discp_lvl = c->daemon->req_cfg.strictnees;
+  const int discp_lvl = c->daemon->req_cfg.strictness;
   /* Parse whitespace in URI, special parsing of the request line */
   const bool wsp_in_uri = (0 >= discp_lvl);
   /* Keep whitespace in URI, give app URI with whitespace instead of
@@ -1562,7 +1562,7 @@ get_req_header (struct MHD_Connection *restrict c,
                 struct MHD_String *restrict hdr_name,
                 struct MHD_String *restrict hdr_value)
 {
-  const int discp_lvl = c->daemon->req_cfg.strictnees;
+  const int discp_lvl = c->daemon->req_cfg.strictness;
   /* Treat bare LF as the end of the line.
      RFC 9112, section 2.2-3
      Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).
@@ -2260,15 +2260,15 @@ parse_cookies_string (const size_t str_len,
   size_t i;
   bool non_strict;
   /* Skip extra whitespaces and empty cookies */
-  const bool allow_wsp_empty = (0 >= connection->daemon->req_cfg.strictnees);
+  const bool allow_wsp_empty = (0 >= connection->daemon->req_cfg.strictness);
   /* Allow whitespaces around '=' character */
-  const bool wsp_around_eq = (-3 >= connection->daemon->req_cfg.strictnees);
+  const bool wsp_around_eq = (-3 >= connection->daemon->req_cfg.strictness);
   /* Allow whitespaces in quoted cookie value */
-  const bool wsp_in_quoted = (-2 >= connection->daemon->req_cfg.strictnees);
+  const bool wsp_in_quoted = (-2 >= connection->daemon->req_cfg.strictness);
   /* Allow tab as space after semicolon between cookies */
-  const bool tab_as_sp = (0 >= connection->daemon->req_cfg.strictnees);
+  const bool tab_as_sp = (0 >= connection->daemon->req_cfg.strictness);
   /* Allow no space after semicolon between cookies */
-  const bool allow_no_space = (0 >= connection->daemon->req_cfg.strictnees);
+  const bool allow_no_space = (0 >= connection->daemon->req_cfg.strictness);
 
   non_strict = false;
   i = 0;
@@ -2471,7 +2471,7 @@ parse_cookie_header (struct MHD_Connection *restrict connection,
   struct mhd_RequestField *const saved_tail =
     connection->rq.fields.last;  // FIXME: a better way?
   const bool allow_partially_correct_cookie =
-    (1 >= connection->daemon->req_cfg.strictnees);
+    (1 >= connection->daemon->req_cfg.strictness);
 
   if (NULL == cookie_val)
     return MHD_PARSE_COOKIE_OK;
@@ -2606,7 +2606,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
                                      f->field.nv.name.len))
     {
       if ((has_host)
-          && (-3 < c->daemon->req_cfg.strictnees))
+          && (-3 < c->daemon->req_cfg.strictness))
       {
         mhd_LOG_MSG (c->daemon, MHD_SC_HOST_HEADER_SEVERAL, \
                      "Received request with more than one 'Host' header.");
@@ -2662,7 +2662,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
         send_err = false;
         if (c->rq.cntn.cntn_size == cntn_size)
         {
-          if (0 < c->daemon->req_cfg.strictnees)
+          if (0 < c->daemon->req_cfg.strictness)
           {
             mhd_LOG_MSG (c->daemon, MHD_SC_CONTENT_LENGTH_SEVERAL_SAME, \
                          "Received request with more than one " \
@@ -2772,7 +2772,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
         c->rq.have_expect_100 = true;
       else
       {
-        if (0 < c->daemon->req_cfg.strictnees)
+        if (0 < c->daemon->req_cfg.strictness)
         {
           mhd_LOG_MSG (c->daemon, MHD_SC_EXPECT_HEADER_VALUE_UNSUPPORTED, \
                        "The 'Expect' header value used in request is " \
@@ -2789,7 +2789,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
 
   if (has_trenc && has_cntnlen)
   {
-    if (0 < c->daemon->req_cfg.strictnees)
+    if (0 < c->daemon->req_cfg.strictness)
     {
       mhd_RESPOND_WITH_ERROR_STATIC ( \
         c, \
@@ -2810,7 +2810,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
   if (MHD_HTTP_VERSION_1_1 <= c->rq.http_ver)
   {
     if ((! has_host) &&
-        (-3 < c->daemon->req_cfg.strictnees))
+        (-3 < c->daemon->req_cfg.strictness))
     {
       mhd_LOG_MSG (c->daemon, MHD_SC_HOST_HEADER_MISSING, \
                    "Received HTTP/1.1 request without 'Host' header.");
@@ -3088,7 +3088,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
   size_t available;
   bool has_more_data;
   char *restrict buffer_head;
-  const int discp_lvl = d->req_cfg.strictnees;
+  const int discp_lvl = d->req_cfg.strictness;
   /* Treat bare LF as the end of the line.
      RFC 9112, section 2.2-3
      Note: MHD never replaces bare LF with space (RFC 9110, section 5.5-5).

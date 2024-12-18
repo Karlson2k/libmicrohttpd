@@ -841,7 +841,7 @@ struct mhd_DaemonRequestProcessingSettings
   /**
    * Protocol strictness enforced by MHD on clients.
    */
-  enum MHD_ProtocolStrictLevel strictnees;
+  enum MHD_ProtocolStrictLevel strictness;
 
   /**
    * Early URI callback
@@ -866,7 +866,7 @@ struct mhd_DaemonRequestProcessingSettings
  * strictness level.
  * RFC 9112, section 2.2
  */
-#define mhd_ALLOW_BARE_LF_AS_CRLF(discp_lvl) (0 >= discp_lvl)
+#define mhd_ALLOW_BARE_LF_AS_CRLF(strictness) (0 >= strictness)
 
 
 #ifndef NDEBUG

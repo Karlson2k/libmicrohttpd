@@ -1418,7 +1418,7 @@ parse_post_mpart (struct MHD_Connection *restrict c,
                   size_t *restrict pdata_size,
                   char *restrict buf)
 {
-  const int discp_lvl = c->daemon->req_cfg.strictnees;
+  const int discp_lvl = c->daemon->req_cfg.strictness;
   const bool bare_lf_as_crlf = (-2 >= discp_lvl); /* Bare LF termination is dangerous when used in "multipart/form-data" */
   struct mhd_PostParserData *const p_data = &(c->rq.u_proc.post);
   struct mhd_PostParserMPartFormData *const mf = &(p_data->e_d.m_form); /**< the current "form-data" parsing details */
@@ -2146,7 +2146,7 @@ parse_post_text (struct MHD_Connection *restrict c,
                  size_t *restrict pdata_size,
                  char *restrict buf)
 {
-  const int discp_lvl = c->daemon->req_cfg.strictnees;
+  const int discp_lvl = c->daemon->req_cfg.strictness;
   /* Treat bare LF as the end of the line.
      The same logic used here as for parsing HTTP headers.
      Bare LF is processed as the end of the line or rejected as broken
