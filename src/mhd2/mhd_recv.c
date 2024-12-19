@@ -107,9 +107,18 @@ mhd_recv_tls (struct MHD_Connection *restrict c,
                   (((unsigned int) c->sk.ready)
                    & (~(enum mhd_SocketNetState)
                       mhd_SOCKET_NET_STATE_RECV_READY));
-  else if ((mhd_SOCKET_ERR_NO_ERROR == res) &&
-           mhd_tls_conn_has_data_in (c->tls))
-    c->tls_has_data_in = mhd_TLS_BUF_HAS_DATA_IN;
+  else if (mhd_SOCKET_ERR_NO_ERROR == res)
+  {
+    if (res == buf_size)
+    {
+      if (mhd_tls_conn_has_data_in (c->tls))
+        c->tls_has_data_in = mhd_TLS_BUF_HAS_DATA_IN;
+    }
+#ifndef NDEBUG
+    else
+      mhd_assert (! mhd_tls_conn_has_data_in (c->tls));
+#endif
+  }
 
   return res;
 }
