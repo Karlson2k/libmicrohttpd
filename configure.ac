@@ -1151,6 +1151,22 @@ int main(void)
     AS_UNSET([mhd_cv_cc_compound_literals_arr_scope])
   ]
 )
+AC_CACHE_CHECK([whether $CC supports trailing comma in enum],[mhd_cv_enum_trailing_comma],
+  [
+    SAVE_c_werror_flag="$ac_c_werror_flag"
+    ac_c_werror_flag="yes"
+    AC_COMPILE_IFELSE(
+      [AC_LANG_SOURCE([[enum TestEnum {ENM_VAL_A, ENM_VAL_B,};]])],
+      [mhd_cv_enum_trailing_comma="yes"],
+      [mhd_cv_enum_trailing_comma="no"]
+    )
+    ac_c_werror_flag="$SAVE_c_werror_flag"
+  ]
+)
+AS_VAR_IF([mhd_cv_enum_trailing_comma],["yes"],[],
+  [AC_DEFINE([MHD_ENUMS_NEED_TRAILING_VALUE],[1],[Define to '1' if your compiler does not supports enum with trailing comma])]
+)
+
 
 AS_VAR_SET_IF([ac_cv_c_restrict],[],
   [
