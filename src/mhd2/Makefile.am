@@ -103,8 +103,12 @@ post_parser_files = \
   mhd_post_parser.h         mhd_post_result.h         mhd_postfield_int.h \
   post_parser_funcs.c       post_parser_funcs.h
 
-basic_auth_sources = \
-  response_add_bauth.c
+auth_sources = \
+  request_auth_get.c        request_auth_get.h
+
+auth_basic_sources = \
+  auth_basic.c              auth_basic.h \
+  response_auth_basic.c
 
 upgrade_files = \
   mhd_upgrade.h \
@@ -134,8 +138,12 @@ if HAVE_POST_PARSER
   libmicrohttpd2_la_SOURCES += $(post_parser_files)
 endif
 
-if MHD_ENABLE_BAUTH
-  libmicrohttpd2_la_SOURCES += $(basic_auth_sources)
+if MHD_SUPPORT_AUTH
+  libmicrohttpd2_la_SOURCES += $(auth_sources)
+endif
+
+if MHD_SUPPORT_AUTH_BASIC
+  libmicrohttpd2_la_SOURCES += $(auth_basic_sources)
 endif
 
 if MHD_UPGRADE_SUPPORT
@@ -240,6 +248,8 @@ check-sources-missing:
 	done ; \
 	echo " done" ; \
 	test -z "$$res" || echo "The following sources are missing in Makefile.am:$${res}"
+
+check-missing-sources: check-sources-missing
 
 .PHONY: update-po-POTFILES.in check-sources-missing
 

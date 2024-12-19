@@ -283,6 +283,67 @@ union mhd_ReqContentParsingData
   // TODO: move "raw" upload processing data here
 };
 
+
+#ifdef MHD_SUPPORT_AUTH_BASIC
+/**
+ * Request Basic Auth internal data
+ * The same format as struct MHD_BasicAuthInfo, but wiht nullable username.
+ * Keep in sync with MHD_BasicAuthInfo!
+ */
+struct mhd_ReqAuthBasicInternalData
+{
+  /**
+   * The user name
+   */
+  struct MHD_StringNullable username;
+  /**
+   * The user password
+   */
+  struct MHD_StringNullable password;
+};
+
+/**
+ * Request Basic Auth data
+ */
+union mhd_ReqAuthBasicData
+{
+  /**
+   * The internal representation of the Basic Auth data
+   */
+  struct mhd_ReqAuthBasicInternalData intr;
+
+  /**
+   * The external (application) Basic Auth data
+   */
+  struct MHD_BasicAuthInfo extr;
+};
+
+#endif /* MHD_SUPPORT_AUTH_BASIC */
+
+#if defined(MHD_SUPPORT_AUTH_BASIC)
+/**
+ * Defined if any Authentication scheme is supported
+ */
+#  define mhd_SUPPORT_AUTH      1
+#endif /* MHD_SUPPORT_AUTH_BASIC */
+
+
+#ifdef mhd_SUPPORT_AUTH
+/**
+ * Request Basic Auth data
+ */
+struct mhd_ReqAuthData
+{
+#ifdef MHD_SUPPORT_AUTH_BASIC
+  /**
+   * Request Basic Auth data
+   */
+  union mhd_ReqAuthBasicData basic;
+#endif /* MHD_SUPPORT_AUTH_BASIC */
+};
+
+#endif /* mhd_SUPPORT_AUTH */
+
 /**
  * Request-specific values.
  *
@@ -326,6 +387,13 @@ struct MHD_Request
    * Have "Expect: 100-continue" request header
    */
   bool have_expect_100;
+
+#ifdef mhd_SUPPORT_AUTH
+  /**
+   * Request Basic Auth data
+   */
+  struct mhd_ReqAuthData auth;
+#endif /* mhd_SUPPORT_AUTH */
 
   /**
    * HTTP version string (i.e. http/1.1).  Allocated

@@ -1944,7 +1944,7 @@ mhd_str_pct_decode_in_place_lenient (char *restrict str,
 }
 
 
-#ifdef DAUTH_SUPPORT
+#ifdef MHD_SUPPORT_AUTH_DIGEST
 MHD_INTERNAL bool
 mhd_str_equal_quoted_bin_n (const char *quoted,
                             size_t quoted_len,
@@ -2005,9 +2005,9 @@ mhd_str_equal_caseless_quoted_bin_n (const char *quoted,
 }
 
 
-#endif /* DAUTH_SUPPORT */
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
 
-#if defined(DAUTH_SUPPORT) || defined(HAVE_POST_PARSER)
+#if defined(MHD_SUPPORT_AUTH_DIGEST) || defined(HAVE_POST_PARSER)
 
 MHD_INTERNAL size_t
 mhd_str_unquote (const char *quoted,
@@ -2034,9 +2034,9 @@ mhd_str_unquote (const char *quoted,
 }
 
 
-#endif /* DAUTH_SUPPORT HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_AUTH_DIGEST HAVE_POST_PARSER */
 
-#if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
+#if defined(MHD_SUPPORT_AUTH_DIGEST) || defined(MHD_SUPPORT_AUTH_BASIC)
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_IN_SIZE_ (1,2)
@@ -2097,9 +2097,9 @@ mhd_str_quote (const char *unquoted,
 }
 
 
-#endif /* DAUTH_SUPPORT || BAUTH_SUPPORT */
+#endif /* MHD_SUPPORT_AUTH_DIGEST || MHD_SUPPORT_AUTH_BASIC */
 
-#ifdef BAUTH_SUPPORT
+#ifdef MHD_SUPPORT_AUTH_BASIC
 
 /*
  * MHD_BASE64_FUNC_VERSION
@@ -2333,7 +2333,7 @@ MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
 
 #undef mhd_base64_map_type
 
-#endif /* BAUTH_SUPPORT */
+#endif /* MHD_SUPPORT_AUTH_BASIC */
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool

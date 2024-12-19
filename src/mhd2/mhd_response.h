@@ -265,12 +265,12 @@ struct mhd_ResponseConfiguration
    */
   bool int_err_resp;
 
-#ifdef MHD_ENABLE_BAUTH
+#ifdef MHD_SUPPORT_AUTH_BASIC
   /**
    * Response has Basic Auth "challenge" header
    */
   bool has_bauth;
-#endif /* MHD_ENABLE_BAUTH */
+#endif /* MHD_SUPPORT_AUTH_BASIC */
 };
 
 /**

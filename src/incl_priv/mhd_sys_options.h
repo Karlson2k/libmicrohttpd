@@ -584,12 +584,12 @@
 #  endif /* 0 != HAVE_DECL_CPU_SETSIZE */
 #endif /* HAVE_DECL_CPU_SETSIZE */
 
-#ifndef MHD_DAUTH_DEF_TIMEOUT_
-#  define MHD_DAUTH_DEF_TIMEOUT_ 90
-#endif /* ! MHD_DAUTH_DEF_TIMEOUT_ */
-#ifndef MHD_DAUTH_DEF_MAX_NC_
-#  define MHD_DAUTH_DEF_MAX_NC_ 1000
-#endif /* ! MHD_DAUTH_DEF_MAX_NC_ */
+#ifndef MHD_AUTH_DIGEST_DEF_TIMEOUT
+#  define MHD_AUTH_DIGEST_DEF_TIMEOUT 90
+#endif /* ! MHD_AUTH_DIGEST_DEF_TIMEOUT */
+#ifndef MHD_AUTH_DIGEST_DEF_MAX_NC
+#  define MHD_AUTH_DIGEST_DEF_MAX_NC 1000
+#endif /* ! MHD_AUTH_DIGEST_DEF_MAX_NC */
 
 /* Eclipse parse compatibility */
 #ifdef __CDT_PARSER__

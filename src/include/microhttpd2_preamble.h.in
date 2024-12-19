@@ -462,6 +462,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_APPLICATION_DATA_GENERATION_FINISHED = 20001
   ,
+  /**
+   * The request does not contain a particular type of Authentication
+   * credentials
+   */
+  MHD_SC_AUTH_ABSENT = 20060
+  ,
 
   /* 30000-level status codes indicate transient failures
      that might go away if the client tries again. */
@@ -554,6 +560,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Failed to allocate memory from our memory pool to store parsed cookie.
    */
   MHD_SC_CONNECTION_POOL_NO_MEM_COOKIE = 30132
+  ,
+  /**
+   * Failed to allocate memory from connection memory pool to store
+   * parsed Authentication data.
+   */
+  MHD_SC_CONNECTION_POOL_NO_MEM_AUTH_DATA = 30133
   ,
   /**
    * Detected jump back of system clock
@@ -752,6 +764,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * of POST encoding.
    */
   MHD_SC_REQ_POST_PARSE_FAILED_INVALID_POST_FORMAT = 40290
+  ,
+  /**
+   * The data in Auth request header has invalid format.
+   * For example, for Basic Authentication base64 decoding failed.
+   */
+  MHD_SC_REQ_AUTH_DATA_BROKEN = 40320
   ,
   /**
    * The request cannot be processed. Sending error reply.
@@ -1373,114 +1391,121 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
      logic did something wrong or generated an error. */
 
   /**
+   * The application called function too early.
+   * For example, a header value was requested before the headers
+   * had been received.
+   */
+  MHD_SC_TOO_EARLY = 60000
+  ,
+  /**
+   * The application called this function too late.
+   * For example, MHD has already started sending reply.
+   */
+  MHD_SC_TOO_LATE = 60001
+  ,
+  /**
    * MHD does not support the requested combination of
    * the sockets polling syscall and the work mode.
    */
-  MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID = 60000
+  MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID = 60010
   ,
   /**
    * MHD does not support quiescing if ITC was disabled
    * and threads are used.
    */
-  MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60001
+  MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60011
   ,
   /**
    * MHD is closing a connection because the application
    * logic to generate the response data failed.
    */
-  MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 60005
+  MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 60015
   ,
   /**
    * MHD is closing a connection because the application
    * callback told it to do so.
    */
-  MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION = 60006
+  MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION = 60016
   ,
   /**
    * Application only partially processed upload and did
    * not suspend connection. This may result in a hung
    * connection.
    */
-  MHD_SC_APPLICATION_HUNG_CONNECTION = 60007
+  MHD_SC_APPLICATION_HUNG_CONNECTION = 60017
   ,
   /**
    * Application only partially processed upload and did
    * not suspend connection and the read buffer was maxxed
    * out, so MHD closed the connection.
    */
-  MHD_SC_APPLICATION_HUNG_CONNECTION_CLOSED = 60008
-  ,
-  /**
-   * Application called function too late, for example because
-   * MHD already changed state.
-   */
-  MHD_SC_TOO_LATE = 60009
+  MHD_SC_APPLICATION_HUNG_CONNECTION_CLOSED = 60018
   ,
   /**
    * Attempted to set an option that conflicts with another option
    * already set.
    */
-  MHD_SC_OPTIONS_CONFLICT = 60010
+  MHD_SC_OPTIONS_CONFLICT = 60020
   ,
   /**
    * Attempted to set an option that not recognised by MHD.
    */
-  MHD_SC_OPTION_UNKNOWN = 60011
+  MHD_SC_OPTION_UNKNOWN = 60021
   ,
   /**
    * Parameter specified unknown work mode.
    */
-  MHD_SC_CONFIGURATION_UNEXPECTED_WM = 60012
+  MHD_SC_CONFIGURATION_UNEXPECTED_WM = 60022
   ,
   /**
    * Parameter specified unknown socket poll syscall.
    */
-  MHD_SC_CONFIGURATION_UNEXPECTED_SPS = 60013
+  MHD_SC_CONFIGURATION_UNEXPECTED_SPS = 60023
   ,
   /**
    * The size of the provided sockaddr does not match address family.
    */
-  MHD_SC_CONFIGURATION_WRONG_SA_SIZE = 60014
+  MHD_SC_CONFIGURATION_WRONG_SA_SIZE = 60024
   ,
   /**
    * The number set by #MHD_D_O_FD_NUMBER_LIMIT is too strict to run
    * the daemon
    */
-  MHD_SC_MAX_FD_NUMBER_LIMIT_TOO_STRICT = 60015
+  MHD_SC_MAX_FD_NUMBER_LIMIT_TOO_STRICT = 60025
   ,
   /**
    * The number set by #MHD_D_O_GLOBAL_CONNECTION_LIMIT is too for the daemon
    * configuration
    */
-  MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60016
+  MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60026
   ,
   /**
    * The application requested an unsupported TLS backend to be used.
    */
-  MHD_SC_TLS_BACKEND_UNSUPPORTED = 60020
+  MHD_SC_TLS_BACKEND_UNSUPPORTED = 60030
   ,
   /**
    * The application attempted to setup TLS parameters before
    * enabling TLS.
    */
-  MHD_SC_TLS_BACKEND_UNINITIALIZED = 60021
+  MHD_SC_TLS_BACKEND_UNINITIALIZED = 60031
   ,
   /**
    * The application requested a TLS backend which cannot be used due
    * to missing TLS dynamic library or backend initialisation problem.
    */
-  MHD_SC_TLS_BACKEND_UNAVAILABLE = 60022
+  MHD_SC_TLS_BACKEND_UNAVAILABLE = 60032
   ,
   /**
    * Provided TLS certificate and/or private key are incorrect
    */
-  MHD_SC_TLS_CONF_BAD_CERT = 60023
+  MHD_SC_TLS_CONF_BAD_CERT = 60033
   ,
   /**
    * The application requested a daemon setting that cannot be used with
    * selected TLS backend
    */
-  MHD_SC_TLS_BACKEND_DAEMON_INCOMPATIBLE_SETTINGS = 60024
+  MHD_SC_TLS_BACKEND_DAEMON_INCOMPATIBLE_SETTINGS = 60034
   ,
   /**
    * The response header name has forbidden characters or token
@@ -1570,12 +1595,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * The requested type of information is not recognised.
    */
-  MHD_SC_INFO_TYPE_UNKNOWN = 60200
-  ,
-  /**
-   * The requested type of information is not recognised.
-   */
-  MHD_SC_INFO_GET_INFO_TYPE_UNKNOWN = 60200
+  MHD_SC_INFO_GET_TYPE_UNKNOWN = 60200
   ,
   /**
    * The information of the requested type is too large to fit into

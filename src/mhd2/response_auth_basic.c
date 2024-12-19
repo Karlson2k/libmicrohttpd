@@ -19,7 +19,7 @@
 */
 
 /**
- * @file src/mhd2/response_add_bauth.c
+ * @file src/mhd2/response_auth_basic.c
  * @brief  The definitions of MHD_response_add_basic_auth_challenge() function
  * @author Karlson2k (Evgeny Grin)
  */
@@ -28,6 +28,7 @@
 
 #include "mhd_response.h"
 #include "mhd_locks.h"
+#include "mhd_str_types.h"
 
 #include <string.h>
 #include "sys_malloc.h"
@@ -43,12 +44,12 @@ response_add_basic_auth_challenge_int (struct MHD_Response *restrict response,
                                        const char *restrict realm,
                                        enum MHD_Bool prefer_utf8)
 {
-  static const char hdr_name[] =        MHD_HTTP_HEADER_WWW_AUTHENTICATE;
-  static const size_t hdr_name_len =    mhd_SSTR_LEN (hdr_name);
-  static const char prefix[] =          "Basic realm=\"";
-  static const size_t prefix_len =      mhd_SSTR_LEN (prefix);
-  static const char add_charset[] =     ", charset=\"UTF-8\"";
-  static const size_t add_charset_len = mhd_SSTR_LEN (add_charset);
+  static const struct MHD_String hdr_name =
+    mhd_MSTR_INIT (MHD_HTTP_HEADER_WWW_AUTHENTICATE);
+  static const struct MHD_String prefix =
+    mhd_MSTR_INIT ("Basic realm=\"");
+  static const struct MHD_String add_charset =
+    mhd_MSTR_INIT (", charset=\"UTF-8\"");
   const size_t realm_len = strlen (realm);
   char *val_str;
   size_t hval_maxlen;
@@ -65,29 +66,29 @@ response_add_basic_auth_challenge_int (struct MHD_Response *restrict response,
 
   suffix_len = 1; /* for (closing) quote char */
   if (MHD_NO != prefer_utf8)
-    suffix_len += add_charset_len;
-  hval_maxlen = prefix_len + realm_len * 2 + suffix_len;
+    suffix_len += add_charset.len;
+  hval_maxlen = prefix.len + realm_len * 2 + suffix_len;
 
   new_hdr = (struct mhd_ResponseHeader *)
             malloc (sizeof(struct mhd_ResponseHeader)
-                    + hdr_name_len + 1 + hval_maxlen + 1);
+                    + hdr_name.len + 1 + hval_maxlen + 1);
 
   if (NULL == new_hdr)
     return MHD_SC_RESPONSE_HEADER_MEM_ALLOC_FAILED;
 
   /* Set the name of the header */
   memcpy ((char *) (new_hdr + 1),
-          hdr_name,
-          hdr_name_len + 1);
+          hdr_name.cstr,
+          hdr_name.len + 1);
 
   /* Set the value of the header */
-  val_str = ((char *) (new_hdr + 1)) + hdr_name_len + 1;
-  memcpy (val_str, prefix, prefix_len);
-  pos = prefix_len;
+  val_str = ((char *) (new_hdr + 1)) + hdr_name.len + 1;
+  memcpy (val_str, prefix.cstr, prefix.len);
+  pos = prefix.len;
   realm_quoted_len = mhd_str_quote (realm,
                                     realm_len,
                                     val_str + pos,
-                                    hval_maxlen - prefix_len - suffix_len);
+                                    hval_maxlen - prefix.len - suffix_len);
   mhd_assert (0 != realm_quoted_len);
   pos += realm_quoted_len;
   val_str[pos++] = '\"';
@@ -95,9 +96,9 @@ response_add_basic_auth_challenge_int (struct MHD_Response *restrict response,
 
   if (MHD_NO != prefer_utf8)
   {
-    mhd_assert (pos + add_charset_len <= hval_maxlen);
-    memcpy (val_str + pos, add_charset, add_charset_len);
-    pos += add_charset_len;
+    mhd_assert (pos + add_charset.len <= hval_maxlen);
+    memcpy (val_str + pos, add_charset.cstr, add_charset.len);
+    pos += add_charset.len;
   }
   val_str[pos] = 0; /* Zero terminate the result */
   mhd_assert (pos <= hval_maxlen);
@@ -107,23 +108,23 @@ response_add_basic_auth_challenge_int (struct MHD_Response *restrict response,
     void *new_ptr;
     new_ptr = realloc (new_hdr,
                        sizeof(struct mhd_ResponseHeader)
-                       + hdr_name_len + 1 + pos + 1);
+                       + hdr_name.len + 1 + pos + 1);
     /* Just use the old pointer if realloc() failed */
     if (NULL != new_ptr)
       new_hdr = (struct mhd_ResponseHeader *) new_ptr;
   }
 
   new_hdr->name.cstr = (char *) (new_hdr + 1);
-  new_hdr->name.len = hdr_name_len;
-  mhd_assert (0 == memcmp (hdr_name, \
+  new_hdr->name.len = hdr_name.len;
+  mhd_assert (0 == memcmp (hdr_name.cstr, \
                            new_hdr->name.cstr, \
                            new_hdr->name.len + 1));
 
-  new_hdr->value.cstr = ((char *) (new_hdr + 1)) + hdr_name_len + 1;
+  new_hdr->value.cstr = ((char *) (new_hdr + 1)) + hdr_name.len + 1;
   new_hdr->value.len = pos;
-  mhd_assert (0 == memcmp (prefix, \
+  mhd_assert (0 == memcmp (prefix.cstr, \
                            new_hdr->value.cstr, \
-                           prefix_len));
+                           prefix.len));
   mhd_assert (0 == new_hdr->value.cstr[new_hdr->value.len]);
 
   mhd_DLINKEDL_INIT_LINKS (new_hdr, headers);
@@ -150,7 +151,7 @@ MHD_response_add_basic_auth_challenge (
     return MHD_SC_RESP_POINTER_NULL;
   if (response->frozen)
     return MHD_SC_TOO_LATE;
-  if (MHD_HTTP_STATUS_FORBIDDEN != response->sc)
+  if (MHD_HTTP_STATUS_UNAUTHORIZED != response->sc)
     return MHD_SC_RESP_HTTP_CODE_NOT_SUITABLE;
 
   if (response->reuse.reusable)

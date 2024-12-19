@@ -25,7 +25,7 @@ noinst_PROGRAMS = \
   logging \
   responseheaders
   
-if MHD_ENABLE_BAUTH
+if MHD_SUPPORT_AUTH_BASIC
 noinst_PROGRAMS += \
   basicauthentication
 if MHD_ENABLE_HTTPS

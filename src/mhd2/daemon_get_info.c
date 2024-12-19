@@ -83,5 +83,5 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
   default:
     break;
   }
-  return MHD_SC_INFO_TYPE_UNKNOWN;
+  return MHD_SC_INFO_GET_TYPE_UNKNOWN;
 }

@@ -5376,99 +5376,100 @@ AM_CONDITIONAL([USE_UPGRADE_TLS_TESTS], [[test "x${mhd_cv_gnutls_mthread_broken}
 
 # optional: HTTP Basic Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP Basic authentication]])
-AC_ARG_ENABLE([bauth],
-  [AS_HELP_STRING([--disable-bauth],[disable HTTP Basic Authentication support])],
+AC_ARG_ENABLE([basic-auth],
+  [AS_HELP_STRING([--disable-basic-auth],[disable HTTP Basic Authentication support])],
   [],
-  [enable_bauth="yes"]
+  [enable_basic_auth="yes"]
 )
-AS_IF([[test "x$enable_bauth" != "xno"]],
+AS_IF([[test "x$enable_basic_auth" != "xno"]],
   [
-    enable_bauth="yes"
-    AC_DEFINE([MHD_ENABLE_BAUTH],[1],[Define to '1' if libmicrohttpd should be compiled with Basic Auth support.])
+    enable_basic_auth="yes"
+    AC_DEFINE([MHD_SUPPORT_AUTH_BASIC],[1],[Define to '1' if libmicrohttpd should be compiled with Basic Auth support.])
   ]
 )
-AM_CONDITIONAL([MHD_ENABLE_BAUTH], [test "x$enable_bauth" = "xyes"])
-AC_MSG_RESULT([[$enable_bauth]])
+AM_CONDITIONAL([MHD_SUPPORT_AUTH_BASIC], [test "x$enable_basic_auth" = "xyes"])
+AC_MSG_RESULT([[$enable_basic_auth]])
 
 # optional: HTTP Digest Auth support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP Digest authentication]])
-AC_ARG_ENABLE([dauth],
-		[AS_HELP_STRING([--disable-dauth], [disable HTTP Digest Authentication support])],
-		[enable_dauth="${enableval}"],
-		[enable_dauth="yes"])
-AS_IF([[test "x$enable_dauth" != "xno"]],
-  [ enable_dauth=yes
-    AC_DEFINE([DAUTH_SUPPORT],[1],[Define to 1 if libmicrohttpd is compiled with Digest Auth support.]) ])
-AM_CONDITIONAL([ENABLE_DAUTH], [test "x$enable_dauth" != "xno"])
-AC_MSG_RESULT([[$enable_dauth]])
+AC_ARG_ENABLE([digest-auth],
+  [AS_HELP_STRING([--disable-digest-auth], [disable HTTP Digest Authentication support])],
+  [],
+  [enable_digest_auth="yes"]
+)
+AS_IF([[test "x$enable_digest_auth" != "xno"]],
+  [ enable_digest_auth=yes
+    AC_DEFINE([MHD_SUPPORT_AUTH_DIGEST],[1],[Define to 1 if libmicrohttpd is compiled with Digest Auth support.]) ])
+AM_CONDITIONAL([MHD_SUPPORT_AUTH_DIGEST], [test "x$enable_digest_auth" != "xno"])
+AC_MSG_RESULT([[$enable_digest_auth]])
 
-AS_VAR_IF([enable_dauth], ["yes"],
+AS_VAR_IF([enable_digest_auth], ["yes"],
   [
     AC_MSG_CHECKING([[for Digest Authentication default nonce timeout value]])
-    AC_ARG_ENABLE([dauth-def-timeout],
-      [AS_HELP_STRING([--enable-dauth-def-timeout=NNN],
+    AC_ARG_ENABLE([digest-auth-def-timeout],
+      [AS_HELP_STRING([--enable-digest-auth-def-timeout=NNN],
                       [set default Digest Auth nonce validity time to NNN seconds])],
-      [enable_dauth_def_timeout="${enableval}"],
-      [enable_dauth_def_timeout=""]
+      [],
+      [enable_digest_auth_def_timeout=""]
     )
-    AS_VAR_IF([enable_dauth_def_timeout], ["no"],
+    AS_VAR_IF([enable_digest_auth_def_timeout], ["no"],
       [
-        AC_MSG_WARN([Default Diget Auth nonce validity time cannot be disabled, --disable-dauth-def-timeout parameter is ignored])
-        enable_dauth_def_timeout=""
+        AC_MSG_WARN([Default Diget Auth nonce validity time cannot be disabled, --disable-digest-auth-def-timeout parameter is ignored])
+        enable_digest_auth_def_timeout=""
       ]
     )
-    AS_IF([test -z "${enable_dauth_def_timeout}"],
+    AS_IF([test -z "${enable_digest_auth_def_timeout}"],
       [
-        enable_dauth_def_timeout="90"
-        enable_dauth_def_timeout_MSG="${enable_dauth_def_timeout} seconds (default)"
+        enable_digest_auth_def_timeout="90"
+        enable_dauth_def_timeout_MSG="${enable_digest_auth_def_timeout} seconds (default)"
       ],
       [
-        AS_IF([[test "x${enable_dauth_def_timeout}" = "x`echo ${enable_dauth_def_timeout}|${SED-sed} 's/[^0-9]//g'`" && \
-                test "${enable_dauth_def_timeout}" -ge "0" 2>/dev/null ]],[:],
-          [AC_MSG_ERROR([Invalid parameter --enable-dauth-def-timeout=${enable_dauth_def_timeout}. Timeout value must be a positive integer.])
+        AS_IF([[test "x${enable_digest_auth_def_timeout}" = "x`echo ${enable_digest_auth_def_timeout}|${SED-sed} 's/[^0-9]//g'`" && \
+                test "${enable_digest_auth_def_timeout}" -ge "0" 2>/dev/null ]],[:],
+          [AC_MSG_ERROR([Invalid parameter --enable-digest-auth-def-timeout=${enable_digest_auth_def_timeout}. Timeout value must be a positive integer.])
           ]
         )
         AC_COMPILE_IFELSE(
           [
             AC_LANG_PROGRAM([],
               [[
-  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_timeout} != ((unsigned int)${enable_dauth_def_timeout}))];
+  static int arr[((int) 2) - 4 * (int)(${enable_digest_auth_def_timeout} != ((unsigned int)${enable_digest_auth_def_timeout}))];
   (void) arr;
               ]]
             )
           ],
           [],
-          [AC_MSG_ERROR([The value specified by --enable-dauth-def-timeout=${enable_dauth_def_timeout} is too large.])]
+          [AC_MSG_ERROR([The value specified by --enable-digest-auth-def-timeout=${enable_digest_auth_def_timeout} is too large.])]
         )
-        enable_dauth_def_timeout_MSG="${enable_dauth_def_timeout} seconds (set by parameter)"
+        enable_dauth_def_timeout_MSG="${enable_digest_auth_def_timeout} seconds (set by parameter)"
       ]
     )
-    AC_DEFINE_UNQUOTED([MHD_DAUTH_DEF_TIMEOUT_],[${enable_dauth_def_timeout}],
+    AC_DEFINE_UNQUOTED([MHD_AUTH_DIGEST_DEF_TIMEOUT],[${enable_digest_auth_def_timeout}],
         [The default HTTP Digest Auth default nonce timeout value (in seconds)])
     AC_MSG_RESULT([[${enable_dauth_def_timeout_MSG}]])
 
     AC_MSG_CHECKING([[for Digest Authentication default maximum nc value]])
-    AC_ARG_ENABLE([dauth-def-max-nc],
-      [AS_HELP_STRING([--enable-dauth-def-max-nc=NNN],
+    AC_ARG_ENABLE([digest-auth-def-max-nc],
+      [AS_HELP_STRING([--enable-digest-auth-def-max-nc=NNN],
                       [set default Digest Auth maximum nc (nonce count) value to NNN])],
-      [enable_dauth_def_max_nc="${enableval}"],
-      [enable_dauth_def_max_nc=""]
+      [],
+      [enable_digest_auth_def_max_nc=""]
     )
-    AS_VAR_IF([enable_dauth_def_max_nc], ["no"],
+    AS_VAR_IF([enable_digest_auth_def_max_nc], ["no"],
       [
-        AC_MSG_WARN([Default Diget Auth maximum nc cannot be disabled, --disable-dauth-def-max-nc parameter is ignored])
-        enable_dauth_def_max_nc=""
+        AC_MSG_WARN([Default Diget Auth maximum nc cannot be disabled, --disable-digest-auth-def-max-nc parameter is ignored])
+        enable_digest_auth_def_max_nc=""
       ]
     )
-    AS_IF([test -z "${enable_dauth_def_max_nc}"],
+    AS_IF([test -z "${enable_digest_auth_def_max_nc}"],
       [
-        enable_dauth_def_max_nc="1000"
-        enable_dauth_def_max_nc_MSG="${enable_dauth_def_max_nc} (default)"
+        enable_digest_auth_def_max_nc="1000"
+        enable_dauth_def_max_nc_MSG="${enable_digest_auth_def_max_nc} (default)"
       ],
       [
-        AS_IF([[test "x${enable_dauth_def_max_nc}" = "x`echo ${enable_dauth_def_max_nc}|${SED-sed} 's/[^0-9]//g'`" && \
-                test "${enable_dauth_def_max_nc}" -ge "0" 2>/dev/null ]],[:],
-          [AC_MSG_ERROR([Invalid parameter --enable-dauth-def-max-nc=${enable_dauth_def_max_nc}. The value must be a positive integer.])
+        AS_IF([[test "x${enable_digest_auth_def_max_nc}" = "x`echo ${enable_digest_auth_def_max_nc}|${SED-sed} 's/[^0-9]//g'`" && \
+                test "${enable_digest_auth_def_max_nc}" -ge "0" 2>/dev/null ]],[:],
+          [AC_MSG_ERROR([Invalid parameter --enable-digest-auth-def-max-nc=${enable_digest_auth_def_max_nc}. The value must be a positive integer.])
           ]
         )
         AC_COMPILE_IFELSE(
@@ -5478,18 +5479,18 @@ AS_VAR_IF([enable_dauth], ["yes"],
 #include <stdint.h>
               ]],
               [[
-  static int arr[((int) 2) - 4 * (int)(${enable_dauth_def_max_nc} != ((uint_fast32_t)${enable_dauth_def_max_nc}))];
+  static int arr[((int) 2) - 4 * (int)(${enable_digest_auth_def_max_nc} != ((uint_fast32_t)${enable_digest_auth_def_max_nc}))];
   (void) arr;
               ]]
             )
           ],
           [],
-          [AC_MSG_ERROR([The value specified by --enable-dauth-def-max-nc=${enable_dauth_def_max_nc} is too large.])]
+          [AC_MSG_ERROR([The value specified by --enable-digest-auth-def-max-nc=${enable_digest_auth_def_max_nc} is too large.])]
         )
-        enable_dauth_def_max_nc_MSG="${enable_dauth_def_max_nc} (set by parameter)"
+        enable_dauth_def_max_nc_MSG="${enable_digest_auth_def_max_nc} (set by parameter)"
       ]
     )
-    AC_DEFINE_UNQUOTED([MHD_DAUTH_DEF_MAX_NC_],[${enable_dauth_def_max_nc}],
+    AC_DEFINE_UNQUOTED([MHD_AUTH_DIGEST_DEF_MAX_NC],[${enable_digest_auth_def_max_nc}],
         [The default HTTP Digest Auth default maximum nc (nonce count) value])
     AC_MSG_RESULT([[${enable_dauth_def_max_nc_MSG}]])
 
@@ -5500,7 +5501,7 @@ AS_VAR_IF([enable_dauth], ["yes"],
   ]
 )
 
-AM_CONDITIONAL([HAVE_ANYAUTH],[test "x$enable_bauth" != "xno" || test "x$enable_dauth" != "xno"])
+AM_CONDITIONAL([MHD_SUPPORT_AUTH],[test "x$enable_basic_auth" != "xno" || test "x$enable_digest_auth" != "xno"])
 
 # optional: HTTP "Upgrade" support. Enabled by default
 AC_MSG_CHECKING([[whether to support HTTP "Upgrade"]])
@@ -5533,7 +5534,7 @@ AC_ARG_ENABLE([[md5]],
   [
     AS_VAR_IF([enable_md5],["internal"],[enable_md5='builtin'])
     AS_VAR_IF([enable_md5],["built-in"],[enable_md5='builtin'])
-    AS_VAR_IF([enable_dauth],["yes"],[],
+    AS_VAR_IF([enable_digest_auth],["yes"],[],
       [
         AS_VAR_IF([enable_md5],["no"],[],
           [
@@ -5543,7 +5544,7 @@ AC_ARG_ENABLE([[md5]],
         )
       ]
     )
-  ], [[enable_md5="${enable_dauth}"]]
+  ], [[enable_md5="${enable_digest_auth}"]]
 )
 AS_CASE([${enable_md5}],[yes|tlslib],
   [
@@ -5655,7 +5656,7 @@ AC_ARG_ENABLE([[sha256]],
   [
     AS_VAR_IF([enable_sha256],["internal"],[enable_sha256='builtin'])
     AS_VAR_IF([enable_sha256],["built-in"],[enable_sha256='builtin'])
-    AS_VAR_IF([enable_dauth],["yes"],[],
+    AS_VAR_IF([enable_digest_auth],["yes"],[],
       [
         AS_VAR_IF([enable_sha256],["no"],[],
           [
@@ -5665,7 +5666,7 @@ AC_ARG_ENABLE([[sha256]],
         )
       ]
     )
-  ], [[enable_sha256="${enable_dauth}"]]
+  ], [[enable_sha256="${enable_digest_auth}"]]
 )
 AS_CASE([${enable_sha256}],[yes|tlslib],
   [
@@ -5777,7 +5778,7 @@ AC_ARG_ENABLE([[sha512-256]],
   [
     AS_VAR_IF([[enable_sha512_256]],[["yes"]],
       [
-        AS_VAR_IF([enable_dauth],["yes"],[],
+        AS_VAR_IF([enable_digest_auth],["yes"],[],
           [
             AC_MSG_WARN([The parameter --enable-sha512-256 is ignored as Digest Authentication is disabled])
             enable_sha512_256='no'
@@ -5785,7 +5786,7 @@ AC_ARG_ENABLE([[sha512-256]],
         )
       ],[[enable_sha512_256='no']]
     )
-  ], [[enable_sha512_256="${enable_dauth}"]]
+  ], [[enable_sha512_256="${enable_digest_auth}"]]
 )
 AC_MSG_CHECKING([[whether to support SHA-512/256]])
 AS_UNSET([enable_sha512_256_MSG])
@@ -5803,7 +5804,7 @@ AS_VAR_IF([[enable_sha512_256]],[["yes"]],
 AM_CONDITIONAL([ENABLE_SHA512_256], [[test "x${enable_sha512_256}" = "xyes"]])
 AC_MSG_RESULT([[${enable_sha512_256_MSG}]])
 
-AS_IF([test "x$enable_dauth" != "xno"],
+AS_IF([test "x$enable_digest_auth" != "xno"],
   [
     AS_IF([test "x${enable_md5}" = "xno" &&  test "x${enable_sha256}" = "xno" && test "x${enable_sha512_256}" != "xyes"],
       [AC_MSG_ERROR([At least one hashing algorithm must be enabled if Digest Auth is enabled])]
@@ -7447,8 +7448,8 @@ AC_MSG_NOTICE([[GNU libmicrohttpd ${PACKAGE_VERSION} Configuration Summary:
   TLS backends     : ${MSG_TLS_BACKENDS}
   Cookie parser    : ${enable_cookie}
   POST parser      : ${enable_postparser}
-  Basic auth.      : ${enable_bauth}
-  Digest auth.     : ${enable_dauth}
+  Basic auth.      : ${enable_basic_auth}
+  Digest auth.     : ${enable_digest_auth}
   Digest auth. defaults: ${dauth_defs_MSG}
   MD5              : ${enable_md5_MSG}
   SHA-256          : ${enable_sha256_MSG}
@@ -7495,8 +7496,8 @@ AC_MSG_NOTICE([[
   Library licence  : ${licence_descr}
 ]])
 
-AS_IF([test "x$enable_bauth" != "xyes" || \
-   test "x$enable_dauth" != "xyes" || \
+AS_IF([test "x$enable_basic_auth" != "xyes" || \
+   test "x$enable_digest_auth" != "xyes" || \
    test "x${enable_md5}" = "xno" || \
    test "x${enable_sha256}" = "xno" || \
    test "x${enable_sha512_256}" != "xyes" || \

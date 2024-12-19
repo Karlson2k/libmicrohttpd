@@ -598,7 +598,7 @@ MHD_INTERNAL size_t
 mhd_str_pct_decode_in_place_lenient (char *restrict str,
                                      bool *restrict broken_encoding);
 
-#ifdef DAUTH_SUPPORT
+#ifdef MHD_SUPPORT_AUTH_DIGEST
 /**
  * Check two strings for equality, "unquoting" the first string from quoted
  * form as specified by RFC7230#section-3.2.6 and RFC7694#quoted.strings.
@@ -689,9 +689,9 @@ mhd_str_equal_caseless_quoted_bin_n (const char *quoted,
 #define mhd_str_equal_caseless_quoted_s_bin_n(q,l,u) \
         mhd_str_equal_caseless_quoted_bin_n (q,l,u,mhd_SSTR_LEN (u))
 
-#endif /* DAUTH_SUPPORT */
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
 
-#if defined(DAUTH_SUPPORT) || defined(HAVE_POST_PARSER)
+#if defined(MHD_SUPPORT_AUTH_DIGEST) || defined(HAVE_POST_PARSER)
 
 /**
  * Convert string from quoted to unquoted form as specified by
@@ -713,9 +713,9 @@ mhd_str_unquote (const char *quoted,
                  size_t quoted_len,
                  char *result);
 
-#endif /* DAUTH_SUPPORT HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_AUTH_DIGEST HAVE_POST_PARSER */
 
-#if defined(DAUTH_SUPPORT) || defined(BAUTH_SUPPORT)
+#if defined(MHD_SUPPORT_AUTH_DIGEST) || defined(MHD_SUPPORT_AUTH_BASIC)
 
 /**
  * Convert string from unquoted to quoted form as specified by
@@ -739,9 +739,9 @@ mhd_str_quote (const char *unquoted,
                size_t buf_size)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (1,2) MHD_FN_PAR_OUT_SIZE_ (3,4);
 
-#endif /* DAUTH_SUPPORT || BAUTH_SUPPORT */
+#endif /* MHD_SUPPORT_AUTH_DIGEST || MHD_SUPPORT_AUTH_BASIC */
 
-#ifdef BAUTH_SUPPORT
+#ifdef MHD_SUPPORT_AUTH_BASIC
 
 /**
  * Returns the maximum possible size of the Base64 decoded data.
@@ -776,7 +776,7 @@ mhd_base64_to_bin_n (const char *base64,
                      void *bin,
                      size_t bin_size);
 
-#endif /* BAUTH_SUPPORT */
+#endif /* MHD_SUPPORT_AUTH_BASIC */
 
 
 /**

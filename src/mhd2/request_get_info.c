@@ -36,6 +36,10 @@
 #include "mhd_request.h"
 #include "mhd_connection.h"
 
+#ifdef MHD_SUPPORT_AUTH_BASIC
+#  include "auth_basic.h"
+#endif
+
 #include "mhd_public_api.h"
 
 MHD_EXTERN_
@@ -80,30 +84,39 @@ MHD_request_get_info_fixed_sz (
   default:
   }
 
-  return MHD_SC_INFO_TYPE_UNKNOWN;
+  return MHD_SC_INFO_GET_TYPE_UNKNOWN;
 }
 
 
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
-MHD_FN_PURE_ enum MHD_StatusCode
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
 MHD_request_get_info_dynamic_sz (
   struct MHD_Request *MHD_RESTRICT request,
   enum MHD_RequestInfoDynamicType info_type,
   union MHD_RequestInfoDynamicData *MHD_RESTRICT return_value,
   size_t return_value_size)
 {
+  if (mhd_HTTP_STAGE_REQ_RECV_FINISHED <
+      mhd_CNTNR_PTR (request, struct MHD_Connection, rq)->stage)
+    return MHD_SC_TOO_LATE;
+  if ((mhd_HTTP_STAGE_HEADERS_PROCESSED >
+       mhd_CNTNR_PTR (request, struct MHD_Connection, rq)->stage) &&
+      (MHD_REQUEST_INFO_DYNAMIC_NUMBER_GET_PARAMS < info_type))
+    return MHD_SC_TOO_EARLY;
   switch (info_type)
   {
   case MHD_REQUEST_INFO_DYNAMIC_HTTP_METHOD_STR:
-    /* TODO: check stage */
+    mhd_assert (mhd_HTTP_STAGE_REQ_LINE_RECEIVED <= \
+                mhd_CNTNR_PTR (request, struct MHD_Connection, rq)->stage);
     if (sizeof(return_value->v_str) > return_value_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     return_value->v_str = request->method;
     return MHD_SC_OK;
   case MHD_REQUEST_INFO_DYNAMIC_URI:
-    /* TODO: check stage */
+    if (mhd_HTTP_STAGE_REQ_LINE_RECEIVED <
+        mhd_CNTNR_PTR (request, struct MHD_Connection, rq)->stage)
+      return MHD_SC_TOO_EARLY;
     if (sizeof(return_value->v_str) > return_value_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     return_value->v_str.cstr = request->url;
@@ -121,7 +134,6 @@ MHD_request_get_info_dynamic_sz (
     mhd_assert (0 && "Not implemented yet");
     break;
   case MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE:
-    /* TODO: check stage */
     if (sizeof(return_value->v_sizet) > return_value_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     return_value->v_sizet = request->header_size;
@@ -133,12 +145,21 @@ MHD_request_get_info_dynamic_sz (
   case MHD_REQUEST_INFO_DYNAMIC_DAUTH_REQ_INFO:
     mhd_assert (0 && "Not implemented yet");
     break;
-  case MHD_REQUEST_INFO_DYNAMIC_BAUTH_REQ_INFO:
+  case MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS:
+#ifdef MHD_SUPPORT_AUTH_BASIC
+    if (sizeof(return_value->v_auth_basic_creds) > return_value_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    return mhd_request_get_auth_basic_creds (request,
+                                             &(return_value->
+                                               v_auth_basic_creds));
+#else  /* MHD_SUPPORT_AUTH_BASIC */
+    return MHD_SC_FEATURE_DISABLED;
+#endif /* MHD_SUPPORT_AUTH_BASIC */
     mhd_assert (0 && "Not implemented yet");
     break;
   case MHD_REQUEST_INFO_DYNAMIC_SENTINEL:
   default:
   }
 
-  return MHD_SC_INFO_TYPE_UNKNOWN;
+  return MHD_SC_INFO_GET_TYPE_UNKNOWN;
 }

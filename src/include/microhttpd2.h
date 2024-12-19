@@ -462,6 +462,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    */
   MHD_SC_APPLICATION_DATA_GENERATION_FINISHED = 20001
   ,
+  /**
+   * The request does not contain a particular type of Authentication
+   * credentials
+   */
+  MHD_SC_AUTH_ABSENT = 20060
+  ,
 
   /* 30000-level status codes indicate transient failures
      that might go away if the client tries again. */
@@ -554,6 +560,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Failed to allocate memory from our memory pool to store parsed cookie.
    */
   MHD_SC_CONNECTION_POOL_NO_MEM_COOKIE = 30132
+  ,
+  /**
+   * Failed to allocate memory from connection memory pool to store
+   * parsed Authentication data.
+   */
+  MHD_SC_CONNECTION_POOL_NO_MEM_AUTH_DATA = 30133
   ,
   /**
    * Detected jump back of system clock
@@ -752,6 +764,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * of POST encoding.
    */
   MHD_SC_REQ_POST_PARSE_FAILED_INVALID_POST_FORMAT = 40290
+  ,
+  /**
+   * The data in Auth request header has invalid format.
+   * For example, for Basic Authentication base64 decoding failed.
+   */
+  MHD_SC_REQ_AUTH_DATA_BROKEN = 40320
   ,
   /**
    * The request cannot be processed. Sending error reply.
@@ -1373,114 +1391,121 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
      logic did something wrong or generated an error. */
 
   /**
+   * The application called function too early.
+   * For example, a header value was requested before the headers
+   * had been received.
+   */
+  MHD_SC_TOO_EARLY = 60000
+  ,
+  /**
+   * The application called this function too late.
+   * For example, MHD has already started sending reply.
+   */
+  MHD_SC_TOO_LATE = 60001
+  ,
+  /**
    * MHD does not support the requested combination of
    * the sockets polling syscall and the work mode.
    */
-  MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID = 60000
+  MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID = 60010
   ,
   /**
    * MHD does not support quiescing if ITC was disabled
    * and threads are used.
    */
-  MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60001
+  MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60011
   ,
   /**
    * MHD is closing a connection because the application
    * logic to generate the response data failed.
    */
-  MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 60005
+  MHD_SC_APPLICATION_DATA_GENERATION_FAILURE_CLOSED = 60015
   ,
   /**
    * MHD is closing a connection because the application
    * callback told it to do so.
    */
-  MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION = 60006
+  MHD_SC_APPLICATION_CALLBACK_ABORT_ACTION = 60016
   ,
   /**
    * Application only partially processed upload and did
    * not suspend connection. This may result in a hung
    * connection.
    */
-  MHD_SC_APPLICATION_HUNG_CONNECTION = 60007
+  MHD_SC_APPLICATION_HUNG_CONNECTION = 60017
   ,
   /**
    * Application only partially processed upload and did
    * not suspend connection and the read buffer was maxxed
    * out, so MHD closed the connection.
    */
-  MHD_SC_APPLICATION_HUNG_CONNECTION_CLOSED = 60008
-  ,
-  /**
-   * Application called function too late, for example because
-   * MHD already changed state.
-   */
-  MHD_SC_TOO_LATE = 60009
+  MHD_SC_APPLICATION_HUNG_CONNECTION_CLOSED = 60018
   ,
   /**
    * Attempted to set an option that conflicts with another option
    * already set.
    */
-  MHD_SC_OPTIONS_CONFLICT = 60010
+  MHD_SC_OPTIONS_CONFLICT = 60020
   ,
   /**
    * Attempted to set an option that not recognised by MHD.
    */
-  MHD_SC_OPTION_UNKNOWN = 60011
+  MHD_SC_OPTION_UNKNOWN = 60021
   ,
   /**
    * Parameter specified unknown work mode.
    */
-  MHD_SC_CONFIGURATION_UNEXPECTED_WM = 60012
+  MHD_SC_CONFIGURATION_UNEXPECTED_WM = 60022
   ,
   /**
    * Parameter specified unknown socket poll syscall.
    */
-  MHD_SC_CONFIGURATION_UNEXPECTED_SPS = 60013
+  MHD_SC_CONFIGURATION_UNEXPECTED_SPS = 60023
   ,
   /**
    * The size of the provided sockaddr does not match address family.
    */
-  MHD_SC_CONFIGURATION_WRONG_SA_SIZE = 60014
+  MHD_SC_CONFIGURATION_WRONG_SA_SIZE = 60024
   ,
   /**
    * The number set by #MHD_D_O_FD_NUMBER_LIMIT is too strict to run
    * the daemon
    */
-  MHD_SC_MAX_FD_NUMBER_LIMIT_TOO_STRICT = 60015
+  MHD_SC_MAX_FD_NUMBER_LIMIT_TOO_STRICT = 60025
   ,
   /**
    * The number set by #MHD_D_O_GLOBAL_CONNECTION_LIMIT is too for the daemon
    * configuration
    */
-  MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60016
+  MHD_SC_CONFIGURATION_CONN_LIMIT_TOO_SMALL = 60026
   ,
   /**
    * The application requested an unsupported TLS backend to be used.
    */
-  MHD_SC_TLS_BACKEND_UNSUPPORTED = 60020
+  MHD_SC_TLS_BACKEND_UNSUPPORTED = 60030
   ,
   /**
    * The application attempted to setup TLS parameters before
    * enabling TLS.
    */
-  MHD_SC_TLS_BACKEND_UNINITIALIZED = 60021
+  MHD_SC_TLS_BACKEND_UNINITIALIZED = 60031
   ,
   /**
    * The application requested a TLS backend which cannot be used due
    * to missing TLS dynamic library or backend initialisation problem.
    */
-  MHD_SC_TLS_BACKEND_UNAVAILABLE = 60022
+  MHD_SC_TLS_BACKEND_UNAVAILABLE = 60032
   ,
   /**
    * Provided TLS certificate and/or private key are incorrect
    */
-  MHD_SC_TLS_CONF_BAD_CERT = 60023
+  MHD_SC_TLS_CONF_BAD_CERT = 60033
   ,
   /**
    * The application requested a daemon setting that cannot be used with
    * selected TLS backend
    */
-  MHD_SC_TLS_BACKEND_DAEMON_INCOMPATIBLE_SETTINGS = 60024
+  MHD_SC_TLS_BACKEND_DAEMON_INCOMPATIBLE_SETTINGS = 60034
   ,
   /**
    * The response header name has forbidden characters or token
@@ -1570,12 +1595,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * The requested type of information is not recognised.
    */
-  MHD_SC_INFO_TYPE_UNKNOWN = 60200
-  ,
-  /**
-   * The requested type of information is not recognised.
-   */
-  MHD_SC_INFO_GET_INFO_TYPE_UNKNOWN = 60200
+  MHD_SC_INFO_GET_TYPE_UNKNOWN = 60200
   ,
   /**
    * The information of the requested type is too large to fit into
@@ -7973,26 +7993,6 @@ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_NONNULL_ (5);
  */
 #define MHD_INVALID_NONCE -1
 
-
-/**
- * Information decoded from Basic Authentication client's header.
- *
- * @see #MHD_REQUEST_INFO_DYNAMIC_BAUTH_REQ_INFO
- */
-struct MHD_BasicAuthInfo
-{
-  /**
-   * The username
-   */
-  struct MHD_String username;
-
-  /**
-   * The password, string pointer may be NULL if password is not encoded
-   * by the client.
-   */
-  struct MHD_StringNullable password;
-};
-
 /**
  * Add Basic Authentication "challenge" to the response.
  *
@@ -8053,6 +8053,11 @@ MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
  *
  * See RFC 7617, section-2 for details.
  *
+ * @param request the request to create the action for
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
  * @param response the reply to send; should contain the "access denied"
  *                 body;
  *                 note: this function adds the "WWW Authenticate" header in
@@ -8061,10 +8066,6 @@ MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
  *                 code;
  *                 the NULL is tolerated (the result is
  *                 #MHD_action_abort_request())
- * @param realm the realm presented to the client
- * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
- *                    be added, indicating for client that UTF-8 encoding
- *                    is preferred
  * @param abort_if_failed if set to #MHD_NO the response will be used even if
  *                        failed to add Basic Authentication "challenge",
  *                        if not set to #MHD_NO the request will be aborted
@@ -8082,9 +8083,9 @@ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 const struct MHD_Action *
 MHD_action_basic_auth_challenge (struct MHD_Request *MHD_RESTRICT request,
-                                 struct MHD_Response *MHD_RESTRICT response,
                                  const char *MHD_RESTRICT realm,
                                  enum MHD_Bool prefer_utf8,
+                                 struct MHD_Response *MHD_RESTRICT response,
                                  enum MHD_Bool abort_if_failed)
 {
   if ((MHD_SC_OK !=
@@ -8109,6 +8110,11 @@ MHD_STATIC_INLINE_END_
  * If the @a response object cannot be extended with the "challenge",
  * the @a response will be used to reply without the "challenge".
  *
+ * @param request the request to create the action for
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
  * @param response the reply to send; should contain the "access denied"
  *                 body;
  *                 note: this function adds the "WWW Authenticate" header in
@@ -8117,10 +8123,6 @@ MHD_STATIC_INLINE_END_
  *                 code;
  *                 the NULL is tolerated (the result is
  *                 #MHD_action_abort_request())
- * @param realm the realm presented to the client
- * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
- *                    be added, indicating for client that UTF-8 encoding
- *                    is preferred
  * @return pointer to the action, the action must be consumed
  *         otherwise response object may leak;
  *         NULL if failed or if any action has been already created for
@@ -8129,9 +8131,9 @@ MHD_STATIC_INLINE_END_
  *         to be "destroyed"
  * @ingroup authentication
  */
-#define MHD_action_basic_auth_challenge_p(request,response,realm,prefer_utf8) \
-        MHD_action_basic_auth_challenge ((request), (response), (realm), \
-                                         (prefer_utf8), MHD_NO)
+#define MHD_action_basic_auth_challenge_p(request,realm,prefer_utf8,response) \
+        MHD_action_basic_auth_challenge ((request), (realm), (prefer_utf8), \
+                                         (response), MHD_NO)
 
 /**
  * Create action to reply with Basic Authentication "challenge".
@@ -8139,8 +8141,13 @@ MHD_STATIC_INLINE_END_
  * The @a response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
  *
  * If the @a response object cannot be extended with the "challenge",
- * the @a response will be used to reply without the "challenge".
+ * the request will be aborted.
  *
+ * @param request the request to create the action for
+ * @param realm the realm presented to the client
+ * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
+ *                    be added, indicating for client that UTF-8 encoding
+ *                    is preferred
  * @param response the reply to send; should contain the "access denied"
  *                 body;
  *                 note: this function adds the "WWW Authenticate" header in
@@ -8149,10 +8156,6 @@ MHD_STATIC_INLINE_END_
  *                 code;
  *                 the NULL is tolerated (the result is
  *                 #MHD_action_abort_request())
- * @param realm the realm presented to the client
- * @param prefer_utf8 if not set to #MHD_NO, parameter'charset="UTF-8"' will
- *                    be added, indicating for client that UTF-8 encoding
- *                    is preferred
  * @return pointer to the action, the action must be consumed
  *         otherwise response object may leak;
  *         NULL if failed or if any action has been already created for
@@ -8161,11 +8164,31 @@ MHD_STATIC_INLINE_END_
  *         to be "destroyed"
  * @ingroup authentication
  */
-#define MHD_action_basic_auth_challenge_a(request,response,realm,prefer_utf8) \
-        MHD_action_basic_auth_challenge ((request), (response), (realm), \
-                                         (prefer_utf8), MHD_YES)
+#define MHD_action_basic_auth_challenge_a(request,realm,prefer_utf8,response) \
+        MHD_action_basic_auth_challenge ((request), (realm), (prefer_utf8), \
+                                         (response), MHD_YES)
 
 #endif /* ! MHD_NO_STATIC_INLINE */
+
+
+/**
+ * Information decoded from Basic Authentication client's header.
+ *
+ * @see #MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS
+ */
+struct MHD_BasicAuthInfo
+{
+  /**
+   * The username
+   */
+  struct MHD_String username;
+
+  /**
+   * The password, string pointer may be NULL if password is not encoded
+   * by the client.
+   */
+  struct MHD_StringNullable password;
+};
 
 /* ********************** (f) Introspection ********************** */
 
@@ -8242,7 +8265,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoFixed
   /**
    * Get whether HTTP Basic authorization is supported. If supported
    * then functions #MHD_action_basic_auth_required_response ()
-   * and #MHD_REQUEST_INFO_DYNAMIC_BAUTH_REQ_INFO can be used.
+   * and #MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS can be used.
    * The result is placed in @a v_bool member.
    */
   MHD_LIB_INFO_FIXED_HAS_BASIC_AUTH = 20
@@ -9664,14 +9687,13 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   MHD_REQUEST_INFO_DYNAMIC_DAUTH_REQ_INFO = 42
   ,
   /**
-   * Returns pointer to information about basic auth in client request.
-   * The resulting pointer is NULL if no basic auth header is set by
-   * the client or the format of the basic auth header is broken.
-   * Pointers in the returned structure (if any) are valid until response
-   * is provided for the request.
-   * The result is placed in @a v_bauth_info member.
+   * Returns information about Basic Authentication credentials in the request.
+   * Pointers in the returned structure (if any) are valid until any MHD_Action
+   * or MHD_UploadAction is provided. If the data is needed beyond this point,
+   * it should be copied.
+   * The result is placed in @a v_auth_basic_creds member.
    */
-  MHD_REQUEST_INFO_DYNAMIC_BAUTH_REQ_INFO = 51
+  MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS = 51
   ,
   /* * Sentinel * */
   /**
@@ -9713,17 +9735,17 @@ union MHD_RequestInfoDynamicData
   /**
    * The information about client provided username for digest auth
    */
-  struct MHD_DigestAuthUsernameInfo *v_dauth_username;
+  const struct MHD_DigestAuthUsernameInfo *v_dauth_username;
 
   /**
    * The information about client's digest auth
    */
-  struct MHD_DigestAuthInfo *v_dauth_info;
+  const struct MHD_DigestAuthInfo *v_dauth_info;
 
   /**
    * The information about client's basic auth
    */
-  struct MHD_BasicAuthInfo *v_bauth_info;
+  const struct MHD_BasicAuthInfo *v_auth_basic_creds;
 };
 
 
@@ -9732,6 +9754,10 @@ union MHD_RequestInfoDynamicData
  * This information may be changed during the lifetime of the request.
  * The wrapper macro #MHD_request_get_info_dynamic() could be more convenient.
  *
+ * Any pointers in the returned data are valid until any MHD_Action or
+ * MHD_UploadAction is provided. If the data is needed beyond this point,
+ * it should be copied.
+ *
  * @param request the request to get information about
  * @param info_type the type of information requested
  * @param[out] return_value pointer to union where requested information will
@@ -9739,7 +9765,22 @@ union MHD_RequestInfoDynamicData
  * @param return_value_size the size of the memory area pointed
  *                          by @a return_data, in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a return_value_size is too small,
+ *         #MHD_SC_TOO_LATE if request is already being closed or the response
+ *                          is being sent
+ *         #MHD_SC_TOO_EARLY if requested data is not yet ready (for example,
+ *                           headers are not yet received),
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if requested information type is
+ *                                       not recognized by MHD,
+ *         #MHD_SC_FEATURE_DISABLED if requested functionality is not supported
+ *                                  by this MHD build,
+ *         #MHD_SC_AUTH_ABSENT if request does not have particular Auth data,
+ *         #MHD_SC_CONNECTION_POOL_NO_MEM_AUTH_DATA if connection memory pool
+ *                                                  has no space to put decoded
+ *                                                  authentication data,
+ *         #MHD_SC_REQ_AUTH_DATA_BROKEN if format of authentication data is
+ *                                      incorrect or broken,
+ *         other error code otherwise
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -9749,8 +9790,7 @@ MHD_request_get_info_dynamic_sz (
   union MHD_RequestInfoDynamicData *MHD_RESTRICT return_value,
   size_t return_value_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
-MHD_FN_PURE_;
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
 /**
@@ -9766,7 +9806,8 @@ MHD_FN_PURE_;
  * @ingroup specialized
  */
 #define MHD_request_get_info_dynamic(request,info_type,return_value) \
-        MHD_request_get_info_dynamic_sz ((request), (info_type), (return_value), \
+        MHD_request_get_info_dynamic_sz ((request), (info_type), \
+                                         (return_value), \
                                          sizeof(*(return_value)))
 
 /**

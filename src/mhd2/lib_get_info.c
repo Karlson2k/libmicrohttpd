@@ -116,7 +116,17 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
   case MHD_LIB_INFO_FIXED_HAS_COOKIE_PARSER:
   case MHD_LIB_INFO_FIXED_HAS_POST_PARSER:
   case MHD_LIB_INFO_FIXED_HAS_UPGRADE:
+    mhd_assert (0 && "Not implemented yet");
+    break;
   case MHD_LIB_INFO_FIXED_HAS_BASIC_AUTH:
+    if (sizeof(return_data->v_bool) > return_data_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+#ifdef MHD_SUPPORT_AUTH_BASIC
+    return_data->v_bool = MHD_YES;
+#else
+    return_data->v_bool = MHD_NO;
+#endif
+    return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH:
   case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH_RFC2069:
   case MHD_LIB_INFO_FIXED_TYPE_DIGEST_AUTH_MD5:
@@ -167,7 +177,7 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
   default:
     break;
   }
-  return MHD_SC_INFO_TYPE_UNKNOWN;
+  return MHD_SC_INFO_GET_TYPE_UNKNOWN;
 }
 
 
@@ -215,5 +225,5 @@ MHD_lib_get_info_dynamic_sz (enum MHD_LibInfoDynamic info_type,
   default:
     break;
   }
-  return MHD_SC_INFO_TYPE_UNKNOWN;
+  return MHD_SC_INFO_GET_TYPE_UNKNOWN;
 }
