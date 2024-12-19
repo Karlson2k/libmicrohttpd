@@ -109,7 +109,8 @@ MHD_response_destroy (struct MHD_Response *response)
     free (response->settings);
 #ifndef NDEBUG
     /* Decrement counter to avoid triggering assert in deinit function */
-    mhd_assert (0 == mhd_atomic_counter_dec_get (&(response->reuse.counter)));
+    if (response->reuse.reusable)
+      mhd_assert (0 == mhd_atomic_counter_dec_get (&(response->reuse.counter)));
 #endif
     response_full_deinit (response);
     return;
