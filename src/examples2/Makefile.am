@@ -28,3 +28,7 @@ $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
 noinst_PROGRAMS = \
   demo \
   minimal_example2
+
+if MHD_SUPPORT_AUTH_BASIC
+  noinst_PROGRAMS += minimal_auth_basic
+endif
