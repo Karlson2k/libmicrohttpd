@@ -1,12 +1,14 @@
 # This Makefile.am is in the public domain
 
+examples_DIR = examples2
+
+SUBDIRS = . incl_priv include mhd2
+
 if BUILD_EXAMPLES
-examplesdirs = examples examples2
-else
-examplesdirs = 
+SUBDIRS += $(examples_DIR)
 endif
 
-SUBDIRS = incl_priv include mhd2 $(examplesdirs) tests .
+SUBDIRS += tests
 
 if RUN_LIBCURL_TESTS
 #SUBDIRS += testcurl

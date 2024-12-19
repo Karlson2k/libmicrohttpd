@@ -26,7 +26,5 @@ $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
 
 # example programs
 noinst_PROGRAMS = \
-  demo
-
-demo_SOURCES = \
-  demo.c
+  demo \
+  minimal_example2
