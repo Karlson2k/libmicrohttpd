@@ -846,24 +846,29 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
   {
     bool use_graceful_closing;
 
-    mhd_assert (! mhd_SOCKET_ERR_IS_HARD (c->sk.state.discnt_err));
+    mhd_assert (c->sk.state.rmt_shut_wr || \
+                ! mhd_SOCKET_ERR_IS_HARD (c->sk.state.discnt_err));
 
-    use_graceful_closing = true;
+    use_graceful_closing = ! c->sk.state.rmt_shut_wr;
+    if (use_graceful_closing)
+    {
 #ifdef MHD_ENABLE_HTTPS
-    if (mhd_C_HAS_TLS (c))
-    {
-      if ((0 != (((unsigned int) c->sk.ready)
-                 & mhd_SOCKET_NET_STATE_SEND_READY))
-          || c->sk.props.is_nonblck)
-        use_graceful_closing =
-          (mhd_TLS_PROCED_FAILED != mhd_tls_conn_shutdown (c->tls));
-    }
+      if (mhd_C_HAS_TLS (c))
+      {
+        if ((0 != (((unsigned int) c->sk.ready)
+                   & mhd_SOCKET_NET_STATE_SEND_READY))
+            || c->sk.props.is_nonblck)
+          use_graceful_closing =
+            (mhd_TLS_PROCED_FAILED != mhd_tls_conn_shutdown (c->tls));
+      }
+      else
 #endif /* MHD_ENABLE_HTTPS */
-    else if (1)
-    {
-      use_graceful_closing = mhd_socket_shut_wr (c->sk.fd);
-      if (use_graceful_closing)
-        use_graceful_closing = (! c->sk.state.rmt_shut_wr); /* Skip as already closed */
+      if (1)
+      {
+        use_graceful_closing = mhd_socket_shut_wr (c->sk.fd);
+        if (use_graceful_closing)
+          use_graceful_closing = (! c->sk.state.rmt_shut_wr); /* Skip as already closed */
+      }
     }
     if (use_graceful_closing)
     {
