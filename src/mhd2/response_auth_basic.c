@@ -20,7 +20,7 @@
 
 /**
  * @file src/mhd2/response_auth_basic.c
- * @brief  The definitions of MHD_response_add_basic_auth_challenge() function
+ * @brief  The definitions of MHD_response_add_auth_basic_challenge() function
  * @author Karlson2k (Evgeny Grin)
  */
 
@@ -39,8 +39,9 @@
 #include "mhd_public_api.h"
 
 
-static MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2) enum MHD_StatusCode
-response_add_basic_auth_challenge_int (struct MHD_Response *restrict response,
+static MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_CSTR_ (2) enum MHD_StatusCode
+response_add_auth_basic_challenge_int (struct MHD_Response *restrict response,
                                        const char *restrict realm,
                                        enum MHD_Bool prefer_utf8)
 {
@@ -139,7 +140,7 @@ response_add_basic_auth_challenge_int (struct MHD_Response *restrict response,
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (2)
 MHD_FN_PAR_CSTR_ (2) enum MHD_StatusCode
-MHD_response_add_basic_auth_challenge (
+MHD_response_add_auth_basic_challenge (
   struct MHD_Response *MHD_RESTRICT response,
   const char *realm,
   enum MHD_Bool prefer_utf8)
@@ -169,7 +170,7 @@ MHD_response_add_basic_auth_challenge (
   else if (response->cfg.has_bauth)
     res = MHD_SC_RESP_HEADERS_CONFLICT;
   else
-    res = response_add_basic_auth_challenge_int (response,
+    res = response_add_auth_basic_challenge_int (response,
                                                  realm,
                                                  prefer_utf8);
 

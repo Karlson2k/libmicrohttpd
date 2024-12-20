@@ -3450,7 +3450,7 @@ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_NONNULL_ (5);
  * @ingroup authentication
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_response_add_basic_auth_challenge (
+MHD_response_add_auth_basic_challenge (
   struct MHD_Response *MHD_RESTRICT response,
   const char *MHD_RESTRICT realm,
   enum MHD_Bool prefer_utf8)
@@ -3507,7 +3507,7 @@ MHD_action_basic_auth_challenge (struct MHD_Request *MHD_RESTRICT request,
                                  enum MHD_Bool abort_if_failed)
 {
   if ((MHD_SC_OK !=
-       MHD_response_add_basic_auth_challenge (response, realm, prefer_utf8))
+       MHD_response_add_auth_basic_challenge (response, realm, prefer_utf8))
       && (MHD_NO != abort_if_failed))
   {
     MHD_response_destroy (response);
