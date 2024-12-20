@@ -163,7 +163,7 @@ check_PROGRAMS += \
   perf_get
 endif
 
-if MHD_ENABLE_BAUTH
+if MHD_SUPPORT_AUTH_BASIC
 check_PROGRAMS += \
   test_basicauth test_basicauth_preauth \
   test_basicauth_oldapi test_basicauth_preauth_oldapi
@@ -180,7 +180,7 @@ check_PROGRAMS += \
 endif
 
 
-if ENABLE_DAUTH
+if MHD_SUPPORT_AUTH_DIGEST
 if ENABLE_MD5
 THREAD_ONLY_TESTS += \
   test_digestauth \
