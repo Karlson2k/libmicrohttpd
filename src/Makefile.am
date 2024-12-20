@@ -2,13 +2,13 @@
 
 examples_DIR = examples2
 
-SUBDIRS = . incl_priv include mhd2
+SUBDIRS = incl_priv include mhd2
 
 if BUILD_EXAMPLES
 SUBDIRS += $(examples_DIR)
 endif
 
-SUBDIRS += tests
+SUBDIRS += tests .
 
 if RUN_LIBCURL_TESTS
 #SUBDIRS += testcurl
