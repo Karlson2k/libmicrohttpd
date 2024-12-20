@@ -149,6 +149,7 @@ mhd_tls_multi_is_edge_trigg_supported (struct DaemonOptions *s)
     break;
   default:
     mhd_UNREACHABLE ();
+    break;
   }
   return false;
 }
@@ -220,6 +221,7 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
 #endif
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
+    break;
   }
   mhd_assert (0 && "Impossible value");
   mhd_UNREACHABLE ();
@@ -300,10 +302,9 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
 #endif /* ! MHD_USE_OPENSSL */
   case MHD_TLS_BACKEND_NONE:
   default:
-    break;
-    mhd_assert (0 && "Should not be reachable");
     mhd_UNREACHABLE ();
     res = MHD_SC_TLS_BACKEND_UNSUPPORTED;
+    break;
   }
   mhd_assert (NULL != d_tls);
   if (MHD_SC_OK == res)
@@ -341,6 +342,7 @@ mhd_tls_multi_daemon_deinit (struct mhd_TlsMultiDaemonData *restrict d_tls)
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
+    break;
   }
   free (d_tls);
 }
@@ -415,6 +417,7 @@ mhd_tls_multi_conn_init (const struct mhd_TlsMultiDaemonData *restrict d_tls,
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
+    break;
   }
 
   return false;
@@ -479,6 +482,7 @@ mhd_tls_multi_conn_handshake (struct mhd_TlsMultiConnData *restrict c_tls)
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
+    break;
   }
   return mhd_TLS_PROCED_FAILED;
 }
@@ -507,6 +511,7 @@ mhd_tls_multi_conn_shutdown (struct mhd_TlsMultiConnData *restrict c_tls)
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
+    break;
   }
   return mhd_TLS_PROCED_FAILED;
 }
@@ -547,6 +552,7 @@ mhd_tls_multi_conn_recv (struct mhd_TlsMultiConnData *restrict c_tls,
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
+    break;
   }
   return mhd_SOCKET_ERR_INTERNAL;
 }
@@ -574,6 +580,7 @@ mhd_tls_multi_conn_has_data_in (struct mhd_TlsMultiConnData *restrict c_tls)
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
+    break;
   }
   return false;
 }
@@ -612,6 +619,7 @@ mhd_tls_multi_conn_send (struct mhd_TlsMultiConnData *restrict c_tls,
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
+    break;
   }
   return mhd_SOCKET_ERR_INTERNAL;
 }

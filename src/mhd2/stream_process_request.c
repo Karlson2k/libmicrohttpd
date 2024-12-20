@@ -2535,7 +2535,6 @@ parse_cookie_header (struct MHD_Connection *restrict connection,
                  "parse client cookies!\n");
     break;
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     break;
   }
@@ -3727,7 +3726,7 @@ handle_recv_no_space (struct MHD_Connection *c,
   default:
     break;
   }
-  mhd_assert (0 && "Should be unreachable");
+  mhd_UNREACHABLE ();
 }
 
 
@@ -3942,9 +3941,9 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
     case mhd_HTTP_STAGE_UPGRADED_CLEANING:
 #endif /* MHD_UPGRADE_SUPPORT */
     default:
-      mhd_assert (0);
       mhd_UNREACHABLE ();
       stage = MHD_PROC_RECV_BODY_NORMAL;
+      break;
     }
 
     handle_recv_no_space (c, stage);

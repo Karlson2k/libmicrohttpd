@@ -325,7 +325,6 @@ setup_reply_properties (struct MHD_Connection *restrict c)
       break;
     case mhd_RESPONSE_CONTENT_DATA_INVALID:
     default:
-      mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
       c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
       break;
@@ -959,7 +958,6 @@ preprocess_dcc_action (struct MHD_Connection *restrict c,
   default:
     break;
   }
-  mhd_assert (0 && "Impossible value");
   mhd_UNREACHABLE ();
   mhd_STREAM_ABORT (c,
                     mhd_CONN_CLOSE_INT_ERROR,
@@ -1018,7 +1016,6 @@ read_response_file (struct MHD_Connection *restrict c,
                       "than specified by application.");
     return false;
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     c->rp.cntn_loc = mhd_REPLY_CNTN_LOC_NOWHERE;
     return false;

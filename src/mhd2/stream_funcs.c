@@ -779,8 +779,8 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     case mhd_SOCKET_ERR_AGAIN:
     case mhd_SOCKET_ERR_INTR:
     default:
-      mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
+      break;
     }
     break;
   case mhd_CONN_CLOSE_DAEMON_SHUTDOWN:
@@ -821,6 +821,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     mhd_UNREACHABLE ();
     end_code = MHD_REQUEST_ENDED_COMPLETED_OK;
     close_hard = false;
+    break;
   }
 
   mhd_assert ((NULL == log_msg) || (MHD_SC_INTERNAL_ERROR != sc));

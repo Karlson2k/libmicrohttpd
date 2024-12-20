@@ -705,7 +705,6 @@ mhd_monotonic_msec_counter (void)
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* _WIN32 */
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     break;
   }

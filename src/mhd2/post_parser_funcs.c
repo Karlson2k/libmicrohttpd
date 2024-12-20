@@ -401,8 +401,8 @@ init_post_parse_data (struct MHD_Connection *restrict c)
     break;
   case MHD_HTTP_POST_ENCODING_OTHER:
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
+    break;
   }
 }
 
@@ -1326,7 +1326,6 @@ parse_post_urlenc (struct MHD_Connection *restrict c,
       reset_parse_field_data_urlenc (p_data);
       continue; /* Process the next char */
     default:
-      mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
       break;
     }
@@ -2069,7 +2068,6 @@ parse_post_mpart (struct MHD_Connection *restrict c,
       c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
       return true;
     default:
-      mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
       break;
     }
@@ -2291,7 +2289,6 @@ parse_post_text (struct MHD_Connection *restrict c,
       reset_parse_field_data_text (p_data);
       continue; /* Process the next char */
     default:
-      mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
       enc_broken = true;
       break;
@@ -2425,7 +2422,6 @@ mhd_stream_post_parse (struct MHD_Connection *restrict c,
       break;
     case MHD_HTTP_POST_ENCODING_OTHER:
     default:
-      mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
       p_data->parse_result =
         MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;
@@ -2570,7 +2566,6 @@ check_post_leftovers_urlenc (struct MHD_Connection *restrict c,
   case mhd_POST_UENC_ST_AT_EQ:
   case mhd_POST_UENC_ST_AT_AMPRSND:
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     p_data->parse_result = MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     return false;
@@ -2707,7 +2702,6 @@ check_post_leftovers_mpart (struct MHD_Connection *restrict c,
   case mhd_POST_MPART_ST_VALUE_END_FOUND:
   case mhd_POST_MPART_ST_VALUE_END_FOUND_FINAL:
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     p_data->parse_result = MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     return false;
@@ -2839,7 +2833,6 @@ check_post_leftovers_text (struct MHD_Connection *restrict c,
   case mhd_POST_TEXT_ST_AT_LF_BARE:
   case mhd_POST_TEXT_ST_AT_CR:
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     p_data->parse_result = MHD_POST_PARSE_RES_FAILED_INVALID_POST_FORMAT;
     return false;
@@ -2907,7 +2900,6 @@ check_post_leftovers (struct MHD_Connection *restrict c)
                                       c->rq.cntn.lbuf.data);
   case MHD_HTTP_POST_ENCODING_OTHER:
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     p_data->parse_result =
       MHD_POST_PARSE_RES_PARTIAL_INVALID_POST_FORMAT;

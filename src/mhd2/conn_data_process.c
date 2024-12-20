@@ -72,6 +72,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
     default:
       mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
+      break;
     }
   }
 #endif /* MHD_ENABLE_HTTPS */

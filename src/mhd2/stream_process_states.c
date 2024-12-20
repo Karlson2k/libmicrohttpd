@@ -173,8 +173,8 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     break;
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
+    break;
   }
 }
 

@@ -399,6 +399,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       default:
         sk_type = mhd_SKT_UNKNOWN;
         p_use_sa = NULL; /* To be set below */
+        break;
       }
 
       if (s->bind_sa.v_dual)
@@ -594,7 +595,6 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       case mhd_SKT_UNIX:
       case mhd_SKT_NO_SOCKET:
       default:
-        mhd_assert (0);
         mhd_UNREACHABLE ();
         return MHD_SC_INTERNAL_ERROR;
       }
@@ -971,7 +971,6 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       break;
     case mhd_SKT_NO_SOCKET:
     default:
-      mhd_assert (0 && "Impossible value");
       mhd_UNREACHABLE ();
       return MHD_SC_INTERNAL_ERROR;
     }
@@ -1339,10 +1338,8 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #endif /* ! MHD_USE_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     return MHD_SC_INTERNAL_ERROR;
-    break;
   }
   return MHD_SC_OK;
 }
@@ -1753,7 +1750,8 @@ allocate_events (struct MHD_Daemon *restrict d)
 #endif /* ! MHD_USE_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
-    mhd_assert (0 && "Impossible value");
+    mhd_UNREACHABLE ();
+    break;
   }
   mhd_UNREACHABLE ();
   return MHD_SC_INTERNAL_ERROR;
@@ -1988,7 +1986,8 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
 #endif /* ! MHD_USE_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
-    mhd_assert (0 && "Impossible value");
+    mhd_UNREACHABLE ();
+    break;
   }
   mhd_UNREACHABLE ();
   return MHD_SC_INTERNAL_ERROR;
@@ -2366,7 +2365,7 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
   case mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL:
 #endif /* ! MHD_USE_THREADS */
   default:
-    mhd_assert (0 && "Impossible value");
+    break;
   }
   mhd_UNREACHABLE ();
   return MHD_SC_INTERNAL_ERROR;

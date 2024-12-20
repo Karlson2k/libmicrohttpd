@@ -1099,9 +1099,9 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
 #endif /* ! MHD_USE_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
-    mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     MHD_PANIC ("Daemon data integrity broken");
+    break;
   }
   if (d->events.act_req.accept)
   {

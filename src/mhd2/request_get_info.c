@@ -82,6 +82,7 @@ MHD_request_get_info_fixed_sz (
     return MHD_SC_OK;
   case MHD_REQUEST_INFO_FIXED_SENTINEL:
   default:
+    break;
   }
 
   return MHD_SC_INFO_GET_TYPE_UNKNOWN;
@@ -159,6 +160,7 @@ MHD_request_get_info_dynamic_sz (
     break;
   case MHD_REQUEST_INFO_DYNAMIC_SENTINEL:
   default:
+    break;
   }
 
   return MHD_SC_INFO_GET_TYPE_UNKNOWN;
