@@ -61,9 +61,9 @@ mhd_request_get_value_n (struct MHD_Request *restrict request,
     {
       if ((key_len == f->field.nv.name.len) &&
           (0 != (kind & f->field.kind)) &&
-          (0 == mhd_str_equal_caseless_bin_n (key,
-                                              f->field.nv.name.cstr,
-                                              key_len)))
+          mhd_str_equal_caseless_bin_n (key,
+                                        f->field.nv.name.cstr,
+                                        key_len))
         return &(f->field.nv.value);
     }
   }
@@ -77,9 +77,9 @@ mhd_request_get_value_n (struct MHD_Request *restrict request,
          f = mhd_DLINKEDL_GET_NEXT (f, post_fields))
     {
       if ((key_len == f->field.name.len) &&
-          (0 == mhd_str_equal_caseless_bin_n (key,
-                                              buf + f->field.name.pos,
-                                              key_len)))
+          mhd_str_equal_caseless_bin_n (key,
+                                        buf + f->field.name.pos,
+                                        key_len))
       {
         f->field_for_app.value.cstr =
           (0 == f->field.value.pos) ?
