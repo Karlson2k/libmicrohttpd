@@ -360,8 +360,8 @@ apim_prepare = \
 
 mostlyclean-local: mostlyclean-autopoint-update
 mostlyclean-autopoint-update:
-	-test -d '$(APIM_LOCK)' && rm -rf '$(APIM_LOCK)'
-	-test -d '$(srcdir_po)/po' && rm -rf '$(srcdir_po)/po'
+	-rm -rf '$(APIM_LOCK)'
+	-rm -rf '$(srcdir_po)/po'
 	rm -f '$(APIM_TMSTMP_TMP)'
 
 $(APIM_TRIGGER):
