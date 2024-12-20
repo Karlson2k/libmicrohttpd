@@ -98,71 +98,71 @@ libmicrohttpd2_la_SOURCES += \
   compat_calloc.c
 endif
 
-post_parser_files = \
+post_parser_OPTSOURCES = \
   http_post_enc.h \
   mhd_post_parser.h         mhd_post_result.h         mhd_postfield_int.h \
   post_parser_funcs.c       post_parser_funcs.h
 
-auth_sources = \
+auth_OPTSOURCES = \
   request_auth_get.c        request_auth_get.h
 
-auth_basic_sources = \
+auth_basic_OPTSOURCES = \
   auth_basic.c              auth_basic.h \
   response_auth_basic.c
 
-upgrade_files = \
+upgrade_OPTSOURCES = \
   mhd_upgrade.h \
   upgrade_prep.c            upgrade_prep.h \
   upgrade_proc.c            upgrade_proc.h \
   upgraded_net.c
 
-tls_common_files = \
+tls_common_OPTSOURCES = \
   mhd_tls_choice.h \
   mhd_tls_funcs.c           mhd_tls_funcs.h           mhd_tls_enums.h \
   tls_dh_params.h \
   conn_tls_check.c          conn_tls_check.h
 
-tls_multi_files = \
+tls_multi_OPTSOURCES = \
   tls_multi_tls_lib.h       tls_multi_daemon_data.h   tls_multi_conn_data.h \
   tls_multi_funcs.c         tls_multi_funcs.h
 
-tls_gnu_files = \
+tls_gnu_OPTSOURCES = \
   tls_gnu_tls_lib.h         tls_gnu_daemon_data.h     tls_gnu_conn_data.h \
   tls_gnu_funcs.c           tls_gnu_funcs.h
 
-tls_open_files = \
+tls_open_OPTSOURCES = \
   tls_open_tls_lib.h        tls_open_daemon_data.h    tls_open_conn_data.h \
   tls_open_funcs.c          tls_open_funcs.h
 
 if HAVE_POST_PARSER
-  libmicrohttpd2_la_SOURCES += $(post_parser_files)
+  libmicrohttpd2_la_SOURCES += $(post_parser_OPTSOURCES)
 endif
 
 if MHD_SUPPORT_AUTH
-  libmicrohttpd2_la_SOURCES += $(auth_sources)
+  libmicrohttpd2_la_SOURCES += $(auth_OPTSOURCES)
 endif
 
 if MHD_SUPPORT_AUTH_BASIC
-  libmicrohttpd2_la_SOURCES += $(auth_basic_sources)
+  libmicrohttpd2_la_SOURCES += $(auth_basic_OPTSOURCES)
 endif
 
 if MHD_UPGRADE_SUPPORT
-  libmicrohttpd2_la_SOURCES += $(upgrade_files)
+  libmicrohttpd2_la_SOURCES += $(upgrade_OPTSOURCES)
 endif
 
 if MHD_ENABLE_HTTPS
-  libmicrohttpd2_la_SOURCES += $(tls_common_files)
+  libmicrohttpd2_la_SOURCES += $(tls_common_OPTSOURCES)
 
 if MHD_ENABLE_MULTITLS
-  libmicrohttpd2_la_SOURCES += $(tls_multi_files)
+  libmicrohttpd2_la_SOURCES += $(tls_multi_OPTSOURCES)
 endif
 
 if MHD_USE_GNUTLS
-  libmicrohttpd2_la_SOURCES += $(tls_gnu_files)
+  libmicrohttpd2_la_SOURCES += $(tls_gnu_OPTSOURCES)
 endif
 
 if MHD_USE_OPENSSL
-  libmicrohttpd2_la_SOURCES += $(tls_open_files)
+  libmicrohttpd2_la_SOURCES += $(tls_open_OPTSOURCES)
 endif
 endif
 
