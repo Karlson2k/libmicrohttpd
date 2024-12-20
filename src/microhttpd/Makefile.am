@@ -167,11 +167,11 @@ libmicrohttpd_la_SOURCES += \
   postprocessor.c postprocessor.h
 endif
 
-if HAVE_ANYAUTH
+if MHD_SUPPORT_AUTH
 libmicrohttpd_la_SOURCES += \
   gen_auth.c gen_auth.h
 endif
-if ENABLE_DAUTH
+if MHD_SUPPORT_AUTH_DIGEST
 libmicrohttpd_la_SOURCES += \
   digestauth.c digestauth.h \
   mhd_bithelpers.h mhd_byteorder.h mhd_align.h
@@ -203,7 +203,7 @@ libmicrohttpd_la_SOURCES += \
 endif
 endif
 
-if MHD_ENABLE_BAUTH
+if MHD_SUPPORT_AUTH_BASIC
 libmicrohttpd_la_SOURCES += \
   basicauth.c basicauth.h
 endif
@@ -294,19 +294,19 @@ endif
 endif
 endif
 
-if HAVE_ANYAUTH
+if MHD_SUPPORT_AUTH
 if HAVE_LOG_FUNCTIONALITY
 check_PROGRAMS += \
   test_auth_parse
 endif
 endif
-if ENABLE_DAUTH
+if MHD_SUPPORT_AUTH_DIGEST
 check_PROGRAMS += \
   test_str_quote \
   test_dauth_userdigest \
   test_dauth_userhash
 endif
-if MHD_ENABLE_BAUTH
+if MHD_SUPPORT_AUTH_BASIC
 check_PROGRAMS += \
   test_str_base64
 endif
