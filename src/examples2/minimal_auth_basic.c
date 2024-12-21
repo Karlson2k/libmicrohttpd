@@ -40,6 +40,8 @@ req_cb (void *cls,
     "You need to know the secret to get in.\n";
   static const char msg_forbidden_page[] =
     "You are not allowed to enter. Go away!\n";
+  static const char msg_bad_header_page[] =
+    "The Authorization header data is invalid\n";
   static const char allowed_username[] = "alibaba";
   static const char allowed_password[] = "open sesam";
   static const size_t allowed_username_len =
@@ -72,9 +74,9 @@ req_cb (void *cls,
     return MHD_action_from_response (
       request,
       MHD_response_from_buffer_static (
-        MHD_HTTP_STATUS_FORBIDDEN,
-        sizeof(msg_forbidden_page) / sizeof(char) - 1,
-        msg_forbidden_page));
+        MHD_HTTP_STATUS_BAD_REQUEST,
+        sizeof(msg_bad_header_page) / sizeof(char) - 1,
+        msg_bad_header_page));
 
   if (MHD_SC_OK != res)
     return MHD_action_abort_request (request);
