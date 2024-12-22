@@ -75,8 +75,8 @@ response_create_basic (enum MHD_HTTP_StatusCode sc,
       r->free.cls = NULL;
       r->special_resp.spec_hdr = NULL;
 
-      s->termination_callback.v_term_cb = NULL;
-      s->termination_callback.v_term_cb_cls = NULL;
+      s->termination_callback.v_ended_cb = NULL;
+      s->termination_callback.v_ended_cb_cls = NULL;
 #endif /* ! HAVE_NULL_PTR_ALL_ZEROS */
 
       r->sc = sc;
