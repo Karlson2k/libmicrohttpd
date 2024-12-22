@@ -5106,18 +5106,18 @@ enum MHD_FLAGS_ENUM_ MHD_ValueKind
   /**
    * HTTP header.
    */
-  MHD_VK_HEADER = (1 << 0)
+  MHD_VK_HEADER = (1u << 0)
   ,
   /**
    * Cookies.  Note that the original HTTP header containing
    * the cookie(s) will still be available and intact.
    */
-  MHD_VK_COOKIE = (1 << 1)
+  MHD_VK_COOKIE = (1u << 1)
   ,
   /**
    * GET (URI) arguments.
    */
-  MHD_VK_GET_ARGUMENT = (1 << 2)
+  MHD_VK_GET_ARGUMENT = (1u << 2)
   ,
   /**
    * POST data.
@@ -5131,12 +5131,12 @@ enum MHD_FLAGS_ENUM_ MHD_ValueKind
    * to check used "Transfer-Encoding". While it is deprecated and not used
    * by modern clients, formally it can be used.
    */
-  MHD_VK_POSTDATA = (1 << 3)
+  MHD_VK_POSTDATA = (1u << 3)
   ,
   /**
    * HTTP footer (only for HTTP 1.1 chunked encodings).
    */
-  MHD_VK_FOOTER = (1 << 4)
+  MHD_VK_FOOTER = (1u << 4)
   ,
   /**
    * Header and footer values
@@ -7054,32 +7054,32 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestBaseAlgo
    * MD5 hash algorithm.
    * As specified by RFC1321
    */
-  MHD_DIGEST_BASE_ALGO_MD5 = (1 << 0)
+  MHD_DIGEST_BASE_ALGO_MD5 = (1u << 0)
   ,
   /**
    * SHA-256 hash algorithm.
    * As specified by FIPS PUB 180-4
    */
-  MHD_DIGEST_BASE_ALGO_SHA256 = (1 << 1)
+  MHD_DIGEST_BASE_ALGO_SHA256 = (1u << 1)
   ,
   /**
    * SHA-512/256 hash algorithm.
    * As specified by FIPS PUB 180-4
    */
-  MHD_DIGEST_BASE_ALGO_SHA512_256 = (1 << 2)
+  MHD_DIGEST_BASE_ALGO_SHA512_256 = (1u << 2)
 };
 
 /**
  * The flag indicating non-session algorithm types,
  * like 'MD5', 'SHA-256' or 'SHA-512-256'.
  */
-#define MHD_DIGEST_AUTH_ALGO_NON_SESSION    (1 << 6)
+#define MHD_DIGEST_AUTH_ALGO_NON_SESSION    (1u << 6)
 
 /**
  * The flag indicating session algorithm types,
  * like 'MD5-sess', 'SHA-256-sess' or 'SHA-512-256-sess'.
  */
-#define MHD_DIGEST_AUTH_ALGO_SESSION        (1 << 7)
+#define MHD_DIGEST_AUTH_ALGO_SESSION        (1u << 7)
 
 /**
  * Digest algorithm identification
@@ -7390,7 +7390,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthUsernameType
   /**
    * The 'username' parameter is used to specify the username.
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = (1 << 2)
+  MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD = (1u << 2)
   ,
   /**
    * The username is specified by 'username*' parameter with
@@ -7398,14 +7398,14 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthUsernameType
    * The only difference between standard and extended types is
    * the way how username value is encoded in the header.
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = (1 << 3)
+  MHD_DIGEST_AUTH_UNAME_TYPE_EXTENDED = (1u << 3)
   ,
   /**
    * The username provided in form of 'userhash' as
    * specified by RFC 7616, section-3.4.4.
    * @sa #MHD_digest_auth_calc_userhash_hex(), #MHD_digest_auth_calc_userhash()
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = (1 << 1)
+  MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH = (1u << 1)
   ,
   /**
    * The invalid combination of username parameters are used by client.
@@ -7415,7 +7415,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthUsernameType
    * * 'username*' used with invalid extended notation
    * * 'username' is not hexadecimal string, while 'userhash' set to 'true'
    */
-  MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = (1 << 0)
+  MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = (1u << 0)
 };
 
 /**
@@ -7438,18 +7438,18 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthQOP
    * parameter).
    * This mode is less secure than other modes and inefficient.
    */
-  MHD_DIGEST_AUTH_QOP_NONE = 1 << 0
+  MHD_DIGEST_AUTH_QOP_NONE = (1u << 0)
   ,
   /**
    * The 'auth' QOP type.
    */
-  MHD_DIGEST_AUTH_QOP_AUTH = 1 << 1
+  MHD_DIGEST_AUTH_QOP_AUTH = (1u << 1)
   ,
   /**
    * The 'auth-int' QOP type.
    * Not supported by MHD for authentication.
    */
-  MHD_DIGEST_AUTH_QOP_AUTH_INT = 1 << 2
+  MHD_DIGEST_AUTH_QOP_AUTH_INT = (1u << 2)
 };
 
 /**
