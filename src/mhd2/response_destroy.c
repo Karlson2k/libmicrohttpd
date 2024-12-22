@@ -40,6 +40,10 @@
 #include "response_funcs.h"
 #include "response_from.h"
 
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+#  include "response_auth_digest.h"
+#endif
+
 #define mhd_RESPONSE_DESTOYED "Attempt to use destroyed response, " \
         "re-use non-reusable response or wrong MHD_Response pointer"
 
@@ -52,6 +56,9 @@
 static MHD_FN_PAR_NONNULL_ (1) void
 response_full_deinit (struct MHD_Response *restrict r)
 {
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  mhd_response_remove_auth_digest_headers (r);
+#endif
   mhd_response_remove_all_headers (r);
   if (NULL != r->special_resp.spec_hdr)
     free (r->special_resp.spec_hdr);

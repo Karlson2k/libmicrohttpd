@@ -1621,6 +1621,16 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * cannot be provided due to some error or other reasons.
    */
   MHD_SC_INFO_GET_TYPE_UNAVAILALBE = 60204
+  ,
+  /**
+   * The type of the Digest Auth algorithm is unknown or not supported.
+   */
+  MHD_SC_AUTH_DIGEST_ALGO_NOT_SUPPORTED = 60240
+  ,
+  /**
+   * The the Digest Auth QOP value is unknown or not supported.
+   */
+  MHD_SC_AUTH_DIGEST_QOP_NOT_SUPPORTED = 60241
 };
 
 /**

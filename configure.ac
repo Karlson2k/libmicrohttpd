@@ -5635,18 +5635,18 @@ AS_CASE([${enable_md5}],
 )
 AS_IF([test "x${enable_md5}" = "xbuiltin" || test "x${enable_md5}" = "xtlslib" ],
   [
-    AC_DEFINE([[MHD_MD5_SUPPORT]],[[1]],
+    AC_DEFINE([[MHD_SUPPORT_MD5]],[[1]],
       [Define to 1 if libmicrohttpd is compiled with MD5 hashing support.])
   ]
 )
 AS_IF([test "x${enable_md5}" = "xtlslib" ],
   [
-    AC_DEFINE([[MHD_MD5_TLSLIB]],[[1]],
+    AC_DEFINE([[MHD_MD5_EXTR]],[[1]],
       [Define to 1 if libmicrohttpd is compiled with MD5 hashing by TLS library.])
   ]
 )
-AM_CONDITIONAL([ENABLE_MD5], [[test "x${enable_md5}" = "xbuiltin" || test "x${enable_md5}" = "xtlslib" ]])
-AM_CONDITIONAL([ENABLE_MD5_EXT], [[test "x${enable_md5}" = "xtlslib" ]])
+AM_CONDITIONAL([MHD_SUPPORT_MD5], [[test "x${enable_md5}" = "xbuiltin" || test "x${enable_md5}" = "xtlslib" ]])
+AM_CONDITIONAL([MHD_MD5_EXTR], [[test "x${enable_md5}" = "xtlslib" ]])
 AC_MSG_RESULT([[${enable_md5_MSG}]])
 
 # optional: SHA-256 support for Digest Auth. Enabled by default.
@@ -5757,18 +5757,18 @@ AS_CASE([${enable_sha256}],
 )
 AS_IF([test "x${enable_sha256}" = "xbuiltin" || test "x${enable_sha256}" = "xtlslib" ],
   [
-    AC_DEFINE([[MHD_SHA256_SUPPORT]],[[1]],
+    AC_DEFINE([[MHD_SUPPORT_SHA256]],[[1]],
       [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing support.])
   ]
 )
 AS_IF([test "x${enable_sha256}" = "xtlslib" ],
   [
-    AC_DEFINE([[MHD_SHA256_TLSLIB]],[[1]],
+    AC_DEFINE([[MHD_SHA256_EXTR]],[[1]],
       [Define to 1 if libmicrohttpd is compiled with SHA-256 hashing by TLS library.])
   ]
 )
-AM_CONDITIONAL([ENABLE_SHA256], [[test "x${enable_sha256}" = "xbuiltin" || test "x${enable_sha256}" = "xtlslib" ]])
-AM_CONDITIONAL([ENABLE_SHA256_EXT], [[test "x${enable_sha256}" = "xtlslib" ]])
+AM_CONDITIONAL([MHD_SUPPORT_SHA256], [[test "x${enable_sha256}" = "xbuiltin" || test "x${enable_sha256}" = "xtlslib" ]])
+AM_CONDITIONAL([MHD_SHA256_EXTR], [[test "x${enable_sha256}" = "xtlslib" ]])
 AC_MSG_RESULT([[${enable_sha256_MSG}]])
 
 # optional: SHA-512/256 support for Digest Auth. Enabled by default.
@@ -5797,11 +5797,11 @@ AS_CASE([${enable_sha512_256}],
 )
 AS_VAR_IF([[enable_sha512_256]],[["yes"]],
   [
-   AC_DEFINE([[MHD_SHA512_256_SUPPORT]],[[1]],
+   AC_DEFINE([[MHD_SUPPORT_SHA512_256]],[[1]],
      [Define to 1 if libmicrohttpd is compiled with SHA-512/256 hashing support.])
   ]
 )
-AM_CONDITIONAL([ENABLE_SHA512_256], [[test "x${enable_sha512_256}" = "xyes"]])
+AM_CONDITIONAL([MHD_SUPPORT_SHA512_256], [[test "x${enable_sha512_256}" = "xyes"]])
 AC_MSG_RESULT([[${enable_sha512_256_MSG}]])
 
 AS_IF([test "x$enable_digest_auth" != "xno"],

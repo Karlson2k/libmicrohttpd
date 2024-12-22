@@ -175,10 +175,10 @@ if MHD_SUPPORT_AUTH_DIGEST
 libmicrohttpd_la_SOURCES += \
   digestauth.c digestauth.h \
   mhd_bithelpers.h mhd_byteorder.h mhd_align.h
-if ENABLE_MD5
+if MHD_SUPPORT_MD5
 libmicrohttpd_la_SOURCES += \
   mhd_md5_wrap.h
-if ! ENABLE_MD5_EXT
+if ! MHD_MD5_EXTR
 libmicrohttpd_la_SOURCES += \
   md5.c md5.h
 else
@@ -186,10 +186,10 @@ libmicrohttpd_la_SOURCES += \
   md5_ext.c md5_ext.h
 endif
 endif
-if ENABLE_SHA256
+if MHD_SUPPORT_SHA256
 libmicrohttpd_la_SOURCES += \
   mhd_sha256_wrap.h
-if ! ENABLE_SHA256_EXT
+if ! MHD_SHA256_EXTR
 libmicrohttpd_la_SOURCES += \
   sha256.c sha256.h
 else
@@ -197,7 +197,7 @@ libmicrohttpd_la_SOURCES += \
   sha256_ext.c sha256_ext.h
 endif
 endif
-if ENABLE_SHA512_256
+if MHD_SUPPORT_SHA512_256
 libmicrohttpd_la_SOURCES += \
   sha512_256.c sha512_256.h
 endif
@@ -244,15 +244,15 @@ check_PROGRAMS = \
   test_mhd_version \
   test_set_panic
 
-if ENABLE_MD5
+if MHD_SUPPORT_MD5
 check_PROGRAMS += \
   test_md5
 endif
-if ENABLE_SHA256
+if MHD_SUPPORT_SHA256
 check_PROGRAMS += \
   test_sha256
 endif
-if ENABLE_SHA512_256
+if MHD_SUPPORT_SHA512_256
 check_PROGRAMS += \
   test_sha512_256
 endif
@@ -518,7 +518,7 @@ test_http_reasons_SOURCES = \
 
 test_md5_SOURCES = \
   test_md5.c test_helpers.h mhd_md5_wrap.h ../include/mhd_options.h
-if ! ENABLE_MD5_EXT
+if ! MHD_MD5_EXTR
 test_md5_SOURCES += \
   md5.c md5.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 test_md5_CPPFLAGS = $(AM_CPPFLAGS)
@@ -536,7 +536,7 @@ endif
 
 test_sha256_SOURCES = \
   test_sha256.c test_helpers.h mhd_sha256_wrap.h ../include/mhd_options.h
-if ! ENABLE_SHA256_EXT
+if ! MHD_SHA256_EXTR
 test_sha256_SOURCES += \
   sha256.c sha256.h mhd_bithelpers.h mhd_byteorder.h mhd_align.h
 test_sha256_CPPFLAGS = $(AM_CPPFLAGS)

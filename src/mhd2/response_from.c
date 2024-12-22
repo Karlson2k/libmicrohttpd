@@ -68,6 +68,9 @@ response_create_basic (enum MHD_HTTP_StatusCode sc,
     {
 #ifndef HAVE_NULL_PTR_ALL_ZEROS
       mhd_DLINKEDL_INIT_LIST (r, headers);
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+      mhd_DLINKEDL_INIT_LIST (r, auth_d_hdrs);
+#endif
       r->free.cb = NULL;
       r->free.cls = NULL;
       r->special_resp.spec_hdr = NULL;

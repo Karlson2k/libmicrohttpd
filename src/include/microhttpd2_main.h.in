@@ -3325,20 +3325,32 @@ MHD_FN_PAR_CSTR_ (4);
 
 
 /**
- * Create an action to request authentication from the client
+ * Add Digest Authentication "challenge" to the response.
  *
- * If @a mqop allows both RFC 2069 (MHD_DIGEST_AUTH_QOP_NONE) and QOP with
- * value, then response is formed like if MHD_DIGEST_AUTH_QOP_NONE bit was
- * not set, because such response should be backward-compatible with RFC 2069.
+ * The response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * If @a mqop allows both RFC 2069 (#MHD_DIGEST_AUTH_QOP_NONE) and other QOP
+ * values, then the "challenge" is formed like if MHD_DIGEST_AUTH_QOP_NONE bit
+ * was not set, because such "challenge" should be backward-compatible with
+ * RFC 2069.
  *
  * If @a mqop allows only MHD_DIGEST_AUTH_MULT_QOP_NONE, then the response is
  * formed in strict accordance with RFC 2069 (no 'qop', no 'userhash', no
  * 'charset'). For better compatibility with clients, it is recommended (but
  * not required) to set @a domain to NULL in this mode.
  *
- * At most one action can be created for any request.
+ * New nonces are generated each time when the resulting response is used.
  *
- * @param request the request
+ * See RFC 7616, section 3.3 for details.
+ *
+ * @param response the response to update; should contain the "access denied"
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_SC_RESP_POINTER_NULL)
  * @param realm the realm presented to the client
  * @param opaque the string for opaque value, can be NULL, but NULL is
  *               not recommended for better compatibility with clients;
@@ -3353,24 +3365,17 @@ MHD_FN_PAR_CSTR_ (4);
  *               credentials could be used for any URI on the same host);
  *               this list provides information for the client only and does
  *               not actually restrict anything on the server side
- * @param response the reply to send; should contain the "access denied"
- *                 body;
- *                 note: this function sets the "WWW Authenticate" header and
- *                 the caller should not set this header;
- *                 the response must have #MHD_HTTP_STATUS_FORBIDDEN status
- *                 code, must not have #MHD_R_O_REUSABLE enabled;
- *                 the NULL is tolerated (the result is NULL)
- * @param signal_stale if set to #MHD_YES then indication of stale nonce used in
- *                     the client's request is signalled by adding 'stale=true'
- *                     to the authentication header, this instructs the client
- *                     to retry immediately with the new nonce and the same
- *                     credentials, without asking user for the new password
+ * @param indicate_stale if set to #MHD_YES then indication of stale nonce used
+ *                       in the client's request is indicated by adding
+ *                       'stale=true' to the authentication header, this
+ *                       instructs the client to retry immediately with the new
+ *                       nonce and the same credentials, without asking user
+ *                       for the new password
  * @param mqop the QOP to use
  * @param algo digest algorithm to use; if several algorithms are allowed
- *               then MD5 is preferred (currently, may be changed in next
- *               versions)
- * @param userhash_support if set to non-zero value (#MHD_YES) then support of
- *                         userhash is indicated, allowing client to provide
+ *             then one challenge for each allowed algorithm is added
+ * @param userhash_support if set to #MHD_YES then support of userhash is
+ *                         indicated, allowing client to provide
  *                         hash("username:realm") instead of the username in
  *                         clear text;
  *                         note that clients are allowed to provide the username
@@ -3382,24 +3387,265 @@ MHD_FN_PAR_CSTR_ (4);
  * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
  *                    added, indicating for the client that UTF-8 encoding for
  *                    the username is preferred
- * @return pointer to the action on success,
- *         NULL on failure
+ * @return #MHD_SC_OK if succeed,
+ *         #MHD_SC_TOO_LATE if the response has been already "frozen" (used to
+ *         create an action),
+ *         #MHD_SC_RESP_HEADERS_CONFLICT if Digest Authentication "challenge"
+ *         has been added already,
+ *         #MHD_SC_RESP_POINTER_NULL if @a response is NULL,
+ *         #MHD_SC_RESP_HTTP_CODE_NOT_SUITABLE is response status code is wrong,
+ *         #MHD_SC_RESP_HEADER_VALUE_INVALID if @a realm, @a opaque or @a domain
+ *         have wrong characters or zero length (for @a realm),
+ *         #MHD_SC_RESPONSE_HEADER_MEM_ALLOC_FAILED if memory allocation failed,
+ *         or other error code if failed
  * @ingroup authentication
  */
-MHD_EXTERN_ const struct MHD_Action *
-MHD_action_digest_auth_required_response (
-  struct MHD_Request *request,
-  const char *realm,
-  const char *opaque,
-  const char *domain,
-  struct MHD_Response *response,
-  enum MHD_Bool signal_stale,
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_response_add_auth_digest_challenge (
+  struct MHD_Response *MHD_RESTRICT response,
+  const char *MHD_RESTRICT realm,
+  const char *MHD_RESTRICT opaque,
+  const char *MHD_RESTRICT domain,
+  enum MHD_Bool indicate_stale,
   enum MHD_DigestAuthMultiQOP mqop,
-  enum MHD_DigestAuthMultiAlgo algo,
+  enum MHD_DigestAuthMultiAlgo malgo,
   enum MHD_Bool userhash_support,
   enum MHD_Bool prefer_utf8)
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
-MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_NONNULL_ (5);
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (4);
+
+
+#ifndef MHD_NO_STATIC_INLINE
+
+/**
+ * Create action to reply with Digest Authentication "challenge".
+ *
+ * The @a response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * See RFC 7616, section 3.3 for details.
+ *
+ * @param request the request to create the action for
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that URI is in the same "protection
+ *               space" if it starts with any of values specified here;
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host);
+ *               this list provides information for the client only and does
+ *               not actually restrict anything on the server side
+ * @param indicate_stale if set to #MHD_YES then indication of stale nonce used
+ *                       in the client's request is indicated by adding
+ *                       'stale=true' to the authentication header, this
+ *                       instructs the client to retry immediately with the new
+ *                       nonce and the same credentials, without asking user
+ *                       for the new password
+ * @param mqop the QOP to use
+ * @param algo digest algorithm to use; if several algorithms are allowed
+ *             then one challenge for each allowed algorithm is added
+ * @param userhash_support if set to #MHD_YES then support of userhash is
+ *                         indicated, allowing client to provide
+ *                         hash("username:realm") instead of the username in
+ *                         clear text;
+ *                         note that clients are allowed to provide the username
+ *                         in cleartext even if this parameter set to non-zero;
+ *                         when userhash is used, application must be ready to
+ *                         identify users by provided userhash value instead of
+ *                         username; see #MHD_digest_auth_calc_userhash() and
+ *                         #MHD_digest_auth_calc_userhash_hex()
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding for
+ *                    the username is preferred
+ * @param response the response to update; should contain the "access denied"
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_SC_RESP_POINTER_NULL)
+ * @param abort_if_failed if set to #MHD_NO the response will be used even if
+ *                        failed to add Basic Authentication "challenge",
+ *                        if not set to #MHD_NO the request will be aborted
+ *                        if the "challenge" could not be added.
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak;
+ *         NULL if failed or if any action has been already created for
+ *         the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
+ * @ingroup authentication
+ */
+MHD_STATIC_INLINE_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+const struct MHD_Action *
+MHD_action_digest_auth_challenge (struct MHD_Request *MHD_RESTRICT request,
+                                  const char *MHD_RESTRICT realm,
+                                  const char *MHD_RESTRICT opaque,
+                                  const char *MHD_RESTRICT domain,
+                                  enum MHD_Bool indicate_stale,
+                                  enum MHD_DigestAuthMultiQOP mqop,
+                                  enum MHD_DigestAuthMultiAlgo malgo,
+                                  enum MHD_Bool userhash_support,
+                                  enum MHD_Bool prefer_utf8,
+                                  struct MHD_Response *MHD_RESTRICT response,
+                                  enum MHD_Bool abort_if_failed)
+{
+  if ((MHD_SC_OK !=
+       MHD_response_add_auth_digest_challenge (response, realm, opaque, domain,
+                                               indicate_stale, mqop, malgo,
+                                               userhash_support, prefer_utf8))
+      && (MHD_NO != abort_if_failed))
+  {
+    MHD_response_destroy (response);
+    return MHD_action_abort_request (request);
+  }
+  return MHD_action_from_response (request, response);
+}
+
+
+MHD_STATIC_INLINE_END_
+
+/**
+ * Create action to reply with Digest Authentication "challenge".
+ *
+ * The @a response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * If the @a response object cannot be extended with the "challenge",
+ * the @a response is used to reply without the "challenge".
+ *
+ * @param request the request to create the action for
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that URI is in the same "protection
+ *               space" if it starts with any of values specified here;
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host);
+ *               this list provides information for the client only and does
+ *               not actually restrict anything on the server side
+ * @param indicate_stale if set to #MHD_YES then indication of stale nonce used
+ *                       in the client's request is indicated by adding
+ *                       'stale=true' to the authentication header, this
+ *                       instructs the client to retry immediately with the new
+ *                       nonce and the same credentials, without asking user
+ *                       for the new password
+ * @param mqop the QOP to use
+ * @param algo digest algorithm to use; if several algorithms are allowed
+ *             then one challenge for each allowed algorithm is added
+ * @param userhash_support if set to #MHD_YES then support of userhash is
+ *                         indicated, allowing client to provide
+ *                         hash("username:realm") instead of the username in
+ *                         clear text;
+ *                         note that clients are allowed to provide the username
+ *                         in cleartext even if this parameter set to non-zero;
+ *                         when userhash is used, application must be ready to
+ *                         identify users by provided userhash value instead of
+ *                         username; see #MHD_digest_auth_calc_userhash() and
+ *                         #MHD_digest_auth_calc_userhash_hex()
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding for
+ *                    the username is preferred
+ * @param response the response to update; should contain the "access denied"
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_SC_RESP_POINTER_NULL)
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak;
+ *         NULL if failed or if any action has been already created for
+ *         the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
+ * @ingroup authentication
+ */
+#define MHD_action_digest_auth_challenge_p(rq,rlm,opq,dmn,stl,mqop,malgo, \
+                                           uh,utf,resp) \
+        MHD_action_digest_auth_challenge ((rq),(rlm),(opq),(dmn),(stl),(mqop), \
+                                          (malgo),(uh),(utf),(resp),MHD_NO)
+
+
+/**
+ * Create action to reply with Digest Authentication "challenge".
+ *
+ * The @a response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
+ *
+ * If the @a response object cannot be extended with the "challenge",
+ * the @a response is aborted.
+ *
+ * @param request the request to create the action for
+ * @param realm the realm presented to the client
+ * @param opaque the string for opaque value, can be NULL, but NULL is
+ *               not recommended for better compatibility with clients;
+ *               the recommended format is hex or Base64 encoded string
+ * @param domain the optional space-separated list of URIs for which the
+ *               same authorisation could be used, URIs can be in form
+ *               "path-absolute" (the path for the same host with initial slash)
+ *               or in form "absolute-URI" (the full path with protocol), in
+ *               any case client may assume that URI is in the same "protection
+ *               space" if it starts with any of values specified here;
+ *               could be NULL (clients typically assume that the same
+ *               credentials could be used for any URI on the same host);
+ *               this list provides information for the client only and does
+ *               not actually restrict anything on the server side
+ * @param indicate_stale if set to #MHD_YES then indication of stale nonce used
+ *                       in the client's request is indicated by adding
+ *                       'stale=true' to the authentication header, this
+ *                       instructs the client to retry immediately with the new
+ *                       nonce and the same credentials, without asking user
+ *                       for the new password
+ * @param mqop the QOP to use
+ * @param algo digest algorithm to use; if several algorithms are allowed
+ *             then one challenge for each allowed algorithm is added
+ * @param userhash_support if set to #MHD_YES then support of userhash is
+ *                         indicated, allowing client to provide
+ *                         hash("username:realm") instead of the username in
+ *                         clear text;
+ *                         note that clients are allowed to provide the username
+ *                         in cleartext even if this parameter set to non-zero;
+ *                         when userhash is used, application must be ready to
+ *                         identify users by provided userhash value instead of
+ *                         username; see #MHD_digest_auth_calc_userhash() and
+ *                         #MHD_digest_auth_calc_userhash_hex()
+ * @param prefer_utf8 if not set to #MHD_NO, parameter 'charset=UTF-8' is
+ *                    added, indicating for the client that UTF-8 encoding for
+ *                    the username is preferred
+ * @param response the response to update; should contain the "access denied"
+ *                 body;
+ *                 note: this function sets the "WWW Authenticate" header and
+ *                 the caller should not set this header;
+ *                 the response must have #MHD_HTTP_STATUS_UNAUTHORIZED status
+ *                 code;
+ *                 the NULL is tolerated (the result is
+ *                 #MHD_SC_RESP_POINTER_NULL)
+ * @return pointer to the action, the action must be consumed
+ *         otherwise response object may leak;
+ *         NULL if failed or if any action has been already created for
+ *         the @a request;
+ *         when failed the response object is consumed and need not
+ *         to be "destroyed"
+ * @ingroup authentication
+ */
+#define MHD_action_digest_auth_challenge_a(rq,rlm,opq,dmn,stl,mqop,malgo, \
+                                           uh,utf,resp) \
+        MHD_action_digest_auth_challenge ((rq),(rlm),(opq),(dmn),(stl),(mqop), \
+                                          (malgo),(uh),(utf),(resp),MHD_YES)
+
+#endif /* ! MHD_NO_STATIC_INLINE */
 
 
 /**

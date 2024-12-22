@@ -36,6 +36,9 @@
 
 #include "mhd_dlinked_list.h"
 #include "mhd_str_types.h"
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+#  include "mhd_auth_digest_hdr.h"
+#endif
 
 #include "mhd_iovec.h"
 
@@ -355,6 +358,13 @@ struct MHD_Response
    * The double linked list of the response headers
    */
   mhd_DLNKDL_LIST (mhd_ResponseHeader,headers);
+
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  /**
+   * The double linked list of the Digest Auth response headers
+   */
+  mhd_DLNKDL_LIST (mhd_RespAuthDigestHeader,auth_d_hdrs);
+#endif
 
   /**
    * Special data for internal error responses

@@ -181,18 +181,18 @@ endif
 
 
 if MHD_SUPPORT_AUTH_DIGEST
-if ENABLE_MD5
+if MHD_SUPPORT_MD5
 THREAD_ONLY_TESTS += \
   test_digestauth \
   test_digestauth_with_arguments \
   test_digestauth_concurrent
 endif
-if ENABLE_SHA256
+if MHD_SUPPORT_SHA256
 THREAD_ONLY_TESTS += \
   test_digestauth_sha256
 endif
 
-if ENABLE_MD5
+if MHD_SUPPORT_MD5
 check_PROGRAMS += \
   test_digestauth_emu_ext \
   test_digestauth_emu_ext_oldapi \
@@ -211,7 +211,7 @@ check_PROGRAMS += \
   test_digestauth2_oldapi1_bind_all \
   test_digestauth2_oldapi1_bind_uri
 endif
-if ENABLE_SHA256
+if MHD_SUPPORT_SHA256
 check_PROGRAMS += \
   test_digestauth2_sha256 \
   test_digestauth2_sha256_userhash \

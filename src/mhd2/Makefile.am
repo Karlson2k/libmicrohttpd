@@ -110,6 +110,10 @@ auth_basic_OPTSOURCES = \
   auth_basic.c              auth_basic.h \
   response_auth_basic.c
 
+auth_digest_OPTSOURCES = \
+  mhd_digest_auth_data.h    mhd_auth_digest_hdr.h \
+  response_auth_digest.c    response_auth_digest.h
+
 upgrade_OPTSOURCES = \
   mhd_upgrade.h \
   upgrade_prep.c            upgrade_prep.h \
@@ -144,6 +148,10 @@ endif
 
 if MHD_SUPPORT_AUTH_BASIC
   libmicrohttpd2_la_SOURCES += $(auth_basic_OPTSOURCES)
+endif
+
+if MHD_SUPPORT_AUTH_DIGEST
+  libmicrohttpd2_la_SOURCES += $(auth_digest_OPTSOURCES)
 endif
 
 if MHD_UPGRADE_SUPPORT
