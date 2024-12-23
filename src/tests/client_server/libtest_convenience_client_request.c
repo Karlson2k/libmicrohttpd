@@ -838,7 +838,7 @@ send_basic_auth (const char *cred,
   if (NULL == pass)
     return "invalid credential given";
   user = strndup (cred,
-                  pass - user);
+                  pass - cred);
   pass++;
   c = curl_easy_init ();
   if (NULL == c)
@@ -862,11 +862,11 @@ send_basic_auth (const char *cred,
        (CURLE_OK !=
         curl_easy_setopt (c,
                           CURLOPT_USERNAME,
-                          "user")) ||
+                          user)) ||
        (CURLE_OK !=
         curl_easy_setopt (c,
                           CURLOPT_PASSWORD,
-                          "password")) )
+                          pass)) )
   {
     curl_easy_cleanup (c);
     free (user);
