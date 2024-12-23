@@ -19,7 +19,7 @@
 */
 
 /**
- * @file libtest_convenience.c
+ * @file libtest_convenience_client_request.c
  * @brief convenience functions implementing clients making requests for libtest users
  * @author Christian Grothoff
  */
@@ -812,5 +812,116 @@ MHDT_client_do_post (
       }
     }
   }
+  return NULL;
+}
+
+
+/**
+ * Send HTTP request with basic authentication.
+ *
+ * @param cred $USERNAME:$PASSWORD to use
+ * @param[in,out] phase context
+ * @param[out] http_status set to HTTP status
+ * @return error message, NULL on success
+ */
+static const char *
+send_basic_auth (const char *cred,
+                 struct MHDT_PhaseContext *pc,
+                 unsigned int *http_status)
+{
+  CURL *c;
+  const char *err;
+  long status;
+  char *pass = strchr (cred, ':');
+  char *user;
+
+  if (NULL == pass)
+    return "invalid credential given";
+  user = strndup (cred,
+                  pass - user);
+  pass++;
+  c = curl_easy_init ();
+  if (NULL == c)
+  {
+    free (user);
+    return "Failed to initialize Curl handle";
+  }
+  err = set_url (c,
+                 pc->base_url,
+                 pc);
+  if (NULL != err)
+  {
+    free (user);
+    curl_easy_cleanup (c);
+    return err;
+  }
+  if ( (CURLE_OK !=
+        curl_easy_setopt (c,
+                          CURLOPT_HTTPAUTH,
+                          (long) CURLAUTH_BASIC)) ||
+       (CURLE_OK !=
+        curl_easy_setopt (c,
+                          CURLOPT_USERNAME,
+                          "user")) ||
+       (CURLE_OK !=
+        curl_easy_setopt (c,
+                          CURLOPT_PASSWORD,
+                          "password")) )
+  {
+    curl_easy_cleanup (c);
+    free (user);
+    return "Failed to set basic authentication header for curl request";
+  }
+  free (user);
+  PERFORM_REQUEST (c);
+  if (CURLE_OK !=
+      curl_easy_getinfo (c,
+                         CURLINFO_RESPONSE_CODE,
+                         &status))
+  {
+    return "Failed to get HTTP status";
+  }
+  *http_status = (unsigned int) status;
+  curl_easy_cleanup (c);
+  return NULL;
+}
+
+
+const char *
+MHDT_client_send_basic_auth (
+  const void *cls,
+  struct MHDT_PhaseContext *pc)
+{
+  const char *cred = cls;
+  const char *ret;
+  unsigned int status;
+
+  ret = send_basic_auth (cred,
+                         pc,
+                         &status);
+  if (NULL != ret)
+    return ret;
+  if (MHD_HTTP_STATUS_NO_CONTENT != status)
+    return "invalid HTTP response code";
+  return NULL;
+}
+
+
+const char *
+MHDT_client_fail_basic_auth (
+  const void *cls,
+  struct MHDT_PhaseContext *pc)
+{
+  const char *cred = cls;
+  const char *ret;
+  unsigned int status;
+
+  ret = send_basic_auth (cred,
+                         pc,
+                         &status);
+  if (NULL != ret)
+    return ret;
+  if (MHD_HTTP_STATUS_UNAUTHORIZED != status)
+    return "invalid HTTP response code";
   return NULL;
 }

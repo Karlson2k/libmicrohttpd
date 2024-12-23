@@ -26,6 +26,7 @@ $(top_builddir)/src/mhd2/libmicrohttpd2.la: $(top_builddir)/src/mhd2/Makefile
 
 check_PROGRAMS = \
   test_client_server \
+  test_authentication \
   test_postprocessor
 
 if MHD_ENABLE_HTTPS
@@ -54,6 +55,11 @@ libmhdt_la_LIBADD = \
 test_client_server_SOURCES = \
   test_client_server.c
 test_client_server_LDADD = \
+  libmhdt.la
+
+test_authentication_SOURCES = \
+  test_authentication.c
+test_authentication_LDADD = \
   libmhdt.la
 
 test_tls_SOURCES = \

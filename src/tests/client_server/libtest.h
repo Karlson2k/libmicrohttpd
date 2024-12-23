@@ -376,6 +376,34 @@ MHDT_client_do_post (
 
 
 /**
+ * Perform GET request and send some HTTP basic authentication header
+ * to authorize the request.
+ *
+ * @param cls a string with "$USERNAME:$PASSWORD"
+ * @param pc context for the client
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_client_send_basic_auth (
+  const void *cls,
+  struct MHDT_PhaseContext *pc);
+
+
+/**
+ * Perform GET request and send some HTTP basic authentication header
+ * to authorize the request. Expect authentication to fail.
+ *
+ * @param cls a string with "$USERNAME:$PASSWORD"
+ * @param pc context for the client
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_client_fail_basic_auth (
+  const void *cls,
+  struct MHDT_PhaseContext *pc);
+
+
+/**
  * Returns the text from @a cls as the response to any
  * request.
  *
@@ -595,6 +623,35 @@ MHDT_server_reply_check_upload (
  */
 const struct MHD_Action *
 MHDT_server_reply_check_post (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size);
+
+
+/**
+ * Checks that the client request includes the given
+ * username and password in HTTP basic authetnication.
+ * If so, returns #MHD_HTTP_STATUS_NO_CONTENT, otherwise
+ * an #MHD_HTTP_STATUS_UNAUTHORIZED.
+ *
+ * @param cls expected upload data as a 0-terminated string.
+ * @param request the request object
+ * @param path the requested uri (without arguments after "?")
+ * @param method the HTTP method used (#MHD_HTTP_METHOD_GET,
+ *        #MHD_HTTP_METHOD_PUT, etc.)
+ * @param upload_size the size of the message upload content payload,
+ *                    #MHD_SIZE_UNKNOWN for chunked uploads (if the
+ *                    final chunk has not been processed yet)
+ * @return action how to proceed, NULL
+ *         if the request must be aborted due to a serious
+ *         error while handling the request (implies closure
+ *         of underling data stream, for HTTP/1.1 it means
+ *         socket closure).
+ */
+const struct MHD_Action *
+MHDT_server_reply_check_basic_auth (
   void *cls,
   struct MHD_Request *MHD_RESTRICT request,
   const struct MHD_String *MHD_RESTRICT path,

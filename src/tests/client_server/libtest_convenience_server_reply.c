@@ -723,3 +723,69 @@ MHDT_server_reply_check_post (
                                 &post_stream_done,
                                 pi);
 }
+
+
+const struct MHD_Action *
+MHDT_server_reply_check_basic_auth (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size)
+{
+  const char *cred = cls;
+  union MHD_RequestInfoDynamicData dd;
+  enum MHD_StatusCode sc;
+  struct MHD_BasicAuthInfo *ba;
+  struct MHD_Connection *connection; // FIXME - suboptimal API
+  union MHD_RequestInfoFixedData rif;
+
+#define FIXME 1
+#if FIXME
+  sc = MHD_request_get_info_fixed (request,
+                                   MHD_REQUEST_INFO_FIXED_CONNECTION,
+                                   &rif);
+  if (MHD_SC_OK != sc)
+    return NULL;
+  connection = rif.v_connection;
+#endif
+  /* should not be needed, except to make gcc happy */
+  memset (&dd,
+          0,
+          sizeof (dd));
+  sc = MHD_request_get_info_dynamic (request,
+                                     MHD_REQUEST_INFO_DYNAMIC_BAUTH_REQ_INFO,
+                                     &dd);
+  if (MHD_SC_OK != sc)
+    return MHD_action_basic_auth_required_response (
+      connection, // FIXME: I'd like to see 'request' here.
+      "test-realm",
+      MHD_YES,
+      MHD_response_from_empty (
+        MHD_HTTP_STATUS_FORBIDDEN));
+  ba = dd.v_bauth_info;
+  if (NULL == ba)
+    return MHD_action_basic_auth_required_response (
+      connection, // FIXME: I'd like to see 'request' here.
+      "test-realm",
+      MHD_YES,
+      MHD_response_from_empty (
+        MHD_HTTP_STATUS_FORBIDDEN));
+  if ( (0 != strncmp (ba->username.cstr,
+                      cred,
+                      ba->username.len)) ||
+       (':' != cred[ba->username.len]) ||
+       (NULL == ba->password.cstr) ||
+       (0 != strcmp (ba->password.cstr,
+                     &cred[ba->username.len + 1])) )
+    return MHD_action_basic_auth_required_response (
+      connection, // FIXME: I'd like to see 'request' here.
+      "test-realm",
+      MHD_YES,
+      MHD_response_from_empty (
+        MHD_HTTP_STATUS_FORBIDDEN));
+  return MHD_action_from_response (
+    request,
+    MHD_response_from_empty (
+      MHD_HTTP_STATUS_NO_CONTENT));
+}
