@@ -9947,6 +9947,9 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * Pointers in the returned structure (if any) are valid until any MHD_Action
    * or MHD_UploadAction is provided. If the data is needed beyond this point,
    * it should be copied.
+   * If #MHD_request_get_info_dynamic_sz() returns #MHD_SC_OK then
+   * @a v_auth_basic_creds is NOT NULL and at least the username data
+   * is provided.
    * The result is placed in @a v_auth_basic_creds member.
    */
   MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS = 51
@@ -9999,7 +10002,9 @@ union MHD_RequestInfoDynamicData
   const struct MHD_DigestAuthInfo *v_dauth_info;
 
   /**
-   * The information about client's basic auth
+   * The information about client's basic auth.
+   * If #MHD_request_get_info_dynamic_sz() returns #MHD_SC_OK then this pointer
+   * is NOT NULL and at least the username data is provided.
    */
   const struct MHD_BasicAuthInfo *v_auth_basic_creds;
 };
@@ -10034,7 +10039,7 @@ union MHD_RequestInfoDynamicData
  *         #MHD_SC_CONNECTION_POOL_NO_MEM_AUTH_DATA if connection memory pool
  *                                                  has no space to put decoded
  *                                                  authentication data,
- *         #MHD_SC_REQ_AUTH_DATA_BROKEN if format of authentication data is
+ *         #MHD_SC_REQ_AUTH_DATA_BROKEN if the format of authentication data is
  *                                      incorrect or broken,
  *         other error code otherwise
  * @ingroup specialized
