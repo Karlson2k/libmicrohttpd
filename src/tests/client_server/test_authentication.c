@@ -53,6 +53,7 @@ main (int argc, char *argv[])
     },
   };
   struct MHDT_Phase phases[] = {
+#if FIXME
     {
       .label = "simple basic authentication",
       .server_cb = &MHDT_server_reply_check_basic_auth,
@@ -69,7 +70,23 @@ main (int argc, char *argv[])
       .client_cb_cls = (void *) "username:word", /* incorrect on purpose */
       .timeout_ms = 200,
     },
-    // TODO: digest auth
+#endif
+    {
+      .label = "simple digest authentication",
+      .server_cb = &MHDT_server_reply_check_digest_auth,
+      .server_cb_cls = (void *) "username:password",
+      .client_cb = &MHDT_client_send_digest_auth,
+      .client_cb_cls = (void *) "username:password",
+      .timeout_ms = 200,
+    },
+    {
+      .label = "failing digest authentication",
+      .server_cb = &MHDT_server_reply_check_digest_auth,
+      .server_cb_cls = (void *) "username:password",
+      .client_cb = &MHDT_client_fail_digest_auth,
+      .client_cb_cls = (void *) "username:word", /* incorrect on purpose */
+      .timeout_ms = 200,
+    },
     {
       .label = NULL,
     },

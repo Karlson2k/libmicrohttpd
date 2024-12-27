@@ -6945,7 +6945,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    void *MHD_RESTRICT recv_buf,
                    size_t *MHD_RESTRICT received_size,
                    uint_fast64_t max_wait_millisec)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_(3,2)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4);
 
 
@@ -7000,7 +7000,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    size_t *MHD_RESTRICT sent_size,
                    uint_fast64_t max_wait_millisec,
                    enum MHD_Bool more_data_to_come)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_(3,2)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4);
 
 
@@ -7882,6 +7882,7 @@ MHD_FN_PAR_OUT_SIZE_ (6,5);
  *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
  *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
  *                        #MHD_digest_get_hash_size())
+ *   FIXME: why pass it if it must anyway match????
  * @param nonce_timeout the period of seconds since nonce generation, when
  *                      the nonce is recognised as valid and not stale;
  *                      if zero is specified then daemon default value is used.
@@ -8292,7 +8293,7 @@ MHD_response_add_auth_basic_challenge (
   struct MHD_Response *MHD_RESTRICT response,
   const char *MHD_RESTRICT realm,
   enum MHD_Bool prefer_utf8)
-MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2);
 
 #ifndef MHD_NO_STATIC_INLINE
 

@@ -33,7 +33,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <curl/curl.h>
-
+#include <assert.h>
 
 const struct MHD_Action *
 MHDT_server_reply_text (
@@ -757,17 +757,7 @@ MHDT_server_reply_check_basic_auth (
         MHD_HTTP_STATUS_UNAUTHORIZED));
   }
   ba = dd.v_auth_basic_creds;
-  if (NULL == ba)
-  {
-    fprintf (stderr,
-             "No credentials??\n");
-    return MHD_action_basic_auth_challenge_p (
-      request,
-      "test-realm",
-      MHD_YES,
-      MHD_response_from_empty (
-        MHD_HTTP_STATUS_UNAUTHORIZED));
-  }
+  assert (NULL != ba);
   if ( (0 != strncmp (ba->username.cstr,
                       cred,
                       ba->username.len)) ||
@@ -787,6 +777,77 @@ MHDT_server_reply_check_basic_auth (
       MHD_YES,
       MHD_response_from_empty (
         MHD_HTTP_STATUS_UNAUTHORIZED));
+  }
+  return MHD_action_from_response (
+    request,
+    MHD_response_from_empty (
+      MHD_HTTP_STATUS_NO_CONTENT));
+}
+
+
+const struct MHD_Action *
+MHDT_server_reply_check_digest_auth (
+  void *cls,
+  struct MHD_Request *MHD_RESTRICT request,
+  const struct MHD_String *MHD_RESTRICT path,
+  enum MHD_HTTP_Method method,
+  uint_fast64_t upload_size)
+{
+  const char *cred = cls;
+  const char *colon = strchr (cred, ':');
+  char *username;
+  const char *password;
+  enum MHD_DigestAuthResult dar;
+
+  assert (NULL != colon);
+  password = colon + 1;
+  username = strndup (cred,
+                      colon - cred);
+  assert (NULL != username);
+  dar = MHD_digest_auth_check_digest (request,
+                                      "test-realm",
+                                      username,
+                                      password,
+                                      MHD_SHA256_DIGEST_SIZE,
+                                      0, /* nonce timeout in seconds; 0: default */
+                                      0, /* maximum nonce counter; 0: default */
+                                      MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                      MHD_DIGEST_AUTH_MULT_ALGO_SHA256);
+
+  free (username);
+  if (MHD_DAUTH_OK != dar)
+  {
+    struct MHD_Response *resp;
+    enum MHD_StatusCode sc;
+
+    resp = MHD_response_from_empty (
+      MHD_HTTP_STATUS_UNAUTHORIZED);
+    if (NULL == resp)
+    {
+      fprintf (stderr,
+               "Failed to create response body\n");
+      return NULL;
+    }
+    sc = MHD_response_add_auth_digest_challenge (
+      resp,
+      "test-realm",
+      "opaque",
+      NULL, /* domain */
+      MHD_YES,                        /* indicate stale */
+      MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+      MHD_DIGEST_AUTH_MULT_ALGO_SHA256,
+      MHD_YES /* userhash_support */,
+      MHD_YES /* prefer UTF8 */);
+    if (MHD_SC_OK != sc)
+    {
+      fprintf (stderr,
+               "MHD_response_add_auth_digest_challenge failed: %d\n",
+               (int) sc);
+      return NULL;
+    }
+    return MHD_action_from_response (
+      request,
+      resp);
   }
   return MHD_action_from_response (
     request,
