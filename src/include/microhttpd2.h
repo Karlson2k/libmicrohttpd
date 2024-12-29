@@ -7851,7 +7851,7 @@ MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo algo,
                                  const char *realm,
                                  const char *password,
                                  size_t bin_buf_size,
-                                 void *userdigest_bin)
+                                 void *MHD_RESTRICT userdigest_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_CSTR_ (3)

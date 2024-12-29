@@ -798,22 +798,44 @@ MHDT_server_reply_check_digest_auth (
   char *username;
   const char *password;
   enum MHD_DigestAuthResult dar;
+  const char *realm = "test-realm";
+  enum MHD_DigestAuthAlgo algo = MHD_DIGEST_AUTH_MULT_ALGO_SHA256;
+  size_t digest_len = MHD_digest_get_hash_size (algo);
 
+  if (0 == digest_len)
+    return NULL;
   assert (NULL != colon);
   password = colon + 1;
   username = strndup (cred,
                       colon - cred);
   assert (NULL != username);
-  dar = MHD_digest_auth_check_digest (request,
-                                      "test-realm",
-                                      username,
-                                      password,
-                                      MHD_SHA256_DIGEST_SIZE,
-                                      0, /* nonce timeout in seconds; 0: default */
-                                      0, /* maximum nonce counter; 0: default */
-                                      MHD_DIGEST_AUTH_MULT_QOP_AUTH,
-                                      MHD_DIGEST_AUTH_MULT_ALGO_SHA256);
+  {
+    enum MHD_StatusCode sc;
+    char digest[digest_len];
 
+    sc = MHD_digest_auth_calc_userdigest (algo,
+                                          username,
+                                          realm,
+                                          password,
+                                          sizeof (digest),
+                                          digest);
+    if (MHD_SC_OK != sc)
+    {
+      fprintf (stderr,
+               "MHD_digest_auth_calc_userhash: %d\n",
+               (int) sc);
+      return NULL;
+    }
+    dar = MHD_digest_auth_check_digest (request,
+                                        realm,
+                                        username,
+                                        digest,
+                                        sizeof (digest),
+                                        0, /* nonce timeout in seconds; 0: default */
+                                        0, /* maximum nonce counter; 0: default */
+                                        MHD_DIGEST_AUTH_MULT_QOP_AUTH,
+                                        algo);
+  }
   free (username);
   if (MHD_DAUTH_OK != dar)
   {
