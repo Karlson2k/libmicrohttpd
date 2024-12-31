@@ -49,7 +49,7 @@ req_cb (void *cls,
   static const size_t allowed_password_len =
     (sizeof(allowed_password) / sizeof(char) - 1);
   union MHD_RequestInfoDynamicData req_data;
-  const struct MHD_BasicAuthInfo *creds; /* a shortcut */
+  const struct MHD_AuthBasicCreds *creds; /* a shortcut */
   enum MHD_StatusCode res;
 
   (void) cls;

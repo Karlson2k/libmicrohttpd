@@ -45,7 +45,7 @@
 MHD_INTERNAL enum MHD_StatusCode
 mhd_request_get_auth_basic_creds (
   struct MHD_Request *restrict req,
-  const struct MHD_BasicAuthInfo **restrict v_auth_basic_creds)
+  const struct MHD_AuthBasicCreds **restrict v_auth_basic_creds)
 MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
 
 #endif /* ! MHD_AUTH_BASIC_H */

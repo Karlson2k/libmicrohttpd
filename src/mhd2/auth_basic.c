@@ -117,7 +117,7 @@ MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_ (2) enum MHD_StatusCode
 mhd_request_get_auth_basic_creds (
   struct MHD_Request *restrict req,
-  const struct MHD_BasicAuthInfo **restrict v_auth_basic_creds)
+  const struct MHD_AuthBasicCreds **restrict v_auth_basic_creds)
 {
   enum MHD_StatusCode res;
   mhd_assert (mhd_HTTP_STAGE_HEADERS_PROCESSED <=

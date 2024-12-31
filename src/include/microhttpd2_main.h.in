@@ -3664,7 +3664,7 @@ MHD_STATIC_INLINE_END_
  *
  * If access to any resource should be limited to specific users, authenticated
  * by Basic Authentication mechanism, and the request for this resource does not
- * have Basic Authentication information (see #MHD_BasicAuthInfo), then response
+ * have Basic Authentication information (see #MHD_AuthBasicCreds), then response
  * with Basic Authentication "challenge" should be sent. This works as
  * an indication that Basic Authentication should be used for the access.
  *
@@ -3711,7 +3711,7 @@ MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
  *
  * If access to any resource should be limited to specific users, authenticated
  * by Basic Authentication mechanism, and the request for this resource does not
- * have Basic Authentication information (see #MHD_BasicAuthInfo), then response
+ * have Basic Authentication information (see #MHD_AuthBasicCreds), then response
  * with Basic Authentication "challenge" should be sent. This works as
  * an indication that Basic Authentication should be used for the access.
  *
@@ -3840,7 +3840,7 @@ MHD_STATIC_INLINE_END_
  *
  * @see #MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS
  */
-struct MHD_BasicAuthInfo
+struct MHD_AuthBasicCreds
 {
   /**
    * The username
@@ -5410,11 +5410,11 @@ union MHD_RequestInfoDynamicData
   const struct MHD_DigestAuthInfo *v_dauth_info;
 
   /**
-   * The information about client's basic auth.
+   * The username and password provided by the client's basic auth header.
    * If #MHD_request_get_info_dynamic_sz() returns #MHD_SC_OK then this pointer
    * is NOT NULL and at least the username data is provided.
    */
-  const struct MHD_BasicAuthInfo *v_auth_basic_creds;
+  const struct MHD_AuthBasicCreds *v_auth_basic_creds;
 };
 
 

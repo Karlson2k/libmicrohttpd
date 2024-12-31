@@ -287,8 +287,8 @@ union mhd_ReqContentParsingData
 #ifdef MHD_SUPPORT_AUTH_BASIC
 /**
  * Request Basic Auth internal data
- * The same format as struct MHD_BasicAuthInfo, but wiht nullable username.
- * Keep in sync with MHD_BasicAuthInfo!
+ * The same format as struct MHD_AuthBasicCreds, but wiht nullable username.
+ * Keep in sync with MHD_AuthBasicCreds!
  */
 struct mhd_ReqAuthBasicInternalData
 {
@@ -315,7 +315,7 @@ union mhd_ReqAuthBasicData
   /**
    * The external (application) Basic Auth data
    */
-  struct MHD_BasicAuthInfo extr;
+  struct MHD_AuthBasicCreds extr;
 };
 
 #endif /* MHD_SUPPORT_AUTH_BASIC */

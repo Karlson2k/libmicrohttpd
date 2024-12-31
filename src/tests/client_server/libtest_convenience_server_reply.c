@@ -736,7 +736,7 @@ MHDT_server_reply_check_basic_auth (
   const char *cred = cls;
   union MHD_RequestInfoDynamicData dd;
   enum MHD_StatusCode sc;
-  const struct MHD_BasicAuthInfo *ba;
+  const struct MHD_AuthBasicCreds *ba;
 
   /* should not be needed, except to make gcc happy */
   memset (&dd,
