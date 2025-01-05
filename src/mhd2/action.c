@@ -60,13 +60,17 @@ MHD_action_from_response (struct MHD_Request *request,
                           struct MHD_Response *response)
 {
   struct MHD_Action *const restrict head_act = &(request->app_act.head_act);
-  if (mhd_ACTION_NO_ACTION != head_act->act)
-    return (const struct MHD_Action *) NULL;
   if (NULL == response)
     return (const struct MHD_Action *) NULL;
 
   mhd_response_check_frozen_freeze (response);
   mhd_response_inc_use_count (response);
+
+  if (mhd_ACTION_NO_ACTION != head_act->act)
+  {
+    mhd_response_dec_use_count (response);
+    return (const struct MHD_Action *) NULL;
+  }
 
   head_act->act = mhd_ACTION_RESPONSE;
   head_act->data.response = response;
@@ -249,11 +253,15 @@ MHD_upload_action_from_response (struct MHD_Request *request,
     &(request->app_act.upl_act);
   if (NULL == response)
     return (const struct MHD_UploadAction *) NULL;
-  if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
-    return (const struct MHD_UploadAction *) NULL;
 
   mhd_response_check_frozen_freeze (response);
   mhd_response_inc_use_count (response);
+
+  if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
+  {
+    mhd_response_dec_use_count (response);
+    return (const struct MHD_UploadAction *) NULL;
+  }
 
   upl_act->act = mhd_UPLOAD_ACTION_RESPONSE;
   upl_act->data.response = response;
