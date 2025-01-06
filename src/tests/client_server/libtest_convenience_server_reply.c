@@ -813,6 +813,9 @@ MHDT_server_reply_check_digest_auth (
     enum MHD_StatusCode sc;
     char digest[digest_len];
 
+    // FIXME: why is this needed? We should not get a warning
+    // even without this memset!
+    memset (digest, 0, sizeof (digest));
     sc = MHD_digest_auth_calc_userdigest (algo,
                                           username,
                                           realm,

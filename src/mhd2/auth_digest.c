@@ -1718,7 +1718,9 @@ digest_update (struct DigestAlgorithm *restrict da,
 {
   mhd_assert (! da->uninitialised);
   mhd_assert (da->algo_selected);
+#ifdef _DEBUG
   mhd_assert (da->ready_for_hashing);
+#endif
   switch (da->algo)
   {
   case MHD_DIGEST_BASE_ALGO_MD5:
@@ -1835,7 +1837,9 @@ digest_calc_hash (struct DigestAlgorithm *da,
 {
   mhd_assert (! da->uninitialised);
   mhd_assert (da->algo_selected);
+#ifdef _DEBUG
   mhd_assert (da->ready_for_hashing);
+#endif
   switch (da->algo)
   {
   case MHD_DIGEST_BASE_ALGO_MD5:
@@ -1966,7 +1970,9 @@ digest_reset (struct DigestAlgorithm *da)
 
   case MHD_DIGEST_BASE_ALGO_INVALID:
   default:
+#ifdef _DEBUG
     da->ready_for_hashing = false;
+#endif
     mhd_UNREACHABLE ();
     break;
   }
