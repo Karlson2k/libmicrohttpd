@@ -26,8 +26,12 @@
 
 #include "mhd_sys_options.h"
 
+#include "mhd_cntnr_ptr.h"
+#include "mhd_connection.h"
+#include "mhd_daemon.h"
 #include "mhd_action.h"
 #include "mhd_request.h"
+#include "mhd_response.h"
 
 #include "daemon_logger.h"
 
@@ -67,6 +71,13 @@ MHD_action_from_response (struct MHD_Request *request,
   mhd_response_inc_use_count (response);
 
   if (mhd_ACTION_NO_ACTION != head_act->act)
+  {
+    mhd_response_dec_use_count (response);
+    return (const struct MHD_Action *) NULL;
+  }
+  if (mhd_RESP_HAD_AUTH_DIGEST (response) &&
+      ! mhd_D_HAS_AUTH_DIGEST ( \
+        mhd_CNTNR_CPTR (request, struct MHD_Connection, rq)->daemon))
   {
     mhd_response_dec_use_count (response);
     return (const struct MHD_Action *) NULL;
@@ -258,6 +269,13 @@ MHD_upload_action_from_response (struct MHD_Request *request,
   mhd_response_inc_use_count (response);
 
   if (mhd_UPLOAD_ACTION_NO_ACTION != upl_act->act)
+  {
+    mhd_response_dec_use_count (response);
+    return (const struct MHD_UploadAction *) NULL;
+  }
+  if (mhd_RESP_HAD_AUTH_DIGEST (response) &&
+      ! mhd_D_HAS_AUTH_DIGEST ( \
+        mhd_CNTNR_CPTR (request, struct MHD_Connection, rq)->daemon))
   {
     mhd_response_dec_use_count (response);
     return (const struct MHD_UploadAction *) NULL;

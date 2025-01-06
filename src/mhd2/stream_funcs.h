@@ -194,7 +194,7 @@ enum mhd_ConnCloseReason
   mhd_CONN_CLOSE_APP_ERROR
   ,
   /**
-   * Application requested about of the stream
+   * Application requested abort of the stream
    */
   mhd_CONN_CLOSE_APP_ABORTED
   ,
@@ -213,6 +213,13 @@ enum mhd_ConnCloseReason
    */
   mhd_CONN_CLOSE_FILE_TOO_SHORT
   ,
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  /**
+   * Error generating nonce for Digest Auth
+   */
+  mhd_CONN_CLOSE_NONCE_ERROR
+  ,
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
 
   /* Hard problem while receiving or sending */
   /**

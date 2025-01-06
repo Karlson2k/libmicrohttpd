@@ -320,7 +320,39 @@ union mhd_ReqAuthBasicData
 
 #endif /* MHD_SUPPORT_AUTH_BASIC */
 
-#if defined(MHD_SUPPORT_AUTH_BASIC)
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+
+struct mhd_AuthDigesReqParams; /* forward declaration */
+
+/**
+ * Request Digest Auth data
+ */
+struct mhd_ReqAuthDigestData
+{
+  /**
+   * Request Digest Auth pre-parsed data
+   */
+  struct mhd_AuthDigesReqParams *rqp;
+  /**
+   * When set to value other then #MHD_SC_OK,
+   * indicates request Digest Auth header parsing error.
+   */
+  enum MHD_StatusCode parse_result;
+  /**
+   * The information about client's Digest Auth header.
+   * NULL if not yet parsed or not found.
+   */
+  struct MHD_AuthDigestInfo *info;
+  /**
+   * The information about client's provided username.
+   * May point to the same address as @a info.
+   * NULL if not yet parsed or not found.
+   */
+  struct MHD_AuthDigestUsernameInfo *uname;
+};
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
+
+#if defined(MHD_SUPPORT_AUTH_BASIC) || defined(MHD_SUPPORT_AUTH_DIGEST)
 /**
  * Defined if any Authentication scheme is supported
  */
@@ -340,6 +372,12 @@ struct mhd_ReqAuthData
    */
   union mhd_ReqAuthBasicData basic;
 #endif /* MHD_SUPPORT_AUTH_BASIC */
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  /**
+   * Request Digest Auth data
+   */
+  struct mhd_ReqAuthDigestData digest;
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
 };
 
 #endif /* mhd_SUPPORT_AUTH */

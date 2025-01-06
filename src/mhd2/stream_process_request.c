@@ -1141,7 +1141,7 @@ request_add_get_arg (void *restrict cls,
 
 MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
-MHD_FN_PAR_INOUT_ (2) bool
+MHD_FN_PAR_INOUT_SIZE_ (2, 1) bool
 // TODO: detect and report errors
 mhd_parse_get_args (size_t args_len,
                     char *restrict args,

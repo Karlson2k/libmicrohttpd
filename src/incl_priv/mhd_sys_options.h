@@ -487,12 +487,12 @@
            (FUNC_ATTR_PTRCOMPARE_WORKS || FUNC_ATTR_NOSANITIZE_WORKS))   */
 
 #ifndef _MSC_FULL_VER
-#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_ /* empty */
-#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ /* empty */
+#  define mhd_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE /* empty */
+#  define mhd_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE /* empty */
 #else  /* _MSC_FULL_VER */
-#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_ \
+#  define mhd_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE \
         __pragma(runtime_checks("c", off))
-#  define MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_ \
+#  define mhd_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE \
         __pragma(runtime_checks("c", restore))
 #endif /* _MSC_FULL_VER */
 

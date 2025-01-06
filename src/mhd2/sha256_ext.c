@@ -36,7 +36,7 @@
  * @param ctx the calculation context
  */
 void
-MHD_SHA256_init_one_time (struct Sha256CtxExt *ctx)
+mhd_SHA256_init_one_time (struct mhd_Sha256CtxExt *ctx)
 {
   ctx->handle = NULL;
   ctx->ext_error = gnutls_hash_init (&ctx->handle, GNUTLS_DIG_SHA256);
@@ -64,12 +64,12 @@ MHD_SHA256_init_one_time (struct Sha256CtxExt *ctx)
  * @param length number of bytes in @a data
  */
 void
-MHD_SHA256_update (struct Sha256CtxExt *ctx,
-                   const uint8_t *data,
-                   size_t length)
+mhd_SHA256_update (struct mhd_Sha256CtxExt *ctx,
+                   size_t size,
+                   const uint8_t *data)
 {
   if (0 == ctx->ext_error)
-    ctx->ext_error = gnutls_hash (ctx->handle, data, length);
+    ctx->ext_error = gnutls_hash (ctx->handle, data, size);
 }
 
 
@@ -77,11 +77,11 @@ MHD_SHA256_update (struct Sha256CtxExt *ctx,
  * Finalise SHA-256 calculation, return digest, reset hash calculation.
  *
  * @param ctx the calculation context
- * @param[out] digest set to the hash, must be #SHA256_DIGEST_SIZE bytes
+ * @param[out] digest set to the hash, must be #mhd_SHA256_DIGEST_SIZE bytes
  */
 void
-MHD_SHA256_finish_reset (struct Sha256CtxExt *ctx,
-                         uint8_t digest[SHA256_DIGEST_SIZE])
+mhd_SHA256_finish_reset (struct mhd_Sha256CtxExt *ctx,
+                         uint8_t digest[mhd_SHA256_DIGEST_SIZE])
 {
   if (0 == ctx->ext_error)
     gnutls_hash_output (ctx->handle, digest);
@@ -94,7 +94,7 @@ MHD_SHA256_finish_reset (struct Sha256CtxExt *ctx,
  * @param ctx the calculation context
  */
 void
-MHD_SHA256_deinit (struct Sha256CtxExt *ctx)
+mhd_SHA256_deinit (struct mhd_Sha256CtxExt *ctx)
 {
   if (NULL != ctx->handle)
     gnutls_hash_deinit (ctx->handle, NULL);

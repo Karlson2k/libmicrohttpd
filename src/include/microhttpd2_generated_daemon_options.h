@@ -298,6 +298,7 @@ The specified callback will be called one time, after network initialisation, TL
   /**
    * Set strong random data to be used by MHD.
    * Currently the data is only needed for Digest Auth module.
+   * Daemon support for Digest Auth is enabled automatically if this option is used.
    * The recommended size is between 8 and 32 bytes. Security can be lower for sizes less or equal four.
    * Sizes larger then 32 (or, probably, larger than 16 - debatable) will not increase the security.
    */
@@ -307,34 +308,25 @@ The specified callback will be called one time, after network initialisation, TL
   /**
    * Specify the size of the internal hash map array that tracks generated digest nonces usage.
    * When the size of the map is too small then need to handle concurrent DAuth requests, a lot of stale nonce results will be produced.
-   * By default the size is 8 bytes (very small).
+   * By default the size is 1000 entries.
    */
-  MHD_D_O_DAUTH_MAP_SIZE = 401
+  MHD_D_O_AUTH_DIGEST_MAP_SIZE = 401
   ,
 
   /**
-   * Control the scope of validity of MHD-generated nonces.
-   * This regulates how nonces are generated and how nonces are checked by #MHD_digest_auth_check() and similar functions.
-   * This option allows bitwise OR combination of #MHD_DaemonOptionValueDAuthBindNonce values.
-   * When this option is not used then default value is #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
-   */
-  MHD_D_O_DAUTH_NONCE_BIND_TYPE = 402
-  ,
-
-  /**
-   * Default nonce timeout value (in seconds) used for Digest Auth.
-   * Silently ignored if followed by zero value.
+   * Nonce validity time (in seconds) used for Digest Auth.
+   * If followed by zero value the value is silently ignored.
    * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
    */
-  MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT = 403
+  MHD_D_O_AUTH_DIGEST_NONCE_TIMEOUT = 403
   ,
 
   /**
    * Default maximum nc (nonce count) value used for Digest Auth.
-   * Silently ignored if followed by zero value.
+   * If followed by zero value the value is silently ignored.
    * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
    */
-  MHD_D_O_DAUTH_DEF_MAX_NC = 404
+  MHD_D_O_AUTH_DIGEST_DEF_MAX_NC = 404
   ,
 
   /**
@@ -799,28 +791,22 @@ union MHD_DaemonOptionValue
   struct MHD_DaemonOptionEntropySeed random_entropy;
 
   /**
-   * Value for #MHD_D_O_DAUTH_MAP_SIZE.
+   * Value for #MHD_D_O_AUTH_DIGEST_MAP_SIZE.
    * the size of the map array
    */
-  size_t dauth_map_size;
+  size_t auth_digest_map_size;
 
   /**
-   * Value for #MHD_D_O_DAUTH_NONCE_BIND_TYPE.
+   * Value for #MHD_D_O_AUTH_DIGEST_NONCE_TIMEOUT.
    * FIXME
    */
-  enum MHD_DaemonOptionValueDAuthBindNonce dauth_nonce_bind_type;
+  unsigned int auth_digest_nonce_timeout;
 
   /**
-   * Value for #MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT.
+   * Value for #MHD_D_O_AUTH_DIGEST_DEF_MAX_NC.
    * FIXME
    */
-  unsigned int dauth_def_nonce_timeout;
-
-  /**
-   * Value for #MHD_D_O_DAUTH_DEF_MAX_NC.
-   * FIXME
-   */
-  uint_fast32_t dauth_def_max_nc;
+  uint_fast32_t auth_digest_def_max_nc;
 
 };
 
@@ -1396,6 +1382,7 @@ The specified callback will be called one time, after network initialisation, TL
 /**
  * Set strong random data to be used by MHD.
  * Currently the data is only needed for Digest Auth module.
+ * Daemon support for Digest Auth is enabled automatically if this option is used.
  * The recommended size is between 8 and 32 bytes. Security can be lower for sizes less or equal four.
  * Sizes larger then 32 (or, probably, larger than 16 - debatable) will not increase the security.
  * @param buf_size the size of the buffer
@@ -1414,62 +1401,46 @@ The specified callback will be called one time, after network initialisation, TL
 /**
  * Specify the size of the internal hash map array that tracks generated digest nonces usage.
  * When the size of the map is too small then need to handle concurrent DAuth requests, a lot of stale nonce results will be produced.
- * By default the size is 8 bytes (very small).
+ * By default the size is 1000 entries.
  * @param size the size of the map array
  * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_DAUTH_MAP_SIZE(size) \
+#  define MHD_D_OPTION_AUTH_DIGEST_MAP_SIZE(size) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
-          .opt = MHD_D_O_DAUTH_MAP_SIZE,  \
-          .val.dauth_map_size = (size) \
+          .opt = MHD_D_O_AUTH_DIGEST_MAP_SIZE,  \
+          .val.auth_digest_map_size = (size) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
- * Control the scope of validity of MHD-generated nonces.
- * This regulates how nonces are generated and how nonces are checked by #MHD_digest_auth_check() and similar functions.
- * This option allows bitwise OR combination of #MHD_DaemonOptionValueDAuthBindNonce values.
- * When this option is not used then default value is #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
- * @param bind_type FIXME
- * @return structure with the requested setting
- */
-#  define MHD_D_OPTION_DAUTH_NONCE_BIND_TYPE(bind_type) \
-        MHD_NOWARN_COMPOUND_LITERALS_ \
-          (const struct MHD_DaemonOptionAndValue) \
-        { \
-          .opt = MHD_D_O_DAUTH_NONCE_BIND_TYPE,  \
-          .val.dauth_nonce_bind_type = (bind_type) \
-        } \
-        MHD_RESTORE_WARN_COMPOUND_LITERALS_
-/**
- * Default nonce timeout value (in seconds) used for Digest Auth.
- * Silently ignored if followed by zero value.
+ * Nonce validity time (in seconds) used for Digest Auth.
+ * If followed by zero value the value is silently ignored.
  * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
  * @param timeout FIXME
  * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT(timeout) \
+#  define MHD_D_OPTION_AUTH_DIGEST_NONCE_TIMEOUT(timeout) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
-          .opt = MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT,  \
-          .val.dauth_def_nonce_timeout = (timeout) \
+          .opt = MHD_D_O_AUTH_DIGEST_NONCE_TIMEOUT,  \
+          .val.auth_digest_nonce_timeout = (timeout) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
  * Default maximum nc (nonce count) value used for Digest Auth.
- * Silently ignored if followed by zero value.
+ * If followed by zero value the value is silently ignored.
  * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
  * @param max_nc FIXME
  * @return structure with the requested setting
  */
-#  define MHD_D_OPTION_DAUTH_DEF_MAX_NC(max_nc) \
+#  define MHD_D_OPTION_AUTH_DIGEST_DEF_MAX_NC(max_nc) \
         MHD_NOWARN_COMPOUND_LITERALS_ \
           (const struct MHD_DaemonOptionAndValue) \
         { \
-          .opt = MHD_D_O_DAUTH_DEF_MAX_NC,  \
-          .val.dauth_def_max_nc = (max_nc) \
+          .opt = MHD_D_O_AUTH_DIGEST_DEF_MAX_NC,  \
+          .val.auth_digest_def_max_nc = (max_nc) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 
@@ -2268,6 +2239,7 @@ MHD_D_OPTION_NOTIFY_STREAM (
 /**
  * Set strong random data to be used by MHD.
  * Currently the data is only needed for Digest Auth module.
+ * Daemon support for Digest Auth is enabled automatically if this option is used.
  * The recommended size is between 8 and 32 bytes. Security can be lower for sizes less or equal four.
  * Sizes larger then 32 (or, probably, larger than 16 - debatable) will not increase the security.
  * @param buf_size the size of the buffer
@@ -2293,62 +2265,40 @@ MHD_D_OPTION_RANDOM_ENTROPY (
 /**
  * Specify the size of the internal hash map array that tracks generated digest nonces usage.
  * When the size of the map is too small then need to handle concurrent DAuth requests, a lot of stale nonce results will be produced.
- * By default the size is 8 bytes (very small).
+ * By default the size is 1000 entries.
  * @param size the size of the map array
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_MAP_SIZE (
+MHD_D_OPTION_AUTH_DIGEST_MAP_SIZE (
   size_t size
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = MHD_D_O_DAUTH_MAP_SIZE;
-  opt_val.val.dauth_map_size = size;
+  opt_val.opt = MHD_D_O_AUTH_DIGEST_MAP_SIZE;
+  opt_val.val.auth_digest_map_size = size;
 
   return opt_val;
 }
 
 
 /**
- * Control the scope of validity of MHD-generated nonces.
- * This regulates how nonces are generated and how nonces are checked by #MHD_digest_auth_check() and similar functions.
- * This option allows bitwise OR combination of #MHD_DaemonOptionValueDAuthBindNonce values.
- * When this option is not used then default value is #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
- * @param bind_type FIXME
- * @return structure with the requested setting
- */
-static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_NONCE_BIND_TYPE (
-  enum MHD_DaemonOptionValueDAuthBindNonce bind_type
-  )
-{
-  struct MHD_DaemonOptionAndValue opt_val;
-
-  opt_val.opt = MHD_D_O_DAUTH_NONCE_BIND_TYPE;
-  opt_val.val.dauth_nonce_bind_type = bind_type;
-
-  return opt_val;
-}
-
-
-/**
- * Default nonce timeout value (in seconds) used for Digest Auth.
- * Silently ignored if followed by zero value.
+ * Nonce validity time (in seconds) used for Digest Auth.
+ * If followed by zero value the value is silently ignored.
  * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
  * @param timeout FIXME
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT (
+MHD_D_OPTION_AUTH_DIGEST_NONCE_TIMEOUT (
   unsigned int timeout
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT;
-  opt_val.val.dauth_def_nonce_timeout = timeout;
+  opt_val.opt = MHD_D_O_AUTH_DIGEST_NONCE_TIMEOUT;
+  opt_val.val.auth_digest_nonce_timeout = timeout;
 
   return opt_val;
 }
@@ -2356,20 +2306,20 @@ MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT (
 
 /**
  * Default maximum nc (nonce count) value used for Digest Auth.
- * Silently ignored if followed by zero value.
+ * If followed by zero value the value is silently ignored.
  * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
  * @param max_nc FIXME
  * @return structure with the requested setting
  */
 static MHD_INLINE struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_DEF_MAX_NC (
+MHD_D_OPTION_AUTH_DIGEST_DEF_MAX_NC (
   uint_fast32_t max_nc
   )
 {
   struct MHD_DaemonOptionAndValue opt_val;
 
-  opt_val.opt = MHD_D_O_DAUTH_DEF_MAX_NC;
-  opt_val.val.dauth_def_max_nc = max_nc;
+  opt_val.opt = MHD_D_O_AUTH_DIGEST_DEF_MAX_NC;
+  opt_val.val.auth_digest_def_max_nc = max_nc;
 
   return opt_val;
 }

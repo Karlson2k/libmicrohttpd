@@ -1231,6 +1231,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_REPLY_FILE_READ_ERROR = 50232
   ,
   /**
+   * Failed to generate the nonce for the Digest Auth.
+   */
+  MHD_SC_REPLY_NONCE_ERROR = 50233
+  ,
+  /**
    * Failed to allocate memory in connection's pool for the reply.
    */
   MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE = 50250
@@ -1378,6 +1383,14 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Failed to perform TLS handshake
    */
   MHD_SC_TLS_CONNECTION_HANDSHAKED_FAILED = 51220
+  ,
+  /**
+   * Hashing failed.
+   * Internal hashing function can never fail (and this code is never returned
+   * for them). External hashing function (like TLS backend-based) may fail
+   * for various reasons, like failure of hardware acccelerated hashing.
+   */
+  MHD_SC_HASH_FAILED = 51260
   ,
   /**
    * Something wrong in the internal MHD logic.
@@ -1593,6 +1606,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_UPGRADED_HANDLE_INVALID = 60161
   ,
   /**
+   * The provided output buffer is too small.
+   */
+  MHD_SC_OUT_BUFF_TOO_SMALL = 60180
+  ,
+  /**
    * The requested type of information is not recognised.
    */
   MHD_SC_INFO_GET_TYPE_UNKNOWN = 60200
@@ -1628,7 +1646,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_AUTH_DIGEST_ALGO_NOT_SUPPORTED = 60240
   ,
   /**
-   * The the Digest Auth QOP value is unknown or not supported.
+   * The Digest Auth QOP value is unknown or not supported.
    */
   MHD_SC_AUTH_DIGEST_QOP_NOT_SUPPORTED = 60241
 };
@@ -3893,6 +3911,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
   MHD_REQUEST_ENDED_FILE_ERROR = 51
   ,
   /**
+   * The request was aborted due to error generating valid nonce for Digest Auth
+   * @ingroup request
+   */
+  MHD_REQUEST_ENDED_NONCE_ERROR = 52
+  ,
+  /**
    * Closing the session since MHD is being shut down.
    * @ingroup request
    */
@@ -4412,6 +4436,7 @@ MHD_D_OPTION_NOTIFY_STREAM (
 /**
  * Set strong random data to be used by MHD.
  * Currently the data is only needed for Digest Auth module.
+ * Daemon support for Digest Auth is enabled automatically if this option is used.
  * The recommended size is between 8 and 32 bytes. Security can be lower for sizes less or equal four.
  * Sizes larger then 32 (or, probably, larger than 16 - debatable) will not increase the security.
  * @param buf_size the size of the buffer
@@ -4427,49 +4452,36 @@ MHD_D_OPTION_RANDOM_ENTROPY (
 /**
  * Specify the size of the internal hash map array that tracks generated digest nonces usage.
  * When the size of the map is too small then need to handle concurrent DAuth requests, a lot of stale nonce results will be produced.
- * By default the size is 8 bytes (very small).
+ * By default the size is 1000 entries.
  * @param size the size of the map array
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_MAP_SIZE (
+MHD_D_OPTION_AUTH_DIGEST_MAP_SIZE (
   size_t size
   );
 
 /**
- * Control the scope of validity of MHD-generated nonces.
- * This regulates how nonces are generated and how nonces are checked by #MHD_digest_auth_check() and similar functions.
- * This option allows bitwise OR combination of #MHD_DaemonOptionValueDAuthBindNonce values.
- * When this option is not used then default value is #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
- * @param bind_type FIXME
- * @return structure with the requested setting
- */
-struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_NONCE_BIND_TYPE (
-  enum MHD_DaemonOptionValueDAuthBindNonce bind_type
-  );
-
-/**
- * Default nonce timeout value (in seconds) used for Digest Auth.
- * Silently ignored if followed by zero value.
+ * Nonce validity time (in seconds) used for Digest Auth.
+ * If followed by zero value the value is silently ignored.
  * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
  * @param timeout FIXME
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_DEF_NONCE_TIMEOUT (
+MHD_D_OPTION_AUTH_DIGEST_NONCE_TIMEOUT (
   unsigned int timeout
   );
 
 /**
  * Default maximum nc (nonce count) value used for Digest Auth.
- * Silently ignored if followed by zero value.
+ * If followed by zero value the value is silently ignored.
  * @see #MHD_digest_auth_check(), MHD_digest_auth_check_digest()
  * @param max_nc FIXME
  * @return structure with the requested setting
  */
 struct MHD_DaemonOptionAndValue
-MHD_D_OPTION_DAUTH_DEF_MAX_NC (
+MHD_D_OPTION_AUTH_DIGEST_DEF_MAX_NC (
   uint_fast32_t max_nc
   );
 
@@ -6945,7 +6957,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    void *MHD_RESTRICT recv_buf,
                    size_t *MHD_RESTRICT received_size,
                    uint_fast64_t max_wait_millisec)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_ (3,2)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_(3,2)
 MHD_FN_PAR_OUT_ (4);
 
 
@@ -7000,7 +7012,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    size_t *MHD_RESTRICT sent_size,
                    uint_fast64_t max_wait_millisec,
                    enum MHD_Bool more_data_to_come)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_(3,2)
 MHD_FN_PAR_OUT_ (4);
 
 
@@ -7098,7 +7110,7 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthAlgo
 {
   /**
    * Unknown or wrong algorithm type.
-   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * Used in struct MHD_AuthDigestInfo to indicate client value that
    * cannot by identified.
    */
   MHD_DIGEST_AUTH_ALGO_INVALID = 0
@@ -7145,12 +7157,12 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthAlgo
 
 
 /**
- * Get digest size for specified algorithm.
+ * Get digest size in bytes for specified algorithm.
  *
  * The size of the digest specifies the size of the userhash, userdigest
  * and other parameters which size depends on used hash algorithm.
  * @param algo the algorithm to check
- * @return the size of the digest (either #MHD_MD5_DIGEST_SIZE or
+ * @return the size (in bytes) of the digest (either #MHD_MD5_DIGEST_SIZE or
  *         #MHD_SHA256_DIGEST_SIZE/MHD_SHA512_256_DIGEST_SIZE)
  *         or zero if the input value is not supported or not valid
  * @sa #MHD_digest_auth_calc_userdigest()
@@ -7314,15 +7326,18 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiAlgo
  *                          upon return
  * @param bin_buf_size the size of the @a userhash_bin buffer, must be
  *                     at least #MHD_digest_get_hash_size() bytes long
- * @return MHD_SC_OK on success,
- *         error code otherwise
+ * @return #MHD_SC_OK on success,
+ *         #MHD_SC_OUT_BUFF_TOO_SMALL if @a bin_buf_size is too small,
+ *         #MHD_SC_HASH_FAILED if hashing failed,
+ *         #MHD_SC_AUTH_DIGEST_ALGO_NOT_SUPPORTED if requested @a algo is
+ *                                                unknown or unsupported.
  * @sa #MHD_digest_auth_calc_userhash_hex()
  * @ingroup authentication
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_digest_auth_calc_userhash (enum MHD_DigestAuthAlgo algo,
-                               const char *username,
-                               const char *realm,
+                               const char *MHD_RESTRICT username,
+                               const char *MHD_RESTRICT realm,
                                size_t bin_buf_size,
                                void *MHD_RESTRICT userhash_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
@@ -7360,17 +7375,20 @@ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (5,4);
  * @param[out] userhash_hex the output buffer for userhash as hex string;
  *                          if this function succeeds, then this buffer has
  *                          #MHD_digest_get_hash_size()*2 chars long
- *                          userhash zero-terminated string
- * @return MHD_SC_OK on success,
- *         error code otherwise
+ *                          userhash string plus one zero-termination char
+ * @return #MHD_SC_OK on success,
+ *         #MHD_SC_OUT_BUFF_TOO_SMALL if @a bin_buf_size is too small,
+ *         #MHD_SC_HASH_FAILED if hashing failed,
+ *         #MHD_SC_AUTH_DIGEST_ALGO_NOT_SUPPORTED if requested @a algo is
+ *                                                unknown or unsupported.
  * @sa #MHD_digest_auth_calc_userhash()
  * @ingroup authentication
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_digest_auth_calc_userhash_hex (
   enum MHD_DigestAuthAlgo algo,
-  const char *username,
-  const char *realm,
+  const char *MHD_RESTRICT username,
+  const char *MHD_RESTRICT realm,
   size_t hex_buf_size,
   char userhash_hex[MHD_FN_PAR_DYN_ARR_SIZE_ (hex_buf_size)])
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_CSTR_ (2)
@@ -7383,7 +7401,7 @@ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (5,4);
  * Values are sorted so simplified checks could be used.
  * For example:
  * * (value <= MHD_DIGEST_AUTH_UNAME_TYPE_INVALID) is true if no valid username
- *   is provided by the client
+ *   is provided by the client (not used currently)
  * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_USERHASH) is true if username is
  *   provided in any form
  * * (value >= MHD_DIGEST_AUTH_UNAME_TYPE_STANDARD) is true if username is
@@ -7393,7 +7411,8 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthUsernameType
 {
   /**
    * No username parameter in in Digest Authorization header.
-   * This should be treated as an error.
+   * Not used currently. Value #MHD_SC_REQ_AUTH_DATA_BROKEN is returned
+   * by #MHD_request_get_info_dynamic_sz() if the request has no username.
    */
   MHD_DIGEST_AUTH_UNAME_TYPE_MISSING = 0
   ,
@@ -7420,10 +7439,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthUsernameType
   /**
    * The invalid combination of username parameters are used by client.
    * Either:
-   * * both 'username' and 'username*' are used
-   * * 'username*' is used with 'userhash=true'
-   * * 'username*' used with invalid extended notation
-   * * 'username' is not hexadecimal string, while 'userhash' set to 'true'
+   * + both 'username' and 'username*' are used
+   * + 'username*' is used with 'userhash=true'
+   * + 'username*' used with invalid extended notation
+   * + 'username' is not hexadecimal string, while 'userhash' set to 'true'
+   * Not used currently. Value #MHD_SC_REQ_AUTH_DATA_BROKEN is returned
+   * by #MHD_request_get_info_dynamic_sz() if the request has broken username.
    */
   MHD_DIGEST_AUTH_UNAME_TYPE_INVALID = (1u << 0)
 };
@@ -7435,7 +7456,7 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthQOP
 {
   /**
    * Invalid/unknown QOP.
-   * Used in struct MHD_DigestAuthInfo to indicate client value that
+   * Used in struct MHD_AuthDigestInfo to indicate client value that
    * cannot by identified.
    */
   MHD_DIGEST_AUTH_QOP_INVALID = 0
@@ -7515,16 +7536,52 @@ enum MHD_FIXED_ENUM_MHD_APP_SET_ MHD_DigestAuthMultiQOP
 };
 
 /**
- * The invalid value of 'nc' parameter in client Digest Authorization header.
+ * The type of 'nc' (nonce count) value provided in the request
  */
-#define MHD_DIGEST_AUTH_INVALID_NC_VALUE        (0)
+enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthNC
+{
+  /**
+   * Readable hexdecimal non-zero number.
+   * The decoded value is placed in @a nc member of struct MHD_AuthDigestInfo
+   */
+  MHD_DIGEST_AUTH_NC_NUMBER = 1
+  ,
+  /**
+   * Readable zero number.
+   * Compliant clients should not use such values.
+   * Can be treated as invalid request.
+   */
+  MHD_DIGEST_AUTH_NC_ZERO = 2
+  ,
+  /**
+   * 'nc' value is not provided by the client.
+   * Unless old RFC 2069 mode is allowed, this should be treated as invalid
+   * request.
+   */
+  MHD_DIGEST_AUTH_NC_NONE = 3
+  ,
+  /**
+   * 'nc' value is too long to be decoded.
+   * Compliant clients should not use such values.
+   * Can be treated as invalid request.
+   */
+  MHD_DIGEST_AUTH_NC_TOO_LONG = 4
+  ,
+  /**
+   * 'nc' value is too large for uint32_t.
+   * Compliant clients should not use such values.
+   * Can be treated as request with a stale nonce or as invalid request.
+   */
+  MHD_DIGEST_AUTH_NC_TOO_LARGE = 5
+};
+
 
 /**
  * Information from Digest Authorization client's header.
  *
- * @see #MHD_REQUEST_INFO_DYNAMIC_DAUTH_REQ_INFO
+ * @see #MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_INFO
  */
-struct MHD_DigestAuthInfo
+struct MHD_AuthDigestInfo
 {
   /**
    * The algorithm as defined by client.
@@ -7569,7 +7626,7 @@ struct MHD_DigestAuthInfo
    *          data.
    * @sa #MHD_digest_auth_calc_userhash()
    */
-  uint8_t *userhash_bin;
+  const uint8_t *userhash_bin;
 
   /**
    * The size of the data pointed by @a userhash_bin.
@@ -7605,13 +7662,17 @@ struct MHD_DigestAuthInfo
   size_t cnonce_len;
 
   /**
-   * The nc parameter value.
+   * The type of 'nc' (nonce count) value provided in the request.
+   */
+  enum MHD_DigestAuthNC nc_type;
+
+  /**
+   * The nc (nonce count) parameter value.
    * Can be used by application to limit the number of nonce re-uses. If @a nc
    * is higher than application wants to allow, then "auth required" response
    * with 'stale=true' could be used to force client to retry with the fresh
    * 'nonce'.
-   * If not specified by client or does not have hexadecimal digits only, the
-   * value is #MHD_DIGEST_AUTH_INVALID_NC_VALUE.
+   * Set to zero when @a nc_type is not set to #MHD_DIGEST_AUTH_NC_NUMBER.
    */
   uint_fast32_t nc;
 };
@@ -7620,9 +7681,9 @@ struct MHD_DigestAuthInfo
 /**
  * Information from Digest Authorization client's header.
  *
- * @see #MHD_REQUEST_INFO_DYNAMIC_DAUTH_USERNAME_INFO
+ * @see #MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME
  */
-struct MHD_DigestAuthUsernameInfo
+struct MHD_AuthDigestUsernameInfo
 {
   /**
    * The algorithm as defined by client.
@@ -7633,7 +7694,10 @@ struct MHD_DigestAuthUsernameInfo
   /**
    * The type of username used by client.
    * The 'invalid' and 'missing' types are not used in this structure,
-   * instead NULL is returned for #MHD_REQUEST_INFO_DYNAMIC_DAUTH_USERNAME_INFO.
+   * instead #MHD_SC_REQ_AUTH_DATA_BROKEN is returned when
+   * #MHD_request_get_info_dynamic_sz() called with
+   * #MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME and the request has
+   * a broken username data.
    */
   enum MHD_DigestAuthUsernameType uname_type;
 
@@ -7648,7 +7712,7 @@ struct MHD_DigestAuthUsernameInfo
    * The buffer pointed by the @a username becomes invalid when a response
    * for the requested is provided (or request is aborted).
    */
-  struct MHD_String username;
+  struct MHD_StringNullable username;
 
   /**
    * The userhash string.
@@ -7659,7 +7723,7 @@ struct MHD_DigestAuthUsernameInfo
    * for the requested is provided (or request is aborted).
    * @sa #MHD_digest_auth_calc_userhash_hex()
    */
-  struct MHD_String userhash_hex;
+  struct MHD_StringNullable userhash_hex;
 
   /**
    * The userhash decoded to binary form.
@@ -7675,7 +7739,7 @@ struct MHD_DigestAuthUsernameInfo
    *          data.
    * @sa #MHD_digest_auth_calc_userhash()
    */
-  uint8_t *userhash_bin;
+  const uint8_t *userhash_bin;
 };
 
 
@@ -7693,45 +7757,66 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
   ,
   /**
    * General error, like "out of memory".
+   * Authentication may be valid, but cannot be checked.
    */
   MHD_DAUTH_ERROR = 0
   ,
   /**
-   * No "Authorization" header or wrong format of the header.
-   * Also may be returned if required parameters in client Authorisation header
-   * are missing or broken (in invalid format).
+   * No "Authorization" header for Digest Authentication.
    */
-  MHD_DAUTH_WRONG_HEADER = -1
+  MHD_DAUTH_HEADER_MISSING = -1
+  ,
+  /**
+   * Wrong format of the header.
+   * Also returned if required parameters in Authorization header are missing
+   * or broken (in invalid format).
+   */
+  MHD_DAUTH_HEADER_BROKEN = -9
+  ,
+  /**
+   * Unsupported algorithm.
+   */
+  MHD_DAUTH_UNSUPPORTED_ALGO = -10
+  ,
+  /**
+   * Unsupported 'qop'.
+   */
+  MHD_DAUTH_UNSUPPORTED_QOP = -11
+  ,
+  /**
+   * Incorrect userdigest size.
+   */
+  MHD_DAUTH_INVALID_USERDIGEST_SIZE = -15
   ,
   /**
    * Wrong 'username'.
    */
-  MHD_DAUTH_WRONG_USERNAME = -2
+  MHD_DAUTH_WRONG_USERNAME = -17
   ,
   /**
    * Wrong 'realm'.
    */
-  MHD_DAUTH_WRONG_REALM = -3
+  MHD_DAUTH_WRONG_REALM = -18
   ,
   /**
    * Wrong 'URI' (or URI parameters).
    */
-  MHD_DAUTH_WRONG_URI = -4
+  MHD_DAUTH_WRONG_URI = -19
   ,
   /**
    * Wrong 'qop'.
    */
-  MHD_DAUTH_WRONG_QOP = -5
+  MHD_DAUTH_WRONG_QOP = -20
   ,
   /**
    * Wrong 'algorithm'.
    */
-  MHD_DAUTH_WRONG_ALGO = -6
+  MHD_DAUTH_WRONG_ALGO = -21
   ,
   /**
    * Too large (>64 KiB) Authorization parameter value.
    */
-  MHD_DAUTH_TOO_LARGE = -15
+  MHD_DAUTH_TOO_LARGE = -22
   ,
   /* The different form of naming is intentionally used for the results below,
    * as they are more important */
@@ -7741,22 +7826,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
    * username and password to get the fresh 'nonce'.
    * The validity of the 'nonce' may be not checked.
    */
-  MHD_DAUTH_NONCE_STALE = -17
-  ,
-  /**
-   * The 'nonce' was generated by MHD for other conditions.
-   * This value is only returned if #MHD_D_O_DAUTH_NONCE_BIND_TYPE is set
-   * to anything other than #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_NONE.
-   * The interpretation of this code could be different. For example, if
-   * #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_URI is set and client just used
-   * the same 'nonce' for another URI, the code could be handled as
-   * #MHD_DAUTH_NONCE_STALE as RFCs allow nonces re-using for other URIs
-   * in the same "protection space".
-   * However, if only #MHD_D_OPTION_VALUE_DAUTH_BIND_NONCE_CLIENT_IP bit is set
-   * and it is know that clients have fixed IP addresses, this return code could
-   * be handled like #MHD_DAUTH_NONCE_WRONG.
-   */
-  MHD_DAUTH_NONCE_OTHER_COND = -18
+  MHD_DAUTH_NONCE_STALE = -25
   ,
   /**
    * The 'nonce' is wrong. May indicate an attack attempt.
@@ -7764,7 +7834,8 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
   MHD_DAUTH_NONCE_WRONG = -33
   ,
   /**
-   * The 'response' is wrong. May indicate an attack attempt.
+   * The 'response' is wrong. May indicate a wrong password used or
+   * an attack attempt.
    */
   MHD_DAUTH_RESPONSE_WRONG = -34
 };
@@ -7786,9 +7857,6 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
  * @param username the username to be authenticated, must be in clear text
  *                 even if userhash is used by the client
  * @param password the password matching the @a username (and the @a realm)
- * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale;
- *                      if zero is specified then daemon default value is used.
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
@@ -7801,18 +7869,15 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthResult
  * @ingroup authentication
  */
 MHD_EXTERN_ enum MHD_DigestAuthResult
-MHD_digest_auth_check (struct MHD_Request *request,
-                       const char *realm,
-                       const char *username,
-                       const char *password,
-                       unsigned int nonce_timeout,
+MHD_digest_auth_check (struct MHD_Request *MHD_RESTRICT request,
+                       const char *MHD_RESTRICT realm,
+                       const char *MHD_RESTRICT username,
+                       const char *MHD_RESTRICT password,
                        uint_fast32_t max_nc,
                        enum MHD_DigestAuthMultiQOP mqop,
                        enum MHD_DigestAuthMultiAlgo malgo)
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3)
-MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_CSTR_ (4);
+MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_CSTR_ (2) MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (4);
 
 
 /**
@@ -7841,15 +7906,18 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_CSTR_ (4);
  *                            #MHD_digest_get_hash_size() bytes of
  *                            userdigest upon return
  * @return #MHD_SC_OK on success,
- *         error code otherwise.
+ *         #MHD_SC_OUT_BUFF_TOO_SMALL if @a bin_buf_size is too small,
+ *         #MHD_SC_HASH_FAILED if hashing failed,
+ *         #MHD_SC_AUTH_DIGEST_ALGO_NOT_SUPPORTED if requested @a algo is
+ *                                                unknown or unsupported.
  * @sa #MHD_digest_auth_check_digest()
  * @ingroup authentication
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_digest_auth_calc_userdigest (enum MHD_DigestAuthAlgo algo,
-                                 const char *username,
-                                 const char *realm,
-                                 const char *password,
+                                 const char *MHD_RESTRICT username,
+                                 const char *MHD_RESTRICT realm,
+                                 const char *MHD_RESTRICT password,
                                  size_t bin_buf_size,
                                  void *MHD_RESTRICT userdigest_bin)
 MHD_FN_PURE_ MHD_FN_PAR_NONNULL_ALL_
@@ -7875,46 +7943,41 @@ MHD_FN_PAR_OUT_SIZE_ (6,5);
  * @param realm the realm for authorization of the client
  * @param username the username to be authenticated, must be in clear text
  *                 even if userhash is used by the client
- * @param userdigest the precalculated binary hash of the string
- *                   "username:realm:password",
- *                   see #MHD_digest_auth_calc_userdigest()
  * @param userdigest_size the size of the @a userdigest in bytes, must match the
  *                        hashing algorithm (see #MHD_MD5_DIGEST_SIZE,
  *                        #MHD_SHA256_DIGEST_SIZE, #MHD_SHA512_256_DIGEST_SIZE,
  *                        #MHD_digest_get_hash_size())
- *   FIXME: why pass it if it must anyway match????
- * @param nonce_timeout the period of seconds since nonce generation, when
- *                      the nonce is recognised as valid and not stale;
- *                      if zero is specified then daemon default value is used.
+ * @param userdigest the precalculated binary hash of the string
+ *                   "username:realm:password",
+ *                   see #MHD_digest_auth_calc_userdigest()
  * @param max_nc the maximum allowed nc (Nonce Count) value, if client's nc
  *               exceeds the specified value then MHD_DAUTH_NONCE_STALE is
  *               returned;
  *               if zero is specified then daemon default value is used.
  * @param mqop the QOP to use
  * @param malgo digest algorithms allowed to use, fail if algorithm used
- *               by the client is not allowed by this parameter;
- *               more than one base algorithms (MD5, SHA-256, SHA-512/256)
- *               cannot be used at the same time for this function
- *               as @a userdigest must match specified algorithm
+ *              by the client is not allowed by this parameter;
+ *              more than one base algorithms (MD5, SHA-256, SHA-512/256)
+ *              cannot be used at the same time for this function
+ *              as @a userdigest must match specified algorithm
  * @return #MHD_DAUTH_OK if authenticated,
  *         the error code otherwise
  * @sa #MHD_digest_auth_calc_userdigest()
  * @ingroup authentication
  */
 MHD_EXTERN_ enum MHD_DigestAuthResult
-MHD_digest_auth_check_digest (struct MHD_Request *request,
-                              const char *realm,
-                              const char *username,
-                              const void *userdigest,
+MHD_digest_auth_check_digest (struct MHD_Request *MHD_RESTRICT request,
+                              const char *MHD_RESTRICT realm,
+                              const char *MHD_RESTRICT username,
                               size_t userdigest_size,
-                              unsigned int nonce_timeout,
+                              const void *MHD_RESTRICT userdigest,
                               uint_fast32_t max_nc,
                               enum MHD_DigestAuthMultiQOP mqop,
                               enum MHD_DigestAuthMultiAlgo malgo)
 MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_CSTR_ (3)
-MHD_FN_PAR_CSTR_ (4);
+MHD_FN_PAR_IN_SIZE_ (5, 4);
 
 
 /**
@@ -8242,15 +8305,6 @@ MHD_STATIC_INLINE_END_
 
 
 /**
- * Constant to indicate that the nonce of the provided
- * authentication code was wrong.
- * Used as return code by #MHD_digest_auth_check(),
- * #MHD_digest_auth_check_digest()
- * @ingroup authentication
- */
-#define MHD_INVALID_NONCE -1
-
-/**
  * Add Basic Authentication "challenge" to the response.
  *
  * The response must have #MHD_HTTP_STATUS_UNAUTHORIZED status code.
@@ -8293,7 +8347,7 @@ MHD_response_add_auth_basic_challenge (
   struct MHD_Response *MHD_RESTRICT response,
   const char *MHD_RESTRICT realm,
   enum MHD_Bool prefer_utf8)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2);
+MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
 
 #ifndef MHD_NO_STATIC_INLINE
 
@@ -9929,9 +9983,9 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * username is provided or the format of the username parameter is broken.
    * Pointers in the returned structure (if any) are valid until response
    * is provided for the request.
-   * The result is placed in @a v_dauth_username member.
+   * The result is placed in @a v_auth_digest_uname member.
    */
-  MHD_REQUEST_INFO_DYNAMIC_DAUTH_USERNAME_INFO = 41
+  MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME = 41
   ,
   /**
    * Returns pointer to information about digest auth in client request.
@@ -9939,9 +9993,9 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * the client or the format of the digest auth header is broken.
    * Pointers in the returned structure (if any) are valid until response
    * is provided for the request.
-   * The result is placed in @a v_dauth_info member.
+   * The result is placed in @a v_auth_digest_info member.
    */
-  MHD_REQUEST_INFO_DYNAMIC_DAUTH_REQ_INFO = 42
+  MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_INFO = 42
   ,
   /**
    * Returns information about Basic Authentication credentials in the request.
@@ -9995,12 +10049,12 @@ union MHD_RequestInfoDynamicData
   /**
    * The information about client provided username for digest auth
    */
-  const struct MHD_DigestAuthUsernameInfo *v_dauth_username;
+  const struct MHD_AuthDigestUsernameInfo *v_auth_digest_uname;
 
   /**
    * The information about client's digest auth
    */
-  const struct MHD_DigestAuthInfo *v_dauth_info;
+  const struct MHD_AuthDigestInfo *v_auth_digest_info;
 
   /**
    * The username and password provided by the client's basic auth header.

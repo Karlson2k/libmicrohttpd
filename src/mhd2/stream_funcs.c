@@ -738,6 +738,14 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     end_code = MHD_REQUEST_ENDED_BY_APP_ERROR;
     sc = MHD_SC_REPLY_FILE_TOO_SHORT;
     break;
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  case mhd_CONN_CLOSE_NONCE_ERROR:
+    close_hard = true;
+    end_code = MHD_REQUEST_ENDED_NONCE_ERROR;
+    sc = MHD_SC_REPLY_NONCE_ERROR;
+    break;
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
+
   case mhd_CONN_CLOSE_INT_ERROR:
     close_hard = true;
     end_code = MHD_REQUEST_ENDED_NO_RESOURCES;

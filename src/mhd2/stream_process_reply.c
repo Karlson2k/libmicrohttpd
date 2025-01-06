@@ -54,6 +54,10 @@
 #include "stream_process_reply.h"
 #include "stream_funcs.h"
 #include "request_get_value.h"
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+#  include "mhd_digest_auth_data.h"
+#  include "auth_digest.h"
+#endif
 
 #include "mhd_read_file.h"
 
@@ -631,6 +635,21 @@ add_user_headers (char *restrict buf,
 #define buffer_append_s(buf,ppos,buf_size,str) \
         buffer_append (buf,ppos,buf_size,str, mhd_SSTR_LEN (str))
 
+
+/**
+ * Append MHD_String to the buffer if enough space is available,
+ * update position.
+ * @param[out] buf the buffer to append data to
+ * @param[in,out] ppos the pointer to position in the @a buffer
+ * @param buf_size the size of the @a buffer
+ * @param pmhdstr the pointer to string to append
+ * @return true if data has been added and position has been updated,
+ *         false if not enough space is available
+ */
+#define buffer_append_mstr(buf,ppos,buf_size,pmhdstr) \
+        buffer_append ((buf),(ppos),(buf_size), \
+                       (pmhdstr)->cstr, (pmhdstr)->len)
+
 /**
  * Allocate the connection's write buffer and fill it with all of the
  * headers from the response.
@@ -816,6 +835,36 @@ build_header_response_inn (struct MHD_Connection *restrict c)
     use_conn_k_alive = false;
   }
 
+  /* Special headers */
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  if (mhd_RESP_HAD_AUTH_DIGEST (r))
+  {
+    char noncestr[mhd_AUTH_DIGEST_NONCE_LEN];
+    const struct mhd_RespAuthDigestHeader *dg_hdr;
+    if (! mhd_auth_digest_get_new_nonce (c,
+                                         noncestr))
+    {
+      mhd_STREAM_ABORT (c,
+                        mhd_CONN_CLOSE_NONCE_ERROR,
+                        "Failed to generate a new nonce for Digest Auth.");
+      return false;
+    }
+    for (dg_hdr = mhd_DLINKEDL_GET_FIRST (r, auth_d_hdrs);
+         NULL != dg_hdr;
+         dg_hdr = mhd_DLINKEDL_GET_NEXT (dg_hdr, auth_d_hdrs))
+    {
+      size_t nonce_pos;
+      nonce_pos = pos + dg_hdr->nonce_pos;
+      if (! buffer_append_mstr (buf, &pos, buf_size, \
+                                &(dg_hdr->hdr)))
+        return false;
+      memcpy (buf + nonce_pos,
+              noncestr,
+              sizeof(noncestr));
+    }
+  }
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
+
   /* User-defined headers */
 
   if (! add_user_headers (buf, &pos, buf_size, r,
@@ -888,6 +937,12 @@ mhd_stream_build_header_response (struct MHD_Connection *restrict c)
 {
   if (! build_header_response_inn (c))
   {
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+    if (mhd_HTTP_STAGE_PRE_CLOSING <= c->stage)
+      return false; /* Already started closing */
+#else  /* ! MHD_SUPPORT_AUTH_DIGEST */
+    mhd_assert (mhd_HTTP_STAGE_START_REPLY == c->stage);
+#endif /* ! MHD_SUPPORT_AUTH_DIGEST */
     mhd_STREAM_ABORT (c,
                       mhd_CONN_CLOSE_NO_POOL_MEM_FOR_REPLY,
                       "No memory in the pool for the reply headers.");

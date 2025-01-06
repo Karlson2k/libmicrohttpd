@@ -381,4 +381,14 @@ struct MHD_Response
 #endif
 };
 
+/*
+ * Check whether the response has Digest Auth headers
+ */
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+#define mhd_RESP_HAD_AUTH_DIGEST(resp) \
+        (NULL != mhd_DLINKEDL_GET_FIRST (resp, auth_d_hdrs))
+#else
+#define mhd_RESP_HAD_AUTH_DIGEST(resp) (((void) (resp)), ! ! 0)
+#endif
+
 #endif /* ! MHD_RESPONSE_H */

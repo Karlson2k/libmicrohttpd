@@ -110,9 +110,46 @@ auth_basic_OPTSOURCES = \
   auth_basic.c              auth_basic.h \
   response_auth_basic.c
 
+if MHD_MD5_EXTR
+md5_OPTSOURCES = \
+  md5_ext.c                 md5_ext.h \
+  mhd_md5.h
+else
+md5_OPTSOURCES = \
+  md5_int.c                 md5_int.h \
+  mhd_md5.h
+endif
+
+if MHD_SHA256_EXTR
+sha256_OPTSOURCES = \
+  sha256_ext.c              sha256_ext.h \
+  mhd_sha256.h
+else
+sha256_OPTSOURCES = \
+  sha256_int.c              sha256_int.h \
+  mhd_sha256.h
+endif
+
+sha512_256_OPTSOURCES = \
+  sha512_256_int.c          sha512_256_int.h \
+  mhd_sha512_256.h
+
 auth_digest_OPTSOURCES = \
   mhd_digest_auth_data.h    mhd_auth_digest_hdr.h \
-  response_auth_digest.c    response_auth_digest.h
+  response_auth_digest.c    response_auth_digest.h \
+  auth_digest.c             auth_digest.h
+
+if MHD_SUPPORT_MD5
+auth_digest_OPTSOURCES += $(md5_OPTSOURCES)
+endif
+
+if MHD_SUPPORT_SHA256
+auth_digest_OPTSOURCES += $(sha256_OPTSOURCES)
+endif
+
+if MHD_SUPPORT_SHA512_256
+auth_digest_OPTSOURCES += $(sha512_256_OPTSOURCES)
+endif
 
 upgrade_OPTSOURCES = \
   mhd_upgrade.h \

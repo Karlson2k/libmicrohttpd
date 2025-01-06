@@ -39,6 +39,9 @@
 #ifdef MHD_SUPPORT_AUTH_BASIC
 #  include "auth_basic.h"
 #endif
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+#  include "auth_digest.h"
+#endif
 
 #include "mhd_public_api.h"
 
@@ -142,9 +145,27 @@ MHD_request_get_info_dynamic_sz (
   case MHD_REQUEST_INFO_DYNAMIC_APP_CONTEXT:
     mhd_assert (0 && "Not implemented yet");
     break;
-  case MHD_REQUEST_INFO_DYNAMIC_DAUTH_USERNAME_INFO:
-  case MHD_REQUEST_INFO_DYNAMIC_DAUTH_REQ_INFO:
-    mhd_assert (0 && "Not implemented yet");
+  case MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME:
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+    if (sizeof(return_value->v_auth_basic_creds) > return_value_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    return mhd_request_get_auth_digest_username (request,
+                                                 &(return_value->
+                                                   v_auth_digest_uname));
+#else  /* ! MHD_SUPPORT_AUTH_DIGEST */
+    return MHD_SC_FEATURE_DISABLED;
+#endif /* ! MHD_SUPPORT_AUTH_DIGEST */
+    break;
+  case MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_INFO:
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+    if (sizeof(return_value->v_auth_basic_creds) > return_value_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    return mhd_request_get_auth_digest_info (request,
+                                             &(return_value->
+                                               v_auth_digest_info));
+#else  /* ! MHD_SUPPORT_AUTH_DIGEST */
+    return MHD_SC_FEATURE_DISABLED;
+#endif /* ! MHD_SUPPORT_AUTH_DIGEST */
     break;
   case MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS:
 #ifdef MHD_SUPPORT_AUTH_BASIC

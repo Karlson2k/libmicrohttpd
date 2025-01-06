@@ -32,3 +32,7 @@ noinst_PROGRAMS = \
 if MHD_SUPPORT_AUTH_BASIC
   noinst_PROGRAMS += minimal_auth_basic
 endif
+
+if MHD_SUPPORT_AUTH_DIGEST
+  noinst_PROGRAMS += minimal_auth_digest
+endif

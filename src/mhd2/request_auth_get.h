@@ -46,6 +46,9 @@ enum MHD_FIXED_ENUM_ mhd_AuthHeaderKind
 #ifdef MHD_SUPPORT_AUTH_BASIC
   mhd_AUTH_HDR_BASIC,
 #endif
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  mhd_AUTH_HDR_DIGEST,
+#endif
 #ifdef MHD_ENUMS_NEED_TRAILING_VALUE
   mhd_AUTH_HDR_KIND_SENTINEL
 #endif

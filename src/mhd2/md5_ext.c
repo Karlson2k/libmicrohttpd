@@ -36,7 +36,7 @@
  * @param ctx the calculation context
  */
 void
-MHD_MD5_init_one_time (struct Md5CtxExt *ctx)
+mhd_MD5_init_one_time (struct mhd_Md5CtxExt *ctx)
 {
   ctx->handle = NULL;
   ctx->ext_error = gnutls_hash_init (&ctx->handle,
@@ -65,12 +65,12 @@ MHD_MD5_init_one_time (struct Md5CtxExt *ctx)
  * @param length number of bytes in @a data
  */
 void
-MHD_MD5_update (struct Md5CtxExt *ctx,
-                const uint8_t *data,
-                size_t length)
+mhd_MD5_update (struct mhd_Md5CtxExt *ctx,
+                size_t size,
+                const uint8_t *data)
 {
   if (0 == ctx->ext_error)
-    ctx->ext_error = gnutls_hash (ctx->handle, data, length);
+    ctx->ext_error = gnutls_hash (ctx->handle, data, size);
 }
 
 
@@ -78,11 +78,11 @@ MHD_MD5_update (struct Md5CtxExt *ctx,
  * Finalise MD5 calculation, return digest, reset hash calculation.
  *
  * @param ctx the calculation context
- * @param[out] digest set to the hash, must be #MD5_DIGEST_SIZE bytes
+ * @param[out] digest set to the hash, must be #mhd_MD5_DIGEST_SIZE bytes
  */
 void
-MHD_MD5_finish_reset (struct Md5CtxExt *ctx,
-                      uint8_t digest[MD5_DIGEST_SIZE])
+mhd_MD5_finish_reset (struct mhd_Md5CtxExt *ctx,
+                      uint8_t digest[mhd_MD5_DIGEST_SIZE])
 {
   if (0 == ctx->ext_error)
     gnutls_hash_output (ctx->handle, digest);
@@ -95,7 +95,7 @@ MHD_MD5_finish_reset (struct Md5CtxExt *ctx,
  * @param ctx the calculation context
  */
 void
-MHD_MD5_deinit (struct Md5CtxExt *ctx)
+mhd_MD5_deinit (struct mhd_Md5CtxExt *ctx)
 {
   if (NULL != ctx->handle)
     gnutls_hash_deinit (ctx->handle, NULL);

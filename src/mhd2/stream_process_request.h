@@ -74,7 +74,7 @@ mhd_parse_get_args (size_t args_len,
                     char *restrict args,
                     mhd_GetArgumentInter cb,
                     void *restrict cls)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2) MHD_FN_PAR_INOUT_ (2);
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2) MHD_FN_PAR_INOUT_SIZE_ (2, 1);
 
 
 /**

@@ -128,6 +128,14 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH:
+    if (sizeof(return_data->v_bool) > return_data_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+    return_data->v_bool = MHD_YES;
+#else
+    return_data->v_bool = MHD_NO;
+#endif
+    return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH_RFC2069:
   case MHD_LIB_INFO_FIXED_TYPE_DIGEST_AUTH_MD5:
   case MHD_LIB_INFO_FIXED_TYPE_DIGEST_AUTH_SHA256:

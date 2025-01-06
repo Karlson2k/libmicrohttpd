@@ -111,9 +111,9 @@ response_add_auth_digest_challenge_alg (
 #endif
   static const struct MHD_String nonce_str =
     mhd_MSTR_INIT (", nonce=\"" \
-                   "00000000000000000000000000000000" \
-                   "00000000000000000000000000000000" \
-                   "00000000" \
+                   "################################" \
+                   "################################" \
+                   "########" \
                    "\"");
   static size_t nonce_off = 9; /* Position of nonce value in the nonce_str */
   static const struct MHD_String opaque_pref =
@@ -147,10 +147,10 @@ response_add_auth_digest_challenge_alg (
   size_t pos;
   size_t elm_len;
 
-  mhd_assert ('0' == nonce_str.cstr[nonce_off]);
-  mhd_assert ('0' == nonce_str.cstr[nonce_off + mhd_AUTH_DIGEST_NONCE_LEN]);
+  mhd_assert ('#' == nonce_str.cstr[nonce_off]);
+  mhd_assert ('#' == nonce_str.cstr[nonce_off + mhd_AUTH_DIGEST_NONCE_LEN - 1]);
   mhd_assert ('"' == nonce_str.cstr[nonce_off - 1]);
-  mhd_assert ('"' == nonce_str.cstr[nonce_off + mhd_AUTH_DIGEST_NONCE_LEN + 1]);
+  mhd_assert ('"' == nonce_str.cstr[nonce_off + mhd_AUTH_DIGEST_NONCE_LEN]);
 
 #ifdef MHD_SUPPORT_MD5
   if (MHD_DIGEST_AUTH_ALGO_MD5 == algo)
@@ -326,7 +326,7 @@ response_add_auth_digest_challenge_alg (
     void *new_ptr;
     new_ptr = realloc (new_hdr,
                        sizeof(struct mhd_RespAuthDigestHeader)
-                       + pos);
+                       + pos + 1);
     /* Just use the old pointer if realloc() failed */
     if (NULL != new_ptr)
       new_hdr = (struct mhd_RespAuthDigestHeader *) new_ptr;
@@ -339,6 +339,8 @@ response_add_auth_digest_challenge_alg (
                       MHD_HTTP_HEADER_WWW_AUTHENTICATE ": ", \
                       mhd_SSTR_LEN (MHD_HTTP_HEADER_WWW_AUTHENTICATE ": ")));
   mhd_assert (0 == new_hdr->hdr.cstr[new_hdr->hdr.len]);
+  mhd_assert ('\r' == new_hdr->hdr.cstr[new_hdr->hdr.len - 2]);
+  mhd_assert ('\n' == new_hdr->hdr.cstr[new_hdr->hdr.len - 1]);
 
   mhd_DLINKEDL_INIT_LINKS (new_hdr, auth_d_hdrs);
   mhd_DLINKEDL_INS_LAST (response, new_hdr, auth_d_hdrs);
@@ -413,7 +415,7 @@ response_add_auth_digest_challenge_int (struct MHD_Response *restrict response,
 
 #ifdef MHD_SUPPORT_MD5
   if ((MHD_SC_OK == res) &&
-      (0 == (MHD_DIGEST_BASE_ALGO_MD5 & ((unsigned int) malgo))))
+      (0 != (MHD_DIGEST_BASE_ALGO_MD5 & ((unsigned int) malgo))))
     res = response_add_auth_digest_challenge_alg (response,
                                                   &rlm,
                                                   &opq,
@@ -426,7 +428,7 @@ response_add_auth_digest_challenge_int (struct MHD_Response *restrict response,
 #endif
 #ifdef MHD_SUPPORT_SHA256
   if ((MHD_SC_OK == res) &&
-      (0 == (MHD_DIGEST_BASE_ALGO_SHA256 & ((unsigned int) malgo))))
+      (0 != (MHD_DIGEST_BASE_ALGO_SHA256 & ((unsigned int) malgo))))
     res = response_add_auth_digest_challenge_alg (response,
                                                   &rlm,
                                                   &opq,
@@ -439,7 +441,7 @@ response_add_auth_digest_challenge_int (struct MHD_Response *restrict response,
 #endif
 #ifdef MHD_SUPPORT_SHA512_256
   if ((MHD_SC_OK == res) &&
-      (0 == (MHD_DIGEST_BASE_ALGO_SHA256 & ((unsigned int) malgo))))
+      (0 != (MHD_DIGEST_BASE_ALGO_SHA256 & ((unsigned int) malgo))))
     res = response_add_auth_digest_challenge_alg (
       response,
       &rlm,

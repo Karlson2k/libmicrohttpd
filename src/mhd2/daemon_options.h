@@ -260,31 +260,24 @@ struct DaemonOptions
 
 
   /**
-   * Value for #MHD_D_O_DAUTH_MAP_SIZE.
+   * Value for #MHD_D_O_AUTH_DIGEST_MAP_SIZE.
    * the size of the map array
    */
-  size_t dauth_map_size;
+  size_t auth_digest_map_size;
 
 
   /**
-   * Value for #MHD_D_O_DAUTH_NONCE_BIND_TYPE.
+   * Value for #MHD_D_O_AUTH_DIGEST_NONCE_TIMEOUT.
    * FIXME
    */
-  enum MHD_DaemonOptionValueDAuthBindNonce dauth_nonce_bind_type;
+  unsigned int auth_digest_nonce_timeout;
 
 
   /**
-   * Value for #MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT.
+   * Value for #MHD_D_O_AUTH_DIGEST_DEF_MAX_NC.
    * FIXME
    */
-  unsigned int dauth_def_nonce_timeout;
-
-
-  /**
-   * Value for #MHD_D_O_DAUTH_DEF_MAX_NC.
-   * FIXME
-   */
-  uint_fast32_t dauth_def_max_nc;
+  uint_fast32_t auth_digest_def_max_nc;
 
 
 };

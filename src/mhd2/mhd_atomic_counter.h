@@ -137,6 +137,26 @@ struct mhd_AtomicCounter
 MHD_INTERNAL mhd_ATOMIC_COUNTER_TYPE
 mhd_atomic_counter_inc_get (struct mhd_AtomicCounter *pcnt);
 
+#ifdef NDEBUG
+/**
+ * Atomically increment the value of the counter and return the result.
+ * The value is allowed to overflow and get back to zero.
+ * @param pcnt the pointer to the counter to increment
+ * @return the final/resulting counter value
+ */
+#define mhd_atomic_counter_inc_wrap_get(pcnt) mhd_atomic_counter_inc_get (pcnt)
+#else
+/**
+ * Atomically increment the value of the counter and return the result.
+ * The value is allowed to overflow and get back to zero.
+ * @param pcnt the pointer to the counter to increment
+ * @return the final/resulting counter value
+ */
+MHD_INTERNAL mhd_ATOMIC_COUNTER_TYPE
+mhd_atomic_counter_inc_wrap_get (struct mhd_AtomicCounter *pcnt);
+
+#endif
+
 /**
  * Atomically decrement the value of the counter and return the result
  * @param pcnt the pointer to the counter to decrement

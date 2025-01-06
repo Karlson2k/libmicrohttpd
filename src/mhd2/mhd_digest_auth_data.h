@@ -35,19 +35,34 @@
 #define mhd_AUTH_DIGEST_SCHEME "Digest"
 
 /**
+ * The size of the random part of the nonce (in bytes)
+ */
+#define mhd_AUTH_DIGEST_NONCE_RAND_BIN_SIZE     32
+/**
  * The length of the random part of the nonce (in chars)
  */
-#define mhd_AUTH_DIGEST_NONCE_RAND_LEN  64
+#define mhd_AUTH_DIGEST_NONCE_RAND_LEN \
+        (mhd_AUTH_DIGEST_NONCE_RAND_BIN_SIZE * 2)
 
+/**
+ * The size of the validity time part of the nonce (in bytes)
+ */
+#define mhd_AUTH_DIGEST_NONCE_VALD_BIN_SIZE     4
 /**
  * The length of the validity time part of the nonce (in chars)
  */
-#define mhd_AUTH_DIGEST_NONCE_VALD_LEN  8
+#define mhd_AUTH_DIGEST_NONCE_VALD_LEN \
+        (mhd_AUTH_DIGEST_NONCE_VALD_BIN_SIZE * 2)
 
 /**
- * The total length of the nonce (in chars)
+ * The total size of the binary form of the nonce (in bytes)
  */
-#define mhd_AUTH_DIGEST_NONCE_LEN \
-        (mhd_AUTH_DIGEST_NONCE_RAND_LEN + mhd_AUTH_DIGEST_NONCE_VALD_LEN)
+#define mhd_AUTH_DIGEST_NONCE_BIN_SIZE \
+        (mhd_AUTH_DIGEST_NONCE_RAND_BIN_SIZE \
+         + mhd_AUTH_DIGEST_NONCE_VALD_BIN_SIZE)
+/**
+ * The total length of the nonce (in chars), without zero termination
+ */
+#define mhd_AUTH_DIGEST_NONCE_LEN       (mhd_AUTH_DIGEST_NONCE_BIN_SIZE * 2)
 
 #endif /* ! MHD_DIGEST_AUTH_DATA_H */

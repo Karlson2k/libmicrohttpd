@@ -1,44 +1,41 @@
 /*
-     This file is part of GNU libmicrohttpd
-     Copyright (C) 2022-2023 Evgeny Grin (Karlson2k)
+  This file is part of GNU libmicrohttpd
+  Copyright (C) 2022-2024 Evgeny Grin (Karlson2k)
 
-     GNU libmicrohttpd is free software; you can redistribute it and/or
-     modify it under the terms of the GNU Lesser General Public
-     License as published by the Free Software Foundation; either
-     version 2.1 of the License, or (at your option) any later version.
+  GNU libmicrohttpd is free software; you can redistribute it and/or
+  modify it under the terms of the GNU Lesser General Public
+  License as published by the Free Software Foundation; either
+  version 2.1 of the License, or (at your option) any later version.
 
-     This library is distributed in the hope that it will be useful,
-     but WITHOUT ANY WARRANTY; without even the implied warranty of
-     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-     Lesser General Public License for more details.
+  GNU libmicrohttpd is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  Lesser General Public License for more details.
 
-     You should have received a copy of the GNU Lesser General Public
-     License along with this library.
-     If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU Lesser General Public
+  License along with this library; if not, write to the Free Software
+  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
 */
 
 /**
- * @file microhttpd/md5.c
+ * @file src/mhd2/md5_int.c
  * @brief  Calculation of MD5 digest as defined in RFC 1321
  * @author Karlson2k (Evgeny Grin)
  */
 
-#include "md5.h"
+#include "mhd_sys_options.h"
+
+#include "sys_bool_type.h"
 
 #include <string.h>
-#ifdef HAVE_MEMORY_H
-#include <memory.h>
-#endif /* HAVE_MEMORY_H */
 #include "mhd_bithelpers.h"
 #include "mhd_assert.h"
 
-/**
- * Initialise structure for MD5 calculation.
- *
- * @param ctx the calculation context
- */
-void
-MHD_MD5_init (struct Md5Ctx *ctx)
+#include "md5_int.h"
+
+MHD_INTERNAL void MHD_FN_PAR_NONNULL_ALL_
+mhd_MD5_init (struct mhd_Md5CtxInt *ctx)
 {
   /* Initial hash values, see RFC 1321, Clause 3.3 (step 3). */
   /* Note: values specified in RFC by bytes and should be loaded in
@@ -54,17 +51,17 @@ MHD_MD5_init (struct Md5Ctx *ctx)
 }
 
 
-MHD_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE_
+mhd_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE
 
 /**
  * Base of MD5 transformation.
  * Gets full 64 bytes block of data and updates hash values;
  * @param H     hash values
- * @param M     the data buffer with #MD5_BLOCK_SIZE bytes block
+ * @param M     the data buffer with #mhd_MD5_BLOCK_SIZE bytes block
  */
-static void
-md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
-               const void *M)
+static MHD_FN_PAR_NONNULL_ALL_ void
+md5_transform (uint32_t H[mhd_MD5_HASH_SIZE_WORDS],
+               const void *restrict M)
 {
   /* Working variables,
      See RFC 1321, Clause 3.4 (step 4). */
@@ -76,8 +73,8 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
   /* The data buffer. See RFC 1321, Clause 3.4 (step 4). */
   uint32_t X[16];
 
-#ifndef _MHD_GET_32BIT_LE_UNALIGNED
-  if (0 != (((uintptr_t) M) % _MHD_UINT32_ALIGN))
+#ifndef mhd_GET_32BIT_LE_UNALIGNED
+  if (0 != (((uintptr_t) M) % mhd_UINT32_ALIGN))
   { /* The input data is unaligned. */
     /* Copy the unaligned input data to the aligned buffer. */
     memcpy (X, M, sizeof(X));
@@ -86,7 +83,7 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
      * the next steps. */
     M = (const void *) X;
   }
-#endif /* _MHD_GET_32BIT_LE_UNALIGNED */
+#endif /* mhd_GET_32BIT_LE_UNALIGNED */
 
   /* Four auxiliary functions, see RFC 1321, Clause 3.4 (step 4). */
   /* Some optimisations used. */
@@ -99,7 +96,7 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
 #  define G_FUNC_2(x,y,z) ((z) & (x))
 #else  /* MHD_FAVOR_SMALL_CODE */
 #  define G_FUNC_1(x,y,z) ((((x) ^ (y)) & (z)) ^ (y))
-#  define G_FUNC_2(x,y,z) UINT32_C(0)
+#  define G_FUNC_2(x,y,z) UINT32_C (0)
 #endif /* MHD_FAVOR_SMALL_CODE */
 #define H_FUNC(x,y,z) ((x) ^ (y) ^ (z)) /* Original version */
 /* #define I_FUNC(x,y,z) ((y) ^ ((x) | (~(z)))) */ /* Original version */
@@ -109,45 +106,45 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
      The original function was modified to use X[k] and T[i] as
      direct inputs. */
 #define MD5STEP_R1(va,vb,vc,vd,vX,vs,vT) do {          \
-    (va) += (vX) + (vT);                               \
-    (va) += F_FUNC((vb),(vc),(vd));                    \
-    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
+          (va) += (vX) + (vT);                               \
+          (va) += F_FUNC ((vb),(vc),(vd));                    \
+          (va) = mhd_ROTL32 ((va),(vs)) + (vb); } while (0)
 
   /* Get value of X(k) from input data buffer.
      See RFC 1321 Clause 3.4 (step 4). */
 #define GET_X_FROM_DATA(buf,t) \
-  _MHD_GET_32BIT_LE (((const uint32_t*) (buf)) + (t))
+        mhd_GET_32BIT_LE (((const uint32_t*) (buf)) + (t))
 
   /* One step of round 2 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
      The original function was modified to use X[k] and T[i] as
      direct inputs. */
 #define MD5STEP_R2(va,vb,vc,vd,vX,vs,vT) do {         \
-    (va) += (vX) + (vT);                              \
-    (va) += G_FUNC_1((vb),(vc),(vd));                 \
-    (va) += G_FUNC_2((vb),(vc),(vd));                 \
-    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
+          (va) += (vX) + (vT);                              \
+          (va) += G_FUNC_1 ((vb),(vc),(vd));                 \
+          (va) += G_FUNC_2 ((vb),(vc),(vd));                 \
+          (va) = mhd_ROTL32 ((va),(vs)) + (vb); } while (0)
 
   /* One step of round 3 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
      The original function was modified to use X[k] and T[i] as
      direct inputs. */
 #define MD5STEP_R3(va,vb,vc,vd,vX,vs,vT) do {         \
-    (va) += (vX) + (vT);                              \
-    (va) += H_FUNC((vb),(vc),(vd));                   \
-    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
+          (va) += (vX) + (vT);                              \
+          (va) += H_FUNC ((vb),(vc),(vd));                   \
+          (va) = mhd_ROTL32 ((va),(vs)) + (vb); } while (0)
 
   /* One step of round 4 of MD5 computation, see RFC 1321, Clause 3.4 (step 4).
      The original function was modified to use X[k] and T[i] as
      direct inputs. */
 #define MD5STEP_R4(va,vb,vc,vd,vX,vs,vT) do {         \
-    (va) += (vX) + (vT);                              \
-    (va) += I_FUNC((vb),(vc),(vd));                   \
-    (va) = _MHD_ROTL32((va),(vs)) + (vb); } while (0)
+          (va) += (vX) + (vT);                              \
+          (va) += I_FUNC ((vb),(vc),(vd));                   \
+          (va) = mhd_ROTL32 ((va),(vs)) + (vb); } while (0)
 
 #if ! defined(MHD_FAVOR_SMALL_CODE)
 
   /* Round 1. */
 
-#if _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN
+#if mhd_BYTE_ORDER == mhd_LITTLE_ENDIAN
   if ((const void *) X == M)
   {
     /* The input data is already in the data buffer X[] in correct bytes
@@ -173,7 +170,7 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
     MD5STEP_R1 (B, C, D, A, X[15], 22, UINT32_C (0x49b40821));
   }
   else /* Combined with the next 'if' */
-#endif /* _MHD_BYTE_ORDER == _MHD_LITTLE_ENDIAN */
+#endif /* mhd_BYTE_ORDER == mhd_LITTLE_ENDIAN */
   if (1)
   {
     /* The input data is loaded in correct (little-endian) format before
@@ -382,60 +379,54 @@ md5_transform (uint32_t H[MD5_HASH_SIZE_WORDS],
 }
 
 
-/**
- * Process portion of bytes.
- *
- * @param ctx the calculation context
- * @param data bytes to add to hash
- * @param length number of bytes in @a data
- */
-void
-MHD_MD5_update (struct Md5Ctx *ctx,
-                const uint8_t *data,
-                size_t length)
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (3, 2) void
+mhd_MD5_update (struct mhd_Md5CtxInt *restrict ctx,
+                size_t size,
+                const uint8_t *restrict data)
 {
   unsigned int bytes_have; /**< Number of bytes in the context buffer */
 
-  mhd_assert ((data != NULL) || (length == 0));
+  mhd_assert ((data != NULL) || (size == 0));
 
 #ifndef MHD_FAVOR_SMALL_CODE
-  if (0 == length)
+  if (0 == size)
     return; /* Shortcut, do nothing */
 #endif /* MHD_FAVOR_SMALL_CODE */
 
-  /* Note: (count & (MD5_BLOCK_SIZE-1))
-           equals (count % MD5_BLOCK_SIZE) for this block size. */
-  bytes_have = (unsigned int) (ctx->count & (MD5_BLOCK_SIZE - 1));
-  ctx->count += length;
+  /* Note: (count & (mhd_MD5_BLOCK_SIZE-1))
+           equals (count % mhd_MD5_BLOCK_SIZE) for this block size. */
+  bytes_have = (unsigned int) (ctx->count & (mhd_MD5_BLOCK_SIZE - 1));
+  ctx->count += size;
 
   if (0 != bytes_have)
   {
-    unsigned int bytes_left = MD5_BLOCK_SIZE - bytes_have;
-    if (length >= bytes_left)
+    unsigned int bytes_left = mhd_MD5_BLOCK_SIZE - bytes_have;
+    if (size >= bytes_left)
     {     /* Combine new data with data in the buffer and
              process the full block. */
       memcpy (((uint8_t *) ctx->buffer) + bytes_have,
               data,
               bytes_left);
       data += bytes_left;
-      length -= bytes_left;
+      size -= bytes_left;
       md5_transform (ctx->H, ctx->buffer);
       bytes_have = 0;
     }
   }
 
-  while (MD5_BLOCK_SIZE <= length)
+  while (mhd_MD5_BLOCK_SIZE <= size)
   {   /* Process any full blocks of new data directly,
          without copying to the buffer. */
     md5_transform (ctx->H, data);
-    data += MD5_BLOCK_SIZE;
-    length -= MD5_BLOCK_SIZE;
+    data += mhd_MD5_BLOCK_SIZE;
+    size -= mhd_MD5_BLOCK_SIZE;
   }
 
-  if (0 != length)
+  if (0 != size)
   {   /* Copy incomplete block of new data (if any)
          to the buffer. */
-    memcpy (((uint8_t *) ctx->buffer) + bytes_have, data, length);
+    memcpy (((uint8_t *) ctx->buffer) + bytes_have, data, size);
   }
 }
 
@@ -451,15 +442,10 @@ MHD_MD5_update (struct Md5Ctx *ctx,
  */
 #define MD5_SIZE_OF_LEN_ADD (MD5_SIZE_OF_LEN_ADD_BITS / 8)
 
-/**
- * Finalise MD5 calculation, return digest.
- *
- * @param ctx the calculation context
- * @param[out] digest set to the hash, must be #MD5_DIGEST_SIZE bytes
- */
-void
-MHD_MD5_finish (struct Md5Ctx *ctx,
-                uint8_t digest[MD5_DIGEST_SIZE])
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) void
+mhd_MD5_finish (struct mhd_Md5CtxInt *restrict ctx,
+                uint8_t digest[mhd_MD5_DIGEST_SIZE])
 {
   uint64_t num_bits;   /**< Number of processed bits */
   unsigned int bytes_have; /**< Number of bytes in the context buffer */
@@ -469,9 +455,9 @@ MHD_MD5_finish (struct Md5Ctx *ctx,
      not change the amount of hashed data. */
   num_bits = ctx->count << 3;
 
-  /* Note: (count & (MD5_BLOCK_SIZE-1))
-           equals (count % MD5_BLOCK_SIZE) for this block size. */
-  bytes_have = (unsigned int) (ctx->count & (MD5_BLOCK_SIZE - 1));
+  /* Note: (count & (mhd_MD5_BLOCK_SIZE-1))
+           equals (count % mhd_MD5_BLOCK_SIZE) for this block size. */
+  bytes_have = (unsigned int) (ctx->count & (mhd_MD5_BLOCK_SIZE - 1));
 
   /* Input data must be padded with a single bit "1", then with zeros and
      the finally the length of data in bits must be added as the final bytes
@@ -484,12 +470,12 @@ MHD_MD5_finish (struct Md5Ctx *ctx,
      processed immediately). */
   ((uint8_t *) ctx->buffer)[bytes_have++] = 0x80;
 
-  if (MD5_BLOCK_SIZE - bytes_have < MD5_SIZE_OF_LEN_ADD)
+  if (mhd_MD5_BLOCK_SIZE - bytes_have < MD5_SIZE_OF_LEN_ADD)
   {   /* No space in the current block to put the total length of message.
          Pad the current block with zeros and process it. */
-    if (bytes_have < MD5_BLOCK_SIZE)
+    if (bytes_have < mhd_MD5_BLOCK_SIZE)
       memset (((uint8_t *) ctx->buffer) + bytes_have, 0,
-              MD5_BLOCK_SIZE - bytes_have);
+              mhd_MD5_BLOCK_SIZE - bytes_have);
     /* Process the full block. */
     md5_transform (ctx->H, ctx->buffer);
     /* Start the new block. */
@@ -498,54 +484,60 @@ MHD_MD5_finish (struct Md5Ctx *ctx,
 
   /* Pad the rest of the buffer with zeros. */
   memset (((uint8_t *) ctx->buffer) + bytes_have, 0,
-          MD5_BLOCK_SIZE - MD5_SIZE_OF_LEN_ADD - bytes_have);
+          mhd_MD5_BLOCK_SIZE - MD5_SIZE_OF_LEN_ADD - bytes_have);
   /* Put the number of bits in processed data as little-endian value.
      See RFC 1321, clauses 2 and 3.2 (step 2). */
-  _MHD_PUT_64BIT_LE_SAFE (ctx->buffer + MD5_BLOCK_SIZE_WORDS - 2,
-                          num_bits);
+  mhd_PUT_64BIT_LE_UNALIGN (ctx->buffer + mhd_MD5_BLOCK_SIZE_WORDS - 2,
+                            num_bits);
   /* Process the full final block. */
   md5_transform (ctx->H, ctx->buffer);
 
   /* Put in LE mode the hash as the final digest.
      See RFC 1321, clauses 2 and 3.5 (step 5). */
-#ifndef _MHD_PUT_32BIT_LE_UNALIGNED
-  if (1
-#ifndef MHD_FAVOR_SMALL_CODE
-      && (0 != ((uintptr_t) digest) % _MHD_UINT32_ALIGN)
-#endif /* MHD_FAVOR_SMALL_CODE */
-      )
-  {
-    /* If storing of the final result requires aligned address and
-       the destination address is not aligned or compact code is used,
-       store the final digest in aligned temporary buffer first, then
-       copy it to the destination. */
-    uint32_t alig_dgst[MD5_DIGEST_SIZE_WORDS];
-    _MHD_PUT_32BIT_LE (alig_dgst + 0, ctx->H[0]);
-    _MHD_PUT_32BIT_LE (alig_dgst + 1, ctx->H[1]);
-    _MHD_PUT_32BIT_LE (alig_dgst + 2, ctx->H[2]);
-    _MHD_PUT_32BIT_LE (alig_dgst + 3, ctx->H[3]);
-    /* Copy result to the unaligned destination address. */
-    memcpy (digest, alig_dgst, MD5_DIGEST_SIZE);
-  }
-#ifndef MHD_FAVOR_SMALL_CODE
-  else /* Combined with the next 'if' */
-#endif /* MHD_FAVOR_SMALL_CODE */
-#endif /* ! _MHD_PUT_32BIT_LE_UNALIGNED */
-#if ! defined(MHD_FAVOR_SMALL_CODE) || defined(_MHD_PUT_32BIT_LE_UNALIGNED)
   if (1)
   {
-    /* Use cast to (void*) here to mute compiler alignment warnings.
-     * Compilers are not smart enough to see that alignment has been checked. */
-    _MHD_PUT_32BIT_LE ((void *) (digest + 0 * MD5_BYTES_IN_WORD), ctx->H[0]);
-    _MHD_PUT_32BIT_LE ((void *) (digest + 1 * MD5_BYTES_IN_WORD), ctx->H[1]);
-    _MHD_PUT_32BIT_LE ((void *) (digest + 2 * MD5_BYTES_IN_WORD), ctx->H[2]);
-    _MHD_PUT_32BIT_LE ((void *) (digest + 3 * MD5_BYTES_IN_WORD), ctx->H[3]);
+    bool use_tmp_buf_to_align_result;
+
+#if defined(mhd_PUT_32BIT_LE_UNALIGNED)
+    use_tmp_buf_to_align_result = false;
+#elif defined (MHD_FAVOR_SMALL_CODE)
+    use_tmp_buf_to_align_result = true; /* smaller code: eliminated branch below */
+#else
+    use_tmp_buf_to_align_result =
+      (0 != ((uintptr_t) digest) % mhd_UINT32_ALIGN);
+#endif
+    if (use_tmp_buf_to_align_result)
+    {
+      /* If storing of the final result requires aligned address and
+         the destination address is not aligned or compact code is used,
+         store the final digest in aligned temporary buffer first, then
+         copy it to the destination. */
+      uint32_t alig_dgst[mhd_MD5_DIGEST_SIZE_WORDS];
+      mhd_PUT_32BIT_LE (alig_dgst + 0, ctx->H[0]);
+      mhd_PUT_32BIT_LE (alig_dgst + 1, ctx->H[1]);
+      mhd_PUT_32BIT_LE (alig_dgst + 2, ctx->H[2]);
+      mhd_PUT_32BIT_LE (alig_dgst + 3, ctx->H[3]);
+      /* Copy result to the unaligned destination address. */
+      memcpy (digest, alig_dgst, mhd_MD5_DIGEST_SIZE);
+    }
+    else
+    {
+      /* Use cast to (void*) here to mute compiler alignment warnings.
+       * Compilers are not smart enough to see that alignment has been checked. */
+      mhd_PUT_32BIT_LE ((void *) (digest + 0 * mhd_MD5_BYTES_IN_WORD), \
+                        ctx->H[0]);
+      mhd_PUT_32BIT_LE ((void *) (digest + 1 * mhd_MD5_BYTES_IN_WORD), \
+                        ctx->H[1]);
+      mhd_PUT_32BIT_LE ((void *) (digest + 2 * mhd_MD5_BYTES_IN_WORD), \
+                        ctx->H[2]);
+      mhd_PUT_32BIT_LE ((void *) (digest + 3 * mhd_MD5_BYTES_IN_WORD), \
+                        ctx->H[3]);
+    }
   }
-#endif /* ! MHD_FAVOR_SMALL_CODE || _MHD_PUT_32BIT_LE_UNALIGNED */
 
   /* Erase potentially sensitive data. */
-  memset (ctx, 0, sizeof(struct Md5Ctx));
+  memset (ctx, 0, sizeof(struct mhd_Md5CtxInt));
 }
 
 
-MHD_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE_
+mhd_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE

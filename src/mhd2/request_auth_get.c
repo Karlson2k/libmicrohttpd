@@ -53,6 +53,9 @@ mhd_request_get_auth_header_value (struct MHD_Request *restrict request,
 #ifdef MHD_SUPPORT_AUTH_BASIC
   static const struct MHD_String prefix_basic = mhd_MSTR_INIT ("Basic");
 #endif
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  static const struct MHD_String prefix_digest = mhd_MSTR_INIT ("Digest");
+#endif
   const int strict_lvl =
     mhd_CNTNR_PTR (request, \
                    struct MHD_Connection, rq)->daemon->req_cfg.strictness;
@@ -71,6 +74,12 @@ mhd_request_get_auth_header_value (struct MHD_Request *restrict request,
   case mhd_AUTH_HDR_BASIC:
     prefix_str = prefix_basic.cstr;
     prefix_len = prefix_basic.len;
+    break;
+#endif
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  case mhd_AUTH_HDR_DIGEST:
+    prefix_str = prefix_digest.cstr;
+    prefix_len = prefix_digest.len;
     break;
 #endif
 #ifdef MHD_ENUMS_NEED_TRAILING_VALUE

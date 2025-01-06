@@ -28,6 +28,7 @@
 
 #include "sys_base_types.h"
 #include "sys_malloc.h"
+#include "compat_calloc.h"
 
 #include <string.h>
 #include "sys_sockets_types.h"
@@ -1468,6 +1469,111 @@ dauth_init (struct MHD_Daemon *restrict d,
 
 #endif
 
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+/**
+ * Initialise daemon Digest Auth data
+ * @param d the daemon object
+ * @param s the user settings
+ * @return #MHD_SC_OK on success,
+ *         the error code otherwise
+ */
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2) \
+  MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
+daemon_init_auth_digest (struct MHD_Daemon *restrict d,
+                         struct DaemonOptions *restrict s)
+{
+  mhd_StatusCodeInt ret;
+  size_t nonces_num;
+
+  if (0 == s->random_entropy.v_buf_size)
+  {
+    /* No initialisation needed */
+#ifndef HAVE_NULL_PTR_ALL_ZEROS
+    d->auth_dg.entropy.data = NULL;
+    d->auth_dg.nonces = NULL;
+#endif
+    return MHD_SC_OK;
+  }
+  nonces_num = s->auth_digest_map_size;
+  if (0 == nonces_num)
+    nonces_num = 1000;
+  d->auth_dg.nonces = (struct mhd_DaemonAuthDigestNonceData *)
+                      mhd_calloc (nonces_num, \
+                                  sizeof(struct mhd_DaemonAuthDigestNonceData));
+  if (NULL == d->auth_dg.nonces)
+  {
+    mhd_LOG_MSG (d, \
+                 MHD_SC_DAEMON_MEM_ALLOC_FAILURE, \
+                 "Failed to allocate memory for Digest Auth array");
+    return MHD_SC_DAEMON_MEM_ALLOC_FAILURE;
+  }
+  d->auth_dg.cfg.nonces_num = nonces_num;
+
+  if (! mhd_mutex_init (&(d->auth_dg.nonces_lock)))
+  {
+    mhd_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
+                 "Failed to initialise mutex for the Digest Auth data");
+    ret = MHD_SC_MUTEX_INIT_FAILURE;
+  }
+  else
+  {
+    if (! mhd_atomic_counter_init (&(d->auth_dg.num_gen_nonces), 0))
+    {
+      mhd_LOG_MSG (d, MHD_SC_MUTEX_INIT_FAILURE, \
+                   "Failed to initialise mutex for the Digest Auth data");
+      ret = MHD_SC_MUTEX_INIT_FAILURE;
+    }
+    else
+    {
+      /* Move ownership of the entropy buffer */
+      d->auth_dg.entropy.data = s->random_entropy.v_buf;
+      d->auth_dg.entropy.size = s->random_entropy.v_buf_size;
+      s->random_entropy.v_buf = NULL;
+      s->random_entropy.v_buf_size = 0;
+
+      d->auth_dg.cfg.nonce_tmout = s->auth_digest_nonce_timeout;
+      if (0 == d->auth_dg.cfg.nonce_tmout)
+        d->auth_dg.cfg.nonce_tmout = MHD_AUTH_DIGEST_DEF_TIMEOUT;
+      d->auth_dg.cfg.def_max_nc = s->auth_digest_def_max_nc;
+      if (0 == d->auth_dg.cfg.def_max_nc)
+        d->auth_dg.cfg.def_max_nc = MHD_AUTH_DIGEST_DEF_MAX_NC;
+
+      return MHD_SC_OK; /* Success exit point */
+    }
+    mhd_mutex_destroy_chk (&(d->auth_dg.nonces_lock));
+  }
+
+  free (d->auth_dg.nonces);
+  mhd_assert (MHD_SC_OK != ret);
+  return ret; /* Failure exit point */
+}
+
+
+/**
+ * Deinitialise daemon Digest Auth data
+ * @param d the daemon object
+ */
+MHD_FN_PAR_NONNULL_ (1) static void
+daemon_deinit_auth_digest (struct MHD_Daemon *restrict d)
+{
+  if (0 == d->auth_dg.entropy.size)
+    return; /* Digest Auth not used, nothing to deinitialise */
+
+  mhd_assert (NULL != d->auth_dg.entropy.data);
+  free (d->auth_dg.entropy.data);
+  mhd_atomic_counter_deinit (&(d->auth_dg.num_gen_nonces));
+  mhd_mutex_destroy_chk (&(d->auth_dg.nonces_lock));
+  mhd_assert (NULL != d->auth_dg.nonces);
+  mhd_assert (0 != d->auth_dg.nonces);
+  free (d->auth_dg.nonces);
+}
+
+
+#else  /* MHD_SUPPORT_AUTH_DIGEST */
+#define daemon_init_auth_digest(d,s)  (MHD_SC_OK)
+#define daemon_deinit_auth_digest(d)  ((void) 0)
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
+
 
 /**
  * Initialise daemon TLS data
@@ -2420,6 +2526,11 @@ deinit_workers_pool (struct MHD_Daemon *restrict d,
 static MHD_FN_PAR_NONNULL_ (1) void
 reset_master_only_areas (struct MHD_Daemon *restrict d)
 {
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  memset (&(d->auth_dg.nonces_lock),
+          0x7F,
+          sizeof(d->auth_dg.nonces_lock));
+#endif
   /* Not needed. It is initialised later */
   /* memset (&(d->req_cfg.large_buf), 0, sizeof(d->req_cfg.large_buf)); */
   (void) d;
@@ -2944,34 +3055,39 @@ daemon_start_internal (struct MHD_Daemon *restrict d,
     return res;
 
   mhd_assert (d->dbg.net_inited);
-  res = daemon_init_tls (d, s);
+
+  res = daemon_init_auth_digest (d, s);
 
   if (MHD_SC_OK == res)
   {
-    mhd_assert (d->dbg.tls_inited);
-    res = daemon_init_threading_and_conn (d, s);
+    res = daemon_init_tls (d, s);
     if (MHD_SC_OK == res)
     {
-      mhd_assert (d->dbg.threading_inited);
-      mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
-
-      res = daemon_init_large_buf (d, s);
+      mhd_assert (d->dbg.tls_inited);
+      res = daemon_init_threading_and_conn (d, s);
       if (MHD_SC_OK == res)
       {
-        res = daemon_start_threads (d);
+        mhd_assert (d->dbg.threading_inited);
+        mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
+
+        res = daemon_init_large_buf (d, s);
         if (MHD_SC_OK == res)
         {
-          return MHD_SC_OK;
+          res = daemon_start_threads (d);
+          if (MHD_SC_OK == res)
+          {
+            return MHD_SC_OK;
+          }
+
+          /* Below is a clean-up path */
+          daemon_deinit_large_buf (d);
         }
-
-        /* Below is a clean-up path */
-        daemon_deinit_large_buf (d);
+        daemon_deinit_threading_and_conn (d);
       }
-      daemon_deinit_threading_and_conn (d);
+      daemon_deinit_tls (d);
     }
-    daemon_deinit_tls (d);
+    daemon_deinit_auth_digest (d);
   }
-
   daemon_deinit_net (d);
   mhd_assert (MHD_SC_OK != res);
   return res;
@@ -3030,6 +3146,8 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
     daemon_deinit_large_buf (daemon);
 
     daemon_deinit_tls (daemon);
+
+    daemon_deinit_auth_digest (daemon);
 
     daemon_deinit_net (daemon);
   }

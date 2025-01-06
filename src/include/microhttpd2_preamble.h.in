@@ -1231,6 +1231,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_REPLY_FILE_READ_ERROR = 50232
   ,
   /**
+   * Failed to generate the nonce for the Digest Auth.
+   */
+  MHD_SC_REPLY_NONCE_ERROR = 50233
+  ,
+  /**
    * Failed to allocate memory in connection's pool for the reply.
    */
   MHD_SC_ERR_RESPONSE_ALLOCATION_FAILURE = 50250
@@ -1378,6 +1383,14 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * Failed to perform TLS handshake
    */
   MHD_SC_TLS_CONNECTION_HANDSHAKED_FAILED = 51220
+  ,
+  /**
+   * Hashing failed.
+   * Internal hashing function can never fail (and this code is never returned
+   * for them). External hashing function (like TLS backend-based) may fail
+   * for various reasons, like failure of hardware acccelerated hashing.
+   */
+  MHD_SC_HASH_FAILED = 51260
   ,
   /**
    * Something wrong in the internal MHD logic.
@@ -1593,6 +1606,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_UPGRADED_HANDLE_INVALID = 60161
   ,
   /**
+   * The provided output buffer is too small.
+   */
+  MHD_SC_OUT_BUFF_TOO_SMALL = 60180
+  ,
+  /**
    * The requested type of information is not recognised.
    */
   MHD_SC_INFO_GET_TYPE_UNKNOWN = 60200
@@ -1628,7 +1646,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_AUTH_DIGEST_ALGO_NOT_SUPPORTED = 60240
   ,
   /**
-   * The the Digest Auth QOP value is unknown or not supported.
+   * The Digest Auth QOP value is unknown or not supported.
    */
   MHD_SC_AUTH_DIGEST_QOP_NOT_SUPPORTED = 60241
 };
@@ -3891,6 +3909,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
    * @ingroup request
    */
   MHD_REQUEST_ENDED_FILE_ERROR = 51
+  ,
+  /**
+   * The request was aborted due to error generating valid nonce for Digest Auth
+   * @ingroup request
+   */
+  MHD_REQUEST_ENDED_NONCE_ERROR = 52
   ,
   /**
    * Closing the session since MHD is being shut down.

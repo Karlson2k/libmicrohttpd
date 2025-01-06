@@ -30,10 +30,17 @@
 #include "mhd_sys_options.h"
 
 #include "sys_bool_type.h"
+#include "sys_base_types.h"
 
+#include "mhd_dlinked_list.h"
+
+#include "mhd_buffer.h"
 #include "mhd_socket_type.h"
+#include "mhd_atomic_counter.h"
 
-#include "mhd_public_api.h"
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+#  include "mhd_digest_auth_data.h"
+#endif
 
 #ifdef MHD_ENABLE_HTTPS
 #  include "mhd_tls_choice.h"
@@ -51,7 +58,7 @@
 #  include <sys/epoll.h>
 #endif
 
-#include "mhd_dlinked_list.h"
+#include "mhd_public_api.h"
 
 struct DaemonOptions; /* Forward declaration */
 struct MHD_Connection; /* Forward declaration */
@@ -499,6 +506,96 @@ struct mhd_DaemonNetwork
   struct mhd_DaemonNetworkSettings cfg;
 };
 
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+
+/**
+ * Digest Auth nonce data
+ */
+struct mhd_DaemonAuthDigestNonceData
+{
+  /**
+   * The nonce value in the binary form, excluding validity tail
+   */
+  uint8_t nonce[mhd_AUTH_DIGEST_NONCE_RAND_BIN_SIZE];
+
+  /**
+   * The nonce validity time
+   */
+  uint_fast32_t valid_time;
+
+  /**
+   * The largest last received 'nc' value.
+   * This 'nc' value has been already used by the client.
+   */
+  uint_fast32_t max_recvd_nc;
+
+  /**
+   * Bitmask over the previous 64 nc values (down to to nc-64).
+   * Used to allow out-of-order 'nc'.
+   * If bit in the bitmask is set to one, then this 'nc' value was already used
+   * by the client.
+   */
+  uint_fast64_t nmask;
+};
+
+/**
+ * Digest Auth daemon configuration data
+ */
+struct mhd_DaemonAuthDigestCfg
+{
+  /**
+   * The number of elements in the nonces array
+   */
+  size_t nonces_num;
+
+  /**
+   * The nonce validity time (in seconds)
+   */
+  unsigned int nonce_tmout;
+
+  /**
+   * The default maximum value of nc
+   */
+  uint_fast32_t def_max_nc;
+};
+
+/**
+ * The Digest Auth daemon's data
+ */
+struct mhd_DaemonAuthDigestData
+{
+  /**
+   * The entropy data used for Digests generation
+   */
+  struct mhd_Buffer entropy;
+
+  /**
+   * The array of generated nonce and related nc
+   */
+  struct mhd_DaemonAuthDigestNonceData *nonces;
+
+  /**
+   * Number of nonces has been generated.
+   * Used as addition for the nonce source data to ensure unique nonce value.
+   * TODO: remove and directly use random generator for nonce generation.
+   */
+  struct mhd_AtomicCounter num_gen_nonces;
+
+#ifdef MHD_USE_THREADS
+  /**
+   * The mutex to change or access the @a nonces data
+   */
+  mhd_mutex nonces_lock;
+#endif
+
+  /**
+   * Digest Auth daemon configuration data
+   */
+  struct mhd_DaemonAuthDigestCfg cfg;
+};
+
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
+
 #ifdef MHD_USE_THREADS
 
 /**
@@ -918,6 +1015,13 @@ struct MHD_Daemon
    */
   struct mhd_DaemonNetwork net;
 
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+  /**
+   * The Digest Auth daemon's data
+   */
+  struct mhd_DaemonAuthDigestData auth_dg;
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
+
 #ifdef MHD_ENABLE_HTTPS
   /**
    * The pointer to the daemon TLS data.
@@ -1035,5 +1139,13 @@ struct MHD_Daemon
 #  define mhd_D_HAS_TLS(d) (0)
 #endif
 
+/*
+ * Check whether the daemon support Digest Auth
+ */
+#ifdef MHD_SUPPORT_AUTH_DIGEST
+#  define mhd_D_HAS_AUTH_DIGEST(d) (NULL != (d)->auth_dg.nonces)
+#else
+#  define mhd_D_HAS_AUTH_DIGEST(d) (! ! 0)
+#endif
 
 #endif /* ! MHD_DAEMON_H */

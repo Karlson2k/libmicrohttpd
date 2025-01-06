@@ -228,17 +228,14 @@ MHD_daemon_set_options (
           option->val.random_entropy.v_buf_size;
       }
       continue;
-    case MHD_D_O_DAUTH_MAP_SIZE:
-      settings->dauth_map_size = option->val.dauth_map_size;
+    case MHD_D_O_AUTH_DIGEST_MAP_SIZE:
+      settings->auth_digest_map_size = option->val.auth_digest_map_size;
       continue;
-    case MHD_D_O_DAUTH_NONCE_BIND_TYPE:
-      settings->dauth_nonce_bind_type = option->val.dauth_nonce_bind_type;
+    case MHD_D_O_AUTH_DIGEST_NONCE_TIMEOUT:
+      settings->auth_digest_nonce_timeout = option->val.auth_digest_nonce_timeout;
       continue;
-    case MHD_D_O_DAUTH_DEF_NONCE_TIMEOUT:
-      settings->dauth_def_nonce_timeout = option->val.dauth_def_nonce_timeout;
-      continue;
-    case MHD_D_O_DAUTH_DEF_MAX_NC:
-      settings->dauth_def_max_nc = option->val.dauth_def_max_nc;
+    case MHD_D_O_AUTH_DIGEST_DEF_MAX_NC:
+      settings->auth_digest_def_max_nc = option->val.auth_digest_def_max_nc;
       continue;
     case MHD_D_O_SENTINEL:
     default: /* for -Wswitch-default -Wswitch-enum */ 

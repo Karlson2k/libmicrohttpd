@@ -47,6 +47,23 @@ mhd_atomic_counter_inc_get (struct mhd_AtomicCounter *pcnt)
 }
 
 
+#ifndef NDEBUG
+MHD_INTERNAL mhd_ATOMIC_COUNTER_TYPE
+mhd_atomic_counter_inc_wrap_get (struct mhd_AtomicCounter *pcnt)
+{
+  mhd_ATOMIC_COUNTER_TYPE ret;
+
+  mhd_mutex_lock_chk (&(pcnt->lock));
+  ret = ++(pcnt->count);
+  mhd_mutex_unlock_chk (&(pcnt->lock));
+
+  return ret;
+}
+
+
+#endif /* ! NDEBUG */
+
+
 MHD_INTERNAL mhd_ATOMIC_COUNTER_TYPE
 mhd_atomic_counter_dec_get (struct mhd_AtomicCounter *pcnt)
 {
