@@ -34,6 +34,9 @@
 #include "mhd_assert.h"
 #include "mhd_unreachable.h"
 
+#include <string.h>
+#include "sys_malloc.h"
+
 #include "mhd_str_macros.h"
 #include "mhd_bithelpers.h"
 #include "mhd_arr_num_elems.h"
