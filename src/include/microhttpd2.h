@@ -1649,6 +1649,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The Digest Auth QOP value is unknown or not supported.
    */
   MHD_SC_AUTH_DIGEST_QOP_NOT_SUPPORTED = 60241
+  ,
+  /**
+   * The Digest Auth is not supported due to configuration
+   */
+  MHD_SC_AUTH_DIGEST_UNSUPPORTED = 60242
 };
 
 /**

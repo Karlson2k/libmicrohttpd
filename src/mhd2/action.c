@@ -75,13 +75,19 @@ MHD_action_from_response (struct MHD_Request *request,
     mhd_response_dec_use_count (response);
     return (const struct MHD_Action *) NULL;
   }
+#ifdef MHD_SUPPORT_AUTH_DIGEST
   if (mhd_RESP_HAD_AUTH_DIGEST (response) &&
       ! mhd_D_HAS_AUTH_DIGEST ( \
         mhd_CNTNR_CPTR (request, struct MHD_Connection, rq)->daemon))
   {
     mhd_response_dec_use_count (response);
+    mhd_LOG_MSG (mhd_CNTNR_PTR (request, struct MHD_Connection, rq)->daemon, \
+                 MHD_SC_AUTH_DIGEST_UNSUPPORTED, \
+                 "Attempted to use a response with Digest Auth challenge on " \
+                 "the daemon without enabled Digest Auth support");
     return (const struct MHD_Action *) NULL;
   }
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
 
   head_act->act = mhd_ACTION_RESPONSE;
   head_act->data.response = response;
@@ -273,13 +279,19 @@ MHD_upload_action_from_response (struct MHD_Request *request,
     mhd_response_dec_use_count (response);
     return (const struct MHD_UploadAction *) NULL;
   }
+#ifdef MHD_SUPPORT_AUTH_DIGEST
   if (mhd_RESP_HAD_AUTH_DIGEST (response) &&
       ! mhd_D_HAS_AUTH_DIGEST ( \
         mhd_CNTNR_CPTR (request, struct MHD_Connection, rq)->daemon))
   {
     mhd_response_dec_use_count (response);
+    mhd_LOG_MSG (mhd_CNTNR_PTR (request, struct MHD_Connection, rq)->daemon, \
+                 MHD_SC_AUTH_DIGEST_UNSUPPORTED, \
+                 "Attempted to use a response with Digest Auth challenge on " \
+                 "the daemon without enabled Digest Auth support");
     return (const struct MHD_UploadAction *) NULL;
   }
+#endif /* MHD_SUPPORT_AUTH_DIGEST */
 
   upl_act->act = mhd_UPLOAD_ACTION_RESPONSE;
   upl_act->data.response = response;
