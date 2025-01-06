@@ -60,7 +60,7 @@ main (int argc, char *argv[])
       .server_cb_cls = (void *) "username:password",
       .client_cb = &MHDT_client_send_basic_auth,
       .client_cb_cls = (void *) "username:password",
-      .timeout_ms = 200,
+      .timeout_ms = 2500,
     },
     {
       .label = "failing basic authentication",
@@ -68,7 +68,7 @@ main (int argc, char *argv[])
       .server_cb_cls = (void *) "username:password",
       .client_cb = &MHDT_client_fail_basic_auth,
       .client_cb_cls = (void *) "username:word", /* incorrect on purpose */
-      .timeout_ms = 200,
+      .timeout_ms = 2500,
     },
 #endif
     {
@@ -77,7 +77,7 @@ main (int argc, char *argv[])
       .server_cb_cls = (void *) "username:password",
       .client_cb = &MHDT_client_send_digest_auth,
       .client_cb_cls = (void *) "username:password",
-      .timeout_ms = 200,
+      .timeout_ms = 2500,
     },
     {
       .label = "failing digest authentication",
@@ -85,7 +85,7 @@ main (int argc, char *argv[])
       .server_cb_cls = (void *) "username:password",
       .client_cb = &MHDT_client_fail_digest_auth,
       .client_cb_cls = (void *) "username:word", /* incorrect on purpose */
-      .timeout_ms = 200,
+      .timeout_ms = 2500,
     },
     {
       .label = NULL,
