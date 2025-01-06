@@ -29,6 +29,8 @@
 #if defined(_WIN32) && ! defined(__CYGWIN__)
 #  include <wincrypt.h> /* For entropy generation */
 #else
+#  include <sys/types.h>
+#  include <fcntl.h>  /* open() function */
 #  include <unistd.h> /* close() function */
 #endif /* _WIN32 && ! __CYGWIN__ */
 
@@ -249,8 +251,7 @@ init_entropy_bytes (void)
   }
   if (0 > fd)
   {
-    fprintf (stderr, "Failed to open random data source: %s\n",
-             strerror (errno));
+    fprintf (stderr, "Failed to open random data source.\n");
     return 0;
   }
   for (off = 0; off < sizeof (entropy_bytes); off += (size_t) len)
@@ -260,8 +261,7 @@ init_entropy_bytes (void)
                 sizeof (entropy_bytes) - off);
     if (0 >= len)
     {
-      fprintf (stderr, "Failed to read random data source: %s\n",
-               strerror (errno));
+      fprintf (stderr, "Failed to read random data source.\n");
       (void) close (fd);
       return 0;
     }
