@@ -267,6 +267,7 @@ init_entropy_bytes (void)
     }
   }
   (void) close (fd);
+  return ! 0;
 #else  /* Native W32 */
   HCRYPTPROV cc;
   BOOL b;
