@@ -441,7 +441,7 @@ response_add_auth_digest_challenge_int (struct MHD_Response *restrict response,
 #endif
 #ifdef MHD_SUPPORT_SHA512_256
   if ((MHD_SC_OK == res) &&
-      (0 != (MHD_DIGEST_BASE_ALGO_SHA256 & ((unsigned int) malgo))))
+      (0 != (MHD_DIGEST_BASE_ALGO_SHA512_256 & ((unsigned int) malgo))))
     res = response_add_auth_digest_challenge_alg (
       response,
       &rlm,
