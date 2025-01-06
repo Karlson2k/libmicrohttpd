@@ -2798,7 +2798,10 @@ is_param_equal_caseless (const struct mhd_RqDAuthParam *restrict param,
  * @ingroup authentication
  */
 static MHD_FN_MUST_CHECK_RESULT_
-MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (4)  MHD_FN_PAR_CSTR_ (4)
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_CSTR_ (3)
+MHD_FN_PAR_CSTR_ (4)
 enum MHD_DigestAuthResult
 digest_auth_check_all_inner (struct MHD_Request *restrict req,
                              const char *restrict realm,
