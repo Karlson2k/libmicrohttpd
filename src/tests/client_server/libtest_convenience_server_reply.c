@@ -836,7 +836,8 @@ MHDT_server_reply_check_digest_auth (
                                         (enum MHD_DigestAuthMultiAlgo) algo);
   }
   free (username);
-  if (MHD_DAUTH_OK != dar)
+  if ((MHD_DAUTH_HEADER_MISSING == dar)
+      || (MHD_DAUTH_NONCE_STALE == dar))
   {
     struct MHD_Response *resp;
     enum MHD_StatusCode sc;
@@ -854,7 +855,7 @@ MHDT_server_reply_check_digest_auth (
       "test-realm",
       "opaque",
       NULL, /* domain */
-      MHD_YES,                        /* indicate stale */
+      (MHD_DAUTH_NONCE_STALE == dar) ? MHD_YES : MHD_NO, /* indicate stale */
       MHD_DIGEST_AUTH_MULT_QOP_AUTH,
       MHD_DIGEST_AUTH_MULT_ALGO_SHA256,
       MHD_NO /* userhash_support */,
@@ -870,8 +871,16 @@ MHDT_server_reply_check_digest_auth (
       request,
       resp);
   }
-  return MHD_action_from_response (
-    request,
-    MHD_response_from_empty (
-      MHD_HTTP_STATUS_NO_CONTENT));
+  if (MHD_DAUTH_RESPONSE_WRONG == dar)
+    return MHD_action_from_response (
+      request,
+      MHD_response_from_empty (MHD_HTTP_STATUS_FORBIDDEN));
+
+  if (MHD_DAUTH_OK == dar)
+    return MHD_action_from_response (
+      request,
+      MHD_response_from_empty (
+        MHD_HTTP_STATUS_NO_CONTENT));
+
+  return MHD_action_abort_request (request);
 }
