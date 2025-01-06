@@ -1032,7 +1032,7 @@ MHDT_client_fail_digest_auth (
                           &status);
   if (NULL != ret)
     return ret;
-  if (MHD_HTTP_STATUS_UNAUTHORIZED != status)
+  if (MHD_HTTP_STATUS_FORBIDDEN != status)
     return "invalid HTTP response code";
   return NULL;
 }
