@@ -822,7 +822,7 @@ MHDT_server_reply_check_digest_auth (
     if (MHD_SC_OK != sc)
     {
       fprintf (stderr,
-               "MHD_digest_auth_calc_userhash: %d\n",
+               "MHD_digest_auth_calc_userdigest: %d\n",
                (int) sc);
       return NULL;
     }
@@ -857,7 +857,7 @@ MHDT_server_reply_check_digest_auth (
       MHD_YES,                        /* indicate stale */
       MHD_DIGEST_AUTH_MULT_QOP_AUTH,
       MHD_DIGEST_AUTH_MULT_ALGO_SHA256,
-      MHD_YES /* userhash_support */,
+      MHD_NO /* userhash_support */,
       MHD_YES /* prefer UTF8 */);
     if (MHD_SC_OK != sc)
     {
