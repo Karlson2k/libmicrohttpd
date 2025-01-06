@@ -799,7 +799,7 @@ MHDT_server_reply_check_digest_auth (
   const char *password;
   enum MHD_DigestAuthResult dar;
   const char *realm = "test-realm";
-  enum MHD_DigestAuthAlgo algo = MHD_DIGEST_AUTH_MULT_ALGO_SHA256;
+  enum MHD_DigestAuthAlgo algo = MHD_DIGEST_AUTH_ALGO_SHA256;
   size_t digest_len = MHD_digest_get_hash_size (algo);
 
   if (0 == digest_len)
@@ -829,12 +829,11 @@ MHDT_server_reply_check_digest_auth (
     dar = MHD_digest_auth_check_digest (request,
                                         realm,
                                         username,
-                                        digest,
                                         sizeof (digest),
-                                        0, /* nonce timeout in seconds; 0: default */
+                                        digest,
                                         0, /* maximum nonce counter; 0: default */
                                         MHD_DIGEST_AUTH_MULT_QOP_AUTH,
-                                        algo);
+                                        (enum MHD_DigestAuthMultiAlgo) algo);
   }
   free (username);
   if (MHD_DAUTH_OK != dar)
