@@ -29,9 +29,12 @@
 int
 main (int argc, char *argv[])
 {
+  unsigned char pseudo_entropy[] = { 0, 1, 2, 3 };
   struct MHD_DaemonOptionAndValue thread1auto[] = {
     MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
     MHD_D_OPTION_WM_WORKER_THREADS (1),
+    MHD_D_OPTION_RANDOM_ENTROPY (sizeof(pseudo_entropy),
+                                 pseudo_entropy),
     MHD_D_OPTION_TERMINATE ()
   };
   struct ServerType
