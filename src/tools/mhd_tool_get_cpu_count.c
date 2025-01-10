@@ -74,45 +74,45 @@
 #  include <stdbool.h>
 #endif /* HAVE_STDBOOL_H */
 
-#if ! defined(HAS_DECL_CPU_SETSIZE) && ! defined(CPU_SETSIZE)
+#if ! defined(HAVE_DCLR_CPU_SETSIZE) && ! defined(CPU_SETSIZE)
 #  define CPU_SETSIZE (1024)
 #  define CPU_SETSIZE_SAFE (64)
-#else  /* HAS_DECL_CPU_SETSIZE || CPU_SETSIZE */
+#else  /* HAVE_DCLR_CPU_SETSIZE || CPU_SETSIZE */
 #  define CPU_SETSIZE_SAFE CPU_SETSIZE
-#endif /* HAS_DECL_CPU_SETSIZE || CPU_SETSIZE */
+#endif /* HAVE_DCLR_CPU_SETSIZE || CPU_SETSIZE */
 
 /* Check and fix possible missing macros */
-#if ! defined(HAS_DECL_CTL_HW) && defined(CTL_HW)
-#  define HAS_DECL_CTL_HW 1
-#endif /* ! HAS_DECL_CTL_HW && CTL_HW */
+#if ! defined(HAVE_DCLR_CTL_HW) && defined(CTL_HW)
+#  define HAVE_DCLR_CTL_HW 1
+#endif /* ! HAVE_DCLR_CTL_HW && CTL_HW */
 
-#if ! defined(HAS_DECL_HW_NCPUONLINE) && defined(HW_NCPUONLINE)
-#  define HAS_DECL_HW_NCPUONLINE 1
-#endif /* ! HAS_DECL_HW_NCPUONLINE && HW_NCPUONLINE */
+#if ! defined(HAVE_DCLR_HW_NCPUONLINE) && defined(HW_NCPUONLINE)
+#  define HAVE_DCLR_HW_NCPUONLINE 1
+#endif /* ! HAVE_DCLR_HW_NCPUONLINE && HW_NCPUONLINE */
 
-#if ! defined(HAS_DECL_HW_AVAILCPU) && defined(HW_AVAILCPU)
-#  define HAS_DECL_HW_AVAILCPU 1
-#endif /* ! HAS_DECL_HW_AVAILCPU && HW_AVAILCPU */
+#if ! defined(HAVE_DCLR_HW_AVAILCPU) && defined(HW_AVAILCPU)
+#  define HAVE_DCLR_HW_AVAILCPU 1
+#endif /* ! HAVE_DCLR_HW_AVAILCPU && HW_AVAILCPU */
 
-#if ! defined(HAS_DECL_HW_NCPU) && defined(HW_NCPU)
-#  define HAS_DECL_HW_NCPU 1
-#endif /* ! HAS_DECL_HW_NCPU && HW_NCPU */
+#if ! defined(HAVE_DCLR_HW_NCPU) && defined(HW_NCPU)
+#  define HAVE_DCLR_HW_NCPU 1
+#endif /* ! HAVE_DCLR_HW_NCPU && HW_NCPU */
 
-#if ! defined(HAS_DECL__SC_NPROCESSORS_ONLN) && defined(_SC_NPROCESSORS_ONLN)
-#  define HAS_DECL__SC_NPROCESSORS_ONLN 1
-#endif /* ! HAS_DECL__SC_NPROCESSORS_ONLN && _SC_NPROCESSORS_ONLN */
+#if ! defined(HAVE_DCLR__SC_NPROCESSORS_ONLN) && defined(_SC_NPROCESSORS_ONLN)
+#  define HAVE_DCLR__SC_NPROCESSORS_ONLN 1
+#endif /* ! HAVE_DCLR__SC_NPROCESSORS_ONLN && _SC_NPROCESSORS_ONLN */
 
-#if ! defined(HAS_DECL__SC_NPROC_ONLN) && defined(_SC_NPROC_ONLN)
-#  define HAS_DECL__SC_NPROC_ONLN 1
-#endif /* ! HAS_DECL__SC_NPROC_ONLN && _SC_NPROC_ONLN */
+#if ! defined(HAVE_DCLR__SC_NPROC_ONLN) && defined(_SC_NPROC_ONLN)
+#  define HAVE_DCLR__SC_NPROC_ONLN 1
+#endif /* ! HAVE_DCLR__SC_NPROC_ONLN && _SC_NPROC_ONLN */
 
-#if ! defined(HAS_DECL__SC_CRAY_NCPU) && defined(_SC_CRAY_NCPU)
-#  define HAS_DECL__SC_CRAY_NCPU 1
-#endif /* ! HAS_DECL__SC_CRAY_NCPU && _SC_CRAY_NCPU */
+#if ! defined(HAVE_DCLR__SC_CRAY_NCPU) && defined(_SC_CRAY_NCPU)
+#  define HAVE_DCLR__SC_CRAY_NCPU 1
+#endif /* ! HAVE_DCLR__SC_CRAY_NCPU && _SC_CRAY_NCPU */
 
-#if ! defined(HAS_DECL__SC_NPROCESSORS_CONF) && defined(_SC_NPROCESSORS_CONF)
-#  define HAS_DECL__SC_NPROCESSORS_CONF 1
-#endif /* ! HAVE_DECL__SC_NPROCESSORS_CONF && _SC_NPROCESSORS_CONF */
+#if ! defined(HAVE_DCLR__SC_NPROCESSORS_CONF) && defined(_SC_NPROCESSORS_CONF)
+#  define HAVE_DCLR__SC_NPROCESSORS_CONF 1
+#endif /* ! HAVE_DCLR__SC_NPROCESSORS_CONF && _SC_NPROCESSORS_CONF */
 
 /* Forward declarations */
 
@@ -269,7 +269,7 @@ mhd_tool_get_proc_cpu_count_sched_getaffinity_np_ (void)
                                    cpuset_ptr))
     {
       cpuid_t cpu_num;
-#if defined(HAVE_SYSCONF) && defined(HAVE_DECL__SC_NPROCESSORS_CONF)
+#if defined(HAVE_SYSCONF) && defined(HAVE_DCLR__SC_NPROCESSORS_CONF)
       unsigned int max_num = 0;
       long sc_value;
       sc_value = sysconf (_SC_NPROCESSORS_ONLN);
@@ -283,7 +283,7 @@ mhd_tool_get_proc_cpu_count_sched_getaffinity_np_ (void)
             ++ret;
       }
       else /* Combined with the next 'if' */
-#endif /* HAVE_SYSCONF && HAVE_DECL__SC_NPROCESSORS_CONF */
+#endif /* HAVE_SYSCONF && HAVE_DCLR__SC_NPROCESSORS_CONF */
       if (1)
       {
         int res;
@@ -719,8 +719,8 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
   }
 #endif /* HAVE_SYSCTLBYNAME */
 #if defined(HAVE_SYSCTL) && \
-  defined(HAS_DECL_CTL_HW) && \
-  defined(HAS_DECL_HW_NCPUONLINE)
+  defined(HAVE_DCLR_CTL_HW) && \
+  defined(HAVE_DCLR_HW_NCPUONLINE)
   if (0 >= ret)
   {
     /* OpenBSD, NetBSD: The number of online CPUs */
@@ -730,10 +730,10 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
         || (sizeof (ret) != value_size))
       ret = -1;
   }
-#endif /* HAVE_SYSCTL && HAS_DECL_CTL_HW && HAS_DECL_HW_NCPUONLINE */
+#endif /* HAVE_SYSCTL && HAVE_DCLR_CTL_HW && HAVE_DCLR_HW_NCPUONLINE */
 #if defined(HAVE_SYSCTL) && \
-  defined(HAS_DECL_CTL_HW) && \
-  defined(HAS_DECL_HW_AVAILCPU)
+  defined(HAVE_DCLR_CTL_HW) && \
+  defined(HAVE_DCLR_HW_AVAILCPU)
   if (0 >= ret)
   {
     /* Darwin: The MIB name for "hw.activecpu" */
@@ -743,7 +743,7 @@ mhd_tool_get_sys_cpu_count_sysctl_ (void)
         || (sizeof (ret) != value_size))
       ret = -1;
   }
-#endif /* HAVE_SYSCTL && HAS_DECL_CTL_HW && HAS_DECL_HW_AVAILCPU */
+#endif /* HAVE_SYSCTL && HAVE_DCLR_CTL_HW && HAVE_DCLR_HW_AVAILCPU */
 #endif /* ! __linux__ */
   if (0 >= ret)
     return -1;
@@ -781,8 +781,8 @@ mhd_tool_get_sys_cpu_count_sysctl_fallback_ (void)
   }
 #endif /* HAVE_SYSCTLBYNAME */
 #if defined(HAVE_SYSCTL) && \
-  defined(HAS_DECL_CTL_HW) && \
-  defined(HAS_DECL_HW_NCPU)
+  defined(HAVE_DCLR_CTL_HW) && \
+  defined(HAVE_DCLR_HW_NCPU)
   if (0 >= ret)
   {
     /* FreeBSD, OpenBSD, NetBSD, Darwin (and others?): The number of CPUs */
@@ -792,7 +792,7 @@ mhd_tool_get_sys_cpu_count_sysctl_fallback_ (void)
         || (sizeof (ret) != value_size))
       ret = -1;
   }
-#endif /* HAVE_SYSCTL && HAS_DECL_CTL_HW && HAS_DECL_HW_NCPU */
+#endif /* HAVE_SYSCTL && HAVE_DCLR_CTL_HW && HAVE_DCLR_HW_NCPU */
 #endif /* ! __linux__ */
   if (0 >= ret)
     return -1;
@@ -813,23 +813,23 @@ mhd_tool_get_sys_cpu_count_sysconf_ (void)
 {
   int ret = -1;
 #if defined(HAVE_SYSCONF) && \
-  (defined(HAS_DECL__SC_NPROCESSORS_ONLN) || defined(HAS_DECL__SC_NPROC_ONLN))
+  (defined(HAVE_DCLR__SC_NPROCESSORS_ONLN) || defined(HAVE_DCLR__SC_NPROC_ONLN))
   long value = -1;
-#ifdef HAS_DECL__SC_NPROCESSORS_ONLN
+#ifdef HAVE_DCLR__SC_NPROCESSORS_ONLN
   if (0 >= value)
     value = sysconf (_SC_NPROCESSORS_ONLN);
-#endif /* HAS_DECL__SC_NPROCESSORS_ONLN */
-#ifdef HAS_DECL__SC_NPROC_ONLN
+#endif /* HAVE_DCLR__SC_NPROCESSORS_ONLN */
+#ifdef HAVE_DCLR__SC_NPROC_ONLN
   if (0 >= value)
     value = sysconf (_SC_NPROC_ONLN);
-#endif /* HAS_DECL__SC_NPROC_ONLN */
+#endif /* HAVE_DCLR__SC_NPROC_ONLN */
   if (0 >= value)
     return -1;
   ret = (int) value;
   if ((long) ret != value)
     return -1; /* Overflow */
 #endif /* HAVE_SYSCONF &&
-          (HAS_DECL__SC_NPROCESSORS_ONLN || HAS_DECL__SC_NPROC_ONLN) */
+          (HAVE_DCLR__SC_NPROCESSORS_ONLN || HAVE_DCLR__SC_NPROC_ONLN) */
   return ret;
 }
 
@@ -849,23 +849,23 @@ mhd_tool_get_sys_cpu_count_sysconf_fallback_ (void)
 {
   int ret = -1;
 #if defined(HAVE_SYSCONF) && \
-  (defined(HAS_DECL__SC_CRAY_NCPU) || defined(HAS_DECL__SC_NPROCESSORS_CONF))
+  (defined(HAVE_DCLR__SC_CRAY_NCPU) || defined(HAVE_DCLR__SC_NPROCESSORS_CONF))
   long value = -1;
-#ifdef HAS_DECL__SC_CRAY_NCPU
+#ifdef HAVE_DCLR__SC_CRAY_NCPU
   if (0 >= value)
     value = sysconf (_SC_CRAY_NCPU);
-#endif /* HAS_DECL__SC_CRAY_NCPU */
-#ifdef HAS_DECL__SC_NPROCESSORS_CONF
+#endif /* HAVE_DCLR__SC_CRAY_NCPU */
+#ifdef HAVE_DCLR__SC_NPROCESSORS_CONF
   if (0 >= value)
     value = sysconf (_SC_NPROCESSORS_CONF);
-#endif /* HAS_DECL__SC_NPROCESSORS_CONF */
+#endif /* HAVE_DCLR__SC_NPROCESSORS_CONF */
   if (0 >= value)
     return -1;
   ret = (int) value;
   if ((long) ret != value)
     return -1; /* Overflow */
 #endif /* HAVE_SYSCONF &&
-          (HAS_DECL__SC_CRAY_NCPU || HAS_DECL__SC_NPROCESSORS_CONF) */
+          (HAVE_DCLR__SC_CRAY_NCPU || HAVE_DCLR__SC_NPROCESSORS_CONF) */
   return ret;
 }
 

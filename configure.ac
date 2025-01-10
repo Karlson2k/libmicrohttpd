@@ -2859,7 +2859,7 @@ AS_IF([test "$os_is_native_w32" != "yes"],
 AS_VAR_IF([have_poll],["yes"],
   [
     AC_DEFINE([[HAVE_POLL]],[[1]],[Define to '1' if poll() is supported on your platform])
-    AC_CHECK_DECLS([POLLRDNORM,POLLIN,POLLRDBAND,POLLWRNORM,POLLOUT,POLLWRBAND,POLLPRI],[],[],[[
+    MHD_CHECK_DECLS([POLLRDNORM POLLIN POLLRDBAND POLLWRNORM POLLOUT POLLWRBAND POLLPRI],[[
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #endif
@@ -3203,8 +3203,8 @@ AS_VAR_IF([[os_is_native_w32]], [["yes"]],[],
   ]
 )
 
-AC_CHECK_DECLS([AF_UNIX,AF_LOCAL,SOMAXCONN,IPV6_V6ONLY,SO_REUSEADDR,SO_REUSEPORT,\
-TCP_NODELAY,TCP_FASTOPEN],[],[],
+MHD_CHECK_DECLS([AF_UNIX AF_LOCAL SOMAXCONN IPV6_V6ONLY SO_REUSEADDR SO_REUSEPORT \
+                 TCP_NODELAY TCP_FASTOPEN SOL_SOCKET SO_LINGER SHUT_WR SD_SEND],
   [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -3874,7 +3874,7 @@ MHD_CHECK_FUNC([[sysctl]], [[
       i][f (sysctl(mib, 2, NULL, NULL, NULL, 0)) return 1;
   ]],
   [
-    AC_CHECK_DECLS([CTL_NET,PF_INET,IPPROTO_ICMP,ICMPCTL_ICMPLIM],[],[],
+    MHD_CHECK_DECLS([CTL_NET PF_INET IPPROTO_ICMP ICMPCTL_ICMPLIM],
       [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -5931,9 +5931,8 @@ AM_CONDITIONAL([USE_IPV6_TESTING], [[test "x$mhd_cv_ipv6_for_testing" = "xyes"]]
 AS_VAR_IF([enable_tools],["yes"],
   [
     AC_CHECK_HEADERS([features.h sys/pstat.h vxCpuLib.h],[],[],[AC_INCLUDES_DEFAULT])
-    AC_CHECK_DECLS(
-      [_SC_NPROCESSORS_ONLN,_SC_NPROC_ONLN,_SC_CRAY_NCPU,_SC_NPROCESSORS_CONF,CTL_HW,HW_NCPUONLINE,HW_NCPU,HW_AVAILCPU],
-      [],[],
+    MHD_CHECK_DECLS([_SC_NPROCESSORS_ONLN _SC_NPROC_ONLN _SC_CRAY_NCPU _SC_NPROCESSORS_CONF \
+                     CTL_HW HW_NCPUONLINE HW_NCPU HW_AVAILCPU],
       [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -6027,7 +6026,7 @@ AS_VAR_IF([enable_tools],["yes"],
                     }
                     CPU_FREE(p_set);
                   ]],
-                  [AC_CHECK_DECLS([CPU_SETSIZE],[],[],[#include <sched.h>])]
+                  [MHD_CHECK_DECLS([CPU_SETSIZE],[],[],[#include <sched.h>])]
                 )
               ]
             )

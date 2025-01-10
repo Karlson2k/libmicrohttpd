@@ -44,36 +44,31 @@
 #error Uknown sockets type
 #  endif
 
-#  if (defined(HAVE_DECL_POLLRDNORM) && (0 != HAVE_DECL_POLLRDNORM + 0)) || \
-  defined(POLLRDNORM)
+#  if defined(HAVE_DCLR_POLLRDNORM) || defined(POLLRDNORM)
 #    define MHD_POLL_IN POLLRDNORM
 #  else
 #    define MHD_POLL_IN POLLIN
 #  endif
 
-#  if (defined(HAVE_DECL_POLLWRNORM) && (0 != HAVE_DECL_POLLWRNORM + 0)) || \
-  defined(POLLWRNORM)
+#  if defined(HAVE_DCLR_POLLWRNORM) || defined(POLLWRNORM)
 #    define MHD_POLL_OUT POLLWRNORM
 #  else
 #    define MHD_POLL_OUT POLLOUT
 #  endif
 
-#  if (defined(HAVE_DECL_POLLRDBAND) && (0 != HAVE_DECL_POLLRDBAND + 0)) || \
-  defined(POLLRDBAND)
+#  if defined(HAVE_DCLR_POLLRDBAND) || defined(POLLRDBAND)
 #    define MHD_POLLRDBAND POLLRDBAND
 #  else
 #    define MHD_POLLRDBAND (0)
 #  endif
 
-#  if (defined(HAVE_DECL_POLLWRBAND) && (0 != HAVE_DECL_POLLWRBAND + 0)) || \
-  defined(POLLWRBAND)
+#  if defined(HAVE_DCLR_POLLWRBAND) || defined(POLLWRBAND)
 #    define MHD_POLLWRBAND POLLWRBAND
 #  else
 #    define MHD_POLLWRBAND (0)
 #  endif
 
-#  if (defined(HAVE_DECL_POLLPRI) && (0 != HAVE_DECL_POLLPRI + 0)) || \
-  defined(POLLWRBAND)
+#  if defined(HAVE_DCLR_POLLPRI) || defined(POLLWRBAND)
 #    define MHD_POLLPRI POLLPRI
 #  else
 #    define MHD_POLLPRI (0)

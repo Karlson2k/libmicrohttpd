@@ -111,8 +111,7 @@ MHD_INTERNAL bool
 mhd_socket_set_nodelay (MHD_Socket sckt,
                         bool on)
 {
-  // TODO: detect constants in configure
-#ifdef TCP_NODELAY
+#ifdef HAVE_DCLR_TCP_NODELAY
   mhd_SCKT_OPT_BOOL value;
 
   value = on ? 1 : 0;
@@ -120,7 +119,7 @@ mhd_socket_set_nodelay (MHD_Socket sckt,
   return 0 == setsockopt (sckt, IPPROTO_TCP, TCP_NODELAY,
                           (const void *) &value, sizeof (value));
 #else  /* ! TCP_NODELAY */
-  (void) sock; (void) on;
+  (void) sckt; (void) on;
   return false;
 #endif /* ! TCP_NODELAY */
 }
@@ -129,8 +128,7 @@ mhd_socket_set_nodelay (MHD_Socket sckt,
 MHD_INTERNAL bool
 mhd_socket_set_hard_close (MHD_Socket sckt)
 {
-  // TODO: detect constants in configure
-#if defined(SOL_SOCKET) && defined(SO_LINGER)
+#if defined(HAVE_DCLR_SOL_SOCKET) && defined(HAVE_DCLR_SO_LINGER)
   struct linger par;
 
   par.l_onoff = 1;
@@ -138,19 +136,19 @@ mhd_socket_set_hard_close (MHD_Socket sckt)
 
   return 0 == setsockopt (sckt, SOL_SOCKET, SO_LINGER,
                           (const void *) &par, sizeof (par));
-#else  /* ! TCP_NODELAY */
-  (void) sock;
+#else  /* ! SOL_SOCKET || ! SO_LINGER */
+  (void) sckt;
   return false;
-#endif /* ! TCP_NODELAY */
+#endif /* ! SOL_SOCKET || ! SO_LINGER */
 }
 
 
 MHD_INTERNAL bool
 mhd_socket_shut_wr (MHD_Socket sckt)
 {
-#if defined(SHUT_WR) // TODO: detect constants in configure
+#if defined(HAVE_DCLR_SHUT_WR)
   return 0 == shutdown (sckt, SHUT_WR);
-#elif defined(SD_SEND) // TODO: detect constants in configure
+#elif defined(HAVE_DCLR_SD_SEND)
   return 0 == shutdown (sckt, SD_SEND);
 #else
   return false;

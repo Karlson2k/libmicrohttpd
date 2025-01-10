@@ -121,11 +121,9 @@ typedef int mhd_SCKT_SEND_SIZE;
 #endif
 
 
-#if defined(AF_UNIX) || \
-  (defined(HAVE_DECL_AF_UNIX) && (HAVE_DECL_AF_UNIX + 0 != 0))
+#if defined(AF_UNIX) || defined(HAVE_DCLR_AF_UNIX)
 #  define MHD_AF_UNIX AF_UNIX
-#elif defined(AF_LOCAL) || \
-  (defined(HAVE_DECL_AF_LOCAL) && (HAVE_DECL_AF_LOCAL + 0 != 0))
+#elif defined(AF_LOCAL) || defined(HAVE_DCLR_AF_LOCAL)
 #  define MHD_AF_UNIX AF_LOCAL
 #endif /* AF_UNIX */
 

@@ -53,6 +53,16 @@
 #  include <ws2tcpip.h>
 #endif
 
+#if ! defined(HAVE_DCLR_IPV6_V6ONLY) && defined(IPV6_V6ONLY)
+/* Mis-deteted by configure */
+#  define HAVE_DCLR_IPV6_V6ONLY 1
+#endif
+
+#if ! defined(HAVE_DCLR_TCP_NODELAY) && defined(TCP_NODELAY)
+/* Mis-deteted by configure */
+#  define HAVE_DCLR_TCP_NODELAY 1
+#endif
+
 #ifdef IPPROTO_TCP
 #  if defined(TCP_CORK)
 /**

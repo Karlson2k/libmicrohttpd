@@ -413,7 +413,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #ifdef HAVE_INET6
         else
         {
-#ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
+#ifdef HAVE_DCLR_IPV6_V6ONLY
           sk_type = mhd_SKT_IP_DUAL_REQUIRED;
 #else  /* ! IPV6_V6ONLY */
           mhd_LOG_MSG (d, \
@@ -454,7 +454,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         return MHD_SC_INTERNAL_ERROR;
       case MHD_AF_AUTO:
 #ifdef HAVE_INET6
-#ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
+#ifdef HAVE_DCLR_IPV6_V6ONLY
         if (force_v6_any_dual)
           sk_type = mhd_SKT_IP_V6_WITH_V4_OPT;
         else if (v6_tried)
@@ -493,7 +493,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         mhd_assert (! v6_tried);
         mhd_assert (! force_v6_any_dual);
 #ifdef HAVE_INET6
-#ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
+#ifdef HAVE_DCLR_IPV6_V6ONLY
         sk_type = mhd_SKT_IP_DUAL_REQUIRED;
 #else  /* ! IPV6_V6ONLY */
         mhd_LOG_MSG (d,
@@ -513,7 +513,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
         mhd_assert (! v6_tried);
         mhd_assert (! force_v6_any_dual);
 #ifdef HAVE_INET6
-#ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
+#ifdef HAVE_DCLR_IPV6_V6ONLY
         sk_type = mhd_SKT_IP_V6_WITH_V4_OPT;
 #else  /* ! IPV6_V6ONLY */
         sk_type = mhd_SKT_IP_V6_ONLY;
@@ -528,7 +528,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       case MHD_AF_DUAL_v6_OPTIONAL:
         mhd_assert (! force_v6_any_dual);
 #ifdef HAVE_INET6
-#ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
+#ifdef HAVE_DCLR_IPV6_V6ONLY
         sk_type = (! v6_tried) ?
                   mhd_SKT_IP_V4_WITH_V6_OPT : mhd_SKT_IP_V4_ONLY;
 #else  /* ! IPV6_V6ONLY */
@@ -689,7 +689,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
     if (! sk_already_listening)
     {
 #ifdef HAVE_INET6
-#ifdef IPV6_V6ONLY // TODO: detect constants declarations in configure
+#ifdef HAVE_DCLR_IPV6_V6ONLY
       if ((mhd_SKT_IP_V6_ONLY == sk_type) ||
           (mhd_SKT_IP_DUAL_REQUIRED == sk_type) ||
           (mhd_SKT_IP_V4_WITH_V6_OPT == sk_type) ||
@@ -783,7 +783,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 
       if (MHD_FOM_AUTO <= d->settings->tcp_fastopen.v_option)
       {
-#if defined(TCP_FASTOPEN)
+#if defined(HAVE_DCLR_TCP_FASTOPEN)
         int fo_param;
 #ifdef __linux__
         /* The parameter is the queue length */
@@ -820,7 +820,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
       if (MHD_D_OPTION_BIND_TYPE_NOT_SHARED >= d->settings->listen_addr_reuse)
       {
 #ifndef MHD_SOCKETS_KIND_WINSOCK
-#ifdef SO_REUSEADDR
+#ifdef HAVE_DCLR_SO_REUSEADDR
         mhd_SCKT_OPT_BOOL on_val1 = 1;
         if (0 != setsockopt (sk, SOL_SOCKET, SO_REUSEADDR,
                              (const void *) &on_val1, sizeof (on_val1)))
@@ -836,7 +836,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 #endif /* ! MHD_SOCKETS_KIND_WINSOCK */
         if (MHD_D_OPTION_BIND_TYPE_NOT_SHARED > d->settings->listen_addr_reuse)
         {
-#if defined(SO_REUSEPORT) || defined(MHD_SOCKETS_KIND_WINSOCK)
+#if defined(HAVE_DCLR_SO_REUSEPORT) || defined(MHD_SOCKETS_KIND_WINSOCK)
           mhd_SCKT_OPT_BOOL on_val2 = 1;
           if (0 != setsockopt (sk, SOL_SOCKET,
 #ifndef MHD_SOCKETS_KIND_WINSOCK
@@ -912,7 +912,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
           accept_queue_len = 0;
         if (0 == accept_queue_len)
         {
-#ifdef SOMAXCONN
+#if defined(SOMAXCONN) || defined(HAVE_DCLR_SOMAXCONN)
           accept_queue_len = SOMAXCONN;
 #else  /* ! SOMAXCONN */
           accept_queue_len = 127; /* Should be the safe value */

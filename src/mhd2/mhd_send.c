@@ -198,7 +198,7 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_connection_set_nodelay_state (struct MHD_Connection *connection,
                                   bool nodelay_state)
 {
-#ifdef TCP_NODELAY
+#ifdef HAVE_DCLR_TCP_NODELAY
   static const mhd_SCKT_OPT_BOOL off_val = 0;
   static const mhd_SCKT_OPT_BOOL on_val = 1;
   int err_code;
