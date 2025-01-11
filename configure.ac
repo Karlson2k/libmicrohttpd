@@ -3103,11 +3103,13 @@ MHD_CHECK_FUNC_RUN([getsockname],
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
 #endif
 #ifdef HAVE_WS2TCPIP_H
 #include <ws2tcpip.h>
+#endif
 #endif
 #ifdef HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -3133,35 +3135,37 @@ MHD_CHECK_FUNC_RUN([getsockname],
   const SOCKET invld_sckt = INVALID_SOCKET;
   WSADATA wsa_data;
 
-  if (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
+  i][f (0 != WSAStartup(MAKEWORD(2, 2), &wsa_data) || MAKEWORD(2, 2) != wsa_data.wVersion)
     return 20;
 #endif
 
-  sckt = socket (PF_INET, SOCK_STREAM, 0);
-  if (invld_sckt != sckt)
+  sckt = socket (AF_INET, SOCK_STREAM, 0);
+  i][f (invld_sckt != sckt)
   {
     memset(&sa, 0, c_addr_size);
     sa.sin_family = AF_INET;
+    i][f (0 != INADDR_ANY)
+      sa.sin_addr.s_addr = htonl (INADDR_ANY);
 #ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
     sa.sin_len = c_addr_size;
 #endif
-    if (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
+    i][f (0 == bind (sckt, (struct sockaddr *)&sa, c_addr_size))
     {
-      if (0 == listen (sckt, 1))
+      i][f (0 == listen (sckt, 1))
       {
         addr_size = c_addr_size;
-        if (0 == getsockname (sckt, (struct sockaddr  *)&sa, &addr_size))
+        i][f (0 == getsockname (sckt, (struct sockaddr  *)&sa, &addr_size))
         {
-          if (c_addr_size >= addr_size)
+          i][f (c_addr_size >= addr_size)
           {
-            if (0 != ntohs(sa.sin_port))
+            i][f (0 != ntohs(sa.sin_port))
             { ret = 0;
-            } else ret = 7;
-          } else ret = 6;
-        } else ret = 5;
-      } else ret = 4;
-    } else ret = 3;
-  } else ret = 2;
+            } el][se ret = 7;
+          } el][se ret = 6;
+        } el][se ret = 5;
+      } el][se ret = 4;
+    } el][se ret = 3;
+  } el][se ret = 2;
 #if !defined(_WIN32) || defined(__CYGWIN__)
   close (sckt);
 #else
