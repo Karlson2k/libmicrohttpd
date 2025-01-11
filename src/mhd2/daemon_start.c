@@ -991,6 +991,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 }
 
 
+#ifdef MHD_USE_GETSOCKNAME
 /**
  * Detect and set the type and port of the listening socket
  * @param d the daemon to use
@@ -1059,6 +1060,11 @@ detect_listen_type_and_port (struct MHD_Daemon *restrict d)
                  "The type of listen socket is detected as non-IP, while " \
                  "the socket has been created as an IP socket");
 }
+
+
+#else
+#  define detect_listen_type_and_port(d) ((void) d)
+#endif
 
 
 #ifdef MHD_USE_EPOLL
