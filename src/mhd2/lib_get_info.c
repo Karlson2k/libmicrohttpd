@@ -1,6 +1,6 @@
 /*
   This file is part of GNU libmicrohttpd
-  Copyright (C) 2024 Evgeny Grin (Karlson2k)
+  Copyright (C) 2024-2025 Evgeny Grin (Karlson2k)
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -69,7 +69,7 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
 #if ! MHD_VERSION
 #error MHD_VERSION is not defined
 #endif
-    return_data->v_uint32 = MHD_VERSION;
+    return_data->v_uint32 = (uint_fast32_t) MHD_VERSION;
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_VERSION_STR:
     if (sizeof(return_data->v_string) <= return_data_size)
@@ -82,29 +82,29 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
       return MHD_SC_OK;
 #else  /* ! VERSION */
       static char str_buf[10] =
-      {0, 0, 0, 0, 0, 0, 0, 0, 1, 1};   /* Larger than needed */
-      if (0 != str_buf[9])
+      {0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1};   /* Larger than needed */
+      if (0 != str_buf[8])
       {
         uint_fast32_t ver_num = MHD_VERSION;
         uint8_t digit;
 
         digit = (uint8_t) (ver_num >> 24);
-        mhd_bin_to_hex (digit,
-                        1,
-                        str_buf);
-        str_buf[3] = '.';
+        (void) mhd_bin_to_hex (&digit,
+                               1,
+                               str_buf);
+        str_buf[2] = '.';
         digit = (uint8_t) (ver_num >> 16);
-        mhd_bin_to_hex (digit,
-                        1,
-                        str_buf + 4);
-        str_buf[6] = '.';
+        (void) mhd_bin_to_hex (&digit,
+                               1,
+                               str_buf + 3);
+        str_buf[5] = '.';
         digit = (uint8_t) (ver_num >> 8);
-        mhd_bin_to_hex (digit,
-                        1,
-                        str_buf + 7);
-        str_buf[9] = 0;
+        (void) mhd_bin_to_hex (&digit,
+                               1,
+                               str_buf + 6);
+        str_buf[8] = 0;
       }
-      return_data->v_string.len = 9;
+      return_data->v_string.len = 8;
       return_data->v_string.cstr = str_buf;
       return MHD_SC_OK;
 #endif /* ! VERSION */
