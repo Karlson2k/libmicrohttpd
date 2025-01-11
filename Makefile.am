@@ -49,6 +49,8 @@ pkgconfig_DATA = libmicrohttpd.pc
 
 EXTRA_DIST += pre-dist-hook-dummy
 MOSTLYCLEANFILES = pre-dist-hook-dummy
+# Old branch files
+MOSTLYCLEANFILES += MHD_config.h '$(top_srcdir)\MHD_config.h.in'
 DISTCLEANFILES =
 MAINTAINERCLEANFILES = m4/c_backported.m4
 
