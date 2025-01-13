@@ -1,6 +1,6 @@
 /*
   This file is part of GNU libmicrohttpd
-  Copyright (C) 2016-2024 Evgeny Grin (Karlson2k)
+  Copyright (C) 2016-2025 Evgeny Grin (Karlson2k)
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -542,4 +542,23 @@ mhd_create_named_thread (mhd_thread_handle_ID *handle_id,
 
 #endif /* mhd_USE_THREAD_NAME */
 
+#if ! defined(mhd_SEND_SPIPE_SUPPRESS_NEEDED)
+#  define mhd_thread_block_sigpipe() ((void) 0)
+#else
+#  ifdef HAVE_PTHREAD_SIGMASK
+/**
+ * Block a SIGPIPE signal in the current thread
+ *
+ * @return 'true' on success,
+ *         'false' otherwise
+ */
+MHD_INTERNAL bool
+mhd_thread_block_sigpipe (void);
+
+/**
+ * Indicates that function #mhd_thread_block_sigpipe() is available
+ */
+#    define mhd_HAVE_MHD_THREAD_BLOCK_SIGPIPE   1
+#  endif
+#endif
 #endif /* ! MHD_THREADS_H */

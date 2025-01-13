@@ -41,6 +41,11 @@
 #endif /* mhd_USE_THREAD_NAME */
 #include "sys_errno.h"
 #include "mhd_assert.h"
+#ifdef mhd_HAVE_MHD_THREAD_BLOCK_SIGPIPE
+#  ifdef HAVE_SIGNAL_H
+#    include <signal.h>
+#  endif
+#endif
 
 #ifndef mhd_USE_THREAD_NAME
 
@@ -420,3 +425,17 @@ mhd_create_named_thread (mhd_thread_handle_ID *handle_id,
 
 
 #endif /* mhd_USE_THREAD_NAME */
+
+#ifdef mhd_HAVE_MHD_THREAD_BLOCK_SIGPIPE
+MHD_INTERNAL bool
+mhd_thread_block_sigpipe (void)
+{
+  sigset_t s_mask;
+
+  return ((0 == sigemptyset (&s_mask)) &&
+          (0 == sigaddset (&s_mask, SIGPIPE)) &&
+          (0 == pthread_sigmask (SIG_BLOCK, &s_mask, NULL)));
+}
+
+
+#endif /* mhd_HAVE_MHD_THREAD_BLOCK_SIGPIPE */

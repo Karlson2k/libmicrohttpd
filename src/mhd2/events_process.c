@@ -1135,6 +1135,11 @@ mhd_worker_all_events (void *cls)
   mhd_assert (d->dbg.events_fully_inited);
   mhd_assert (d->dbg.connections_inited);
 
+#ifdef mhd_HAVE_MHD_THREAD_BLOCK_SIGPIPE
+  // TODO: store and use the result
+  (void) mhd_thread_block_sigpipe ();
+#endif
+
   while (! d->threading.stop_requested)
   {
     if (d->threading.resume_requested)
@@ -1200,6 +1205,11 @@ mhd_worker_listening_only (void *cls)
   mhd_assert (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION == d->wmode_int);
   mhd_assert (d->dbg.events_fully_inited);
   mhd_assert (d->dbg.connections_inited);
+
+#ifdef mhd_HAVE_MHD_THREAD_BLOCK_SIGPIPE
+  // TODO: store and use the result
+  (void) mhd_thread_block_sigpipe ();
+#endif
 
   while (! d->threading.stop_requested)
   {

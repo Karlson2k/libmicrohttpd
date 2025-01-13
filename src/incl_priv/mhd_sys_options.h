@@ -496,6 +496,15 @@
         __pragma(runtime_checks("c", restore))
 #endif /* _MSC_FULL_VER */
 
+
+#if ! defined(mhd_W32_NATIVE)
+/**
+ * Indicate that suppression of SIGPIPE is required for some network
+ * system calls.
+ */
+#  define mhd_SEND_SPIPE_SUPPRESS_NEEDED     1
+#endif
+
 #ifdef _DEBUG
 #  ifndef MHD_NO_TLS_DEBUG_MESSAGES
 #    ifndef mhd_USE_TLS_DEBUG_MESSAGES
