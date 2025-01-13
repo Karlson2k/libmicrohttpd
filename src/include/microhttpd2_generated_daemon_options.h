@@ -354,7 +354,8 @@ struct MHD_DaemonOptionValueLog
 {
   /**
    * the callback to use for logging,
-   * NULL to disable logging
+   * NULL to disable logging.
+   * The logging to stderr is enabled by default.
    */
   MHD_LoggingCallback v_log_cb;
 
@@ -605,7 +606,8 @@ union MHD_DaemonOptionValue
   /**
    * Value for #MHD_D_O_LOG_CALLBACK.
    * the callback to use for logging,
-   * NULL to disable logging
+   * NULL to disable logging.
+   * The logging to stderr is enabled by default.
    */
   struct MHD_DaemonOptionValueLog log_callback;
 
@@ -869,7 +871,8 @@ struct MHD_DaemonOptionAndValue
 /**
  * Set a callback to use for logging
  * @param log_cb the callback to use for logging,
- *   NULL to disable logging
+ *   NULL to disable logging.
+ *   The logging to stderr is enabled by default.
  * @param log_cb_cls the closure for the logging callback
  * @return structure with the requested setting
  */
@@ -1529,7 +1532,8 @@ MHD_D_OPTION_POLL_SYSCALL (
 /**
  * Set a callback to use for logging
  * @param log_cb the callback to use for logging,
- *   NULL to disable logging
+ *   NULL to disable logging.
+ *   The logging to stderr is enabled by default.
  * @param log_cb_cls the closure for the logging callback
  * @return structure with the requested setting
  */

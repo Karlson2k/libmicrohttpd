@@ -4013,7 +4013,8 @@ MHD_D_OPTION_POLL_SYSCALL (
 /**
  * Set a callback to use for logging
  * @param log_cb the callback to use for logging,
- *   NULL to disable logging
+ *   NULL to disable logging.
+ *   The logging to stderr is enabled by default.
  * @param log_cb_cls the closure for the logging callback
  * @return structure with the requested setting
  */

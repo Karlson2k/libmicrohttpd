@@ -31,7 +31,8 @@ struct DaemonOptions
   /**
    * Value for #MHD_D_O_LOG_CALLBACK.
    * the callback to use for logging,
-   * NULL to disable logging
+   * NULL to disable logging.
+   * The logging to stderr is enabled by default.
    */
   struct MHD_DaemonOptionValueLog log_callback;
 

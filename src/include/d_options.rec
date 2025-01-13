@@ -36,7 +36,8 @@ Comment: Set a callback to use for logging
 Type: struct MHD_DaemonOptionValueLog
 Argument1: MHD_LoggingCallback log_cb
 Description1: the callback to use for logging,
-+ NULL to disable logging
++ NULL to disable logging.
++ The logging to stderr is enabled by default.
 Argument2: void *log_cb_cls
 Description2: the closure for the logging callback
 # Note: CG does not exactly like this...
