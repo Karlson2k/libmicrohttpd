@@ -312,7 +312,7 @@
 #      define mhd_socket_pair(fdarr_ptr) \
         (0 != socketpair (AF_INET, SOCK_STREAM, 0, (fdarr_ptr))) /* Fallback, could be broken on many platforms */
 #    endif
-#    if defined(HAVE_SOCK_NONBLOCK)
+#    if defined(HAVE_DCLR_SOCK_NONBLOCK)
 #      ifdef MHD_AF_UNIX
 #        define mhd_socket_pair_nblk(fdarr_ptr) \
         (0 != socketpair (MHD_AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0, \
@@ -321,7 +321,7 @@
 #        define mhd_socket_pair_nblk(fdarr_ptr) \
         (0 != socketpair (AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0, (fdarr_ptr))) /* Fallback, could be broken on many platforms */
 #      endif
-#    endif /* HAVE_SOCK_NONBLOCK*/
+#    endif /* HAVE_DCLR_SOCK_NONBLOCK*/
 #  endif /* HAVE_SOCKETPAIR */
 #endif
 

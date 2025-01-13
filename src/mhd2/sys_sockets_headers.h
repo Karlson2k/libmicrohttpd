@@ -48,31 +48,81 @@
 #  include <sys/un.h>
 #endif
 
-#if defined(HAVE_SOCK_NONBLOCK) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
+#if defined(SOCK_NONBLOCK) && ! defined(HAVE_DCLR_SOCK_NONBLOCK)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SOCK_NONBLOCK 1
+#endif
+
+#if defined(SOCK_CLOEXEC) && ! defined(HAVE_DCLR_SOCK_CLOEXEC)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SOCK_CLOEXEC 1
+#endif
+
+#if defined(SOCK_NOSIGPIPE) && ! defined(HAVE_DCLR_SOCK_NOSIGPIPE)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SOCK_NOSIGPIPE 1
+#endif
+
+#if defined(MSG_NOSIGNAL) && ! defined(HAVE_DCLR_MSG_NOSIGNAL)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_MSG_NOSIGNAL 1
+#endif
+
+#if defined(MSG_MORE) && ! defined(HAVE_DCLR_MSG_MORE)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_MSG_MORE 1
+#endif
+
+#if defined(SOL_SOCKET) && ! defined(HAVE_DCLR_SOL_SOCKET)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SOL_SOCKET 1
+#endif
+
+#if defined(SO_REUSEADDR) && ! defined(HAVE_DCLR_SO_REUSEADDR)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SO_REUSEADDR 1
+#endif
+
+#if defined(SO_REUSEPORT) && ! defined(HAVE_DCLR_SO_REUSEPORT)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SO_REUSEPORT 1
+#endif
+
+#if defined(SO_LINGER) && ! defined(HAVE_DCLR_SO_LINGER)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SO_LINGER 1
+#endif
+
+#if defined(SO_NOSIGPIPE) && ! defined(HAVE_DCLR_SO_NOSIGPIPE)
+/* Mis-detected by configure */
+#  define HAVE_DCLR_SO_NOSIGPIPE 1
+#endif
+
+#if defined(HAVE_DCLR_SOCK_NONBLOCK) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SOCK_NONBLOCK SOCK_NONBLOCK
 #else
 #  define mhd_SOCK_NONBLOCK (0)
 #endif
 
-#if defined(SOCK_CLOEXEC) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
+#if defined(HAVE_DCLR_SOCK_CLOEXEC) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SOCK_CLOEXEC SOCK_CLOEXEC
 #else
 #  define mhd_SOCK_CLOEXEC (0)
 #endif
 
-#if defined(SOCK_NOSIGPIPE) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
+#if defined(HAVE_DCLR_SOCK_NOSIGPIPE) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_SOCK_NOSIGPIPE SOCK_NOSIGPIPE
 #else
 #  define mhd_SOCK_NOSIGPIPE (0)
 #endif
 
-#if defined(MSG_NOSIGNAL) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
+#if defined(HAVE_DCLR_MSG_NOSIGNAL) && ! defined(MHD_SOCKETS_KIND_WINSOCK)
 #  define mhd_MSG_NOSIGNAL MSG_NOSIGNAL
 #else
 #  define mhd_MSG_NOSIGNAL (0)
 #endif
 
-#ifdef MSG_MORE
+#ifdef HAVE_DCLR_MSG_MORE
 #  ifdef __linux__
 /* MSG_MORE signal kernel to buffer outbond data and works like
  * TCP_CORK per call without actually setting TCP_CORK value.

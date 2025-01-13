@@ -82,11 +82,11 @@
 
 
 #ifdef mhd_USE_VECT_SEND
-#  if (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL)) && \
+#  if (! defined(HAVE_SENDMSG) || ! defined(HAVE_DCLR_MSG_NOSIGNAL)) && \
   defined(mhd_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
   defined(mhd_SEND_SPIPE_SUPPRESS_NEEDED)
 #    define mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED 1
-#  endif /* (!HAVE_SENDMSG || !MSG_NOSIGNAL) &&
+#  endif /* (!HAVE_SENDMSG || !HAVE_DCLR_MSG_NOSIGNAL) &&
             mhd_SEND_SPIPE_SUPPRESS_POSSIBLE && mhd_SEND_SPIPE_SUPPRESS_NEEDED */
 #endif /* mhd_USE_VECT_SEND */
 
@@ -930,12 +930,12 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
 
   no_vec = false;
   no_vec = no_vec || (mhd_C_HAS_TLS (connection));
-#if (! defined(HAVE_SENDMSG) || ! defined(MSG_NOSIGNAL) ) && \
+#if (! defined(HAVE_SENDMSG) || ! defined(HAVE_DCLR_MSG_NOSIGNAL) ) && \
   defined(mhd_SEND_SPIPE_SUPPRESS_POSSIBLE) && \
   defined(mhd_SEND_SPIPE_SUPPRESS_NEEDED)
   no_vec = no_vec || (! connection->daemon->sigpipe_blocked &&
                       ! connection->sk.props.has_spipe_supp);
-#endif /* (!HAVE_SENDMSG || ! MSG_NOSIGNAL) &&
+#endif /* (!HAVE_SENDMSG || ! HAVE_DCLR_MSG_NOSIGNAL) &&
           mhd_SEND_SPIPE_SUPPRESS_POSSIBLE &&
           mhd_SEND_SPIPE_SUPPRESS_NEEDED */
 #endif /* mhd_USE_VECT_SEND */

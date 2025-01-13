@@ -3207,8 +3207,10 @@ AS_VAR_IF([[os_is_native_w32]], [["yes"]],[],
   ]
 )
 
-MHD_CHECK_DECLS([AF_UNIX AF_LOCAL SOMAXCONN IPV6_V6ONLY SO_REUSEADDR SO_REUSEPORT \
-                 TCP_NODELAY TCP_FASTOPEN SOL_SOCKET SO_LINGER SHUT_WR SD_SEND],
+MHD_CHECK_DECLS([AF_UNIX AF_LOCAL SOMAXCONN IPV6_V6ONLY TCP_NODELAY TCP_FASTOPEN \
+                 SOCK_NONBLOCK SOCK_CLOEXEC SOCK_NOSIGPIPE MSG_NOSIGNAL MSG_MORE \
+                 SOL_SOCKET SO_REUSEADDR SO_REUSEPORT SO_LINGER SO_NOSIGPIPE \
+                 SHUT_WR SD_SEND],
   [[
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -3704,21 +3706,6 @@ errno_t gmtime_s(struct tm* _tm, const time_t* time);
   [[#define __STDC_WANT_LIB_EXT1__ 1
 #include <time.h>]])
 
-
-AC_CHECK_DECL([SOCK_NONBLOCK], [AC_DEFINE([HAVE_SOCK_NONBLOCK], [1], [SOCK_NONBLOCK is defined in a socket header])], [],
-  [[
-#if defined(HAVE_SYS_TYPES_H)
-#  include <sys/types.h>
-#endif
-#if defined(HAVE_SYS_SOCKET_H)
-#  include <sys/socket.h>
-#elif defined(HAVE_WINSOCK2_H)
-#  include <winsock2.h>
-#elif defined(HAVE_UNISTD_H)
-#  include <unistd.h>
-#endif
-  ]]
-)
 
 MHD_FIND_LIB([clock_gettime],[[#include <time.h>]],
   [[

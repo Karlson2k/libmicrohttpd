@@ -682,7 +682,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
   {
     mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED, \
                  "Failed to suppress SIGPIPE on the new client socket.");
-#ifndef MSG_NOSIGNAL
+#ifndef HAVE_DCLR_MSG_NOSIGNAL
     /* Application expects that SIGPIPE will be suppressed,
      * but suppression failed and SIGPIPE cannot be suppressed with send(). */
     if (! daemon->sigpipe_blocked)
@@ -692,7 +692,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
       MHD_socket_fset_error_ (err);
       return MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED;
     }
-#endif /* MSG_NOSIGNAL */
+#endif /* HAVE_DCLR_MSG_NOSIGNAL */
   }
 #endif /* MHD_socket_nosignal_ */
 
@@ -956,7 +956,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
     mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED,
                  "Failed to suppress SIGPIPE on incoming connection " \
                  "socket.");
-#ifndef MSG_NOSIGNAL
+#ifndef HAVE_DCLR_MSG_NOSIGNAL
     /* Application expects that SIGPIPE will be suppressed,
      * but suppression failed and SIGPIPE cannot be suppressed with send(). */
     if (! daemon->sigpipe_blocked)
@@ -964,7 +964,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
       (void) MHD_socket_close_ (s);
       return MHD_NO;
     }
-#endif /* MSG_NOSIGNAL */
+#endif /* HAVE_DCLR_MSG_NOSIGNAL */
   }
   else
     sk_spipe_supprs = true;
