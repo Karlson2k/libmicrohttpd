@@ -198,6 +198,18 @@ MHD_daemon_set_options (
     case MHD_D_O_DISALLOW_SUSPEND_RESUME:
       settings->disallow_suspend_resume = option->val.disallow_suspend_resume;
       continue;
+    case MHD_D_O_DISABLE_COOKIES:
+      /* custom setter */
+      /* The is not an easy for automatic generations */
+      // TODO: remove options generator, put preprocessor directives to
+      //       the first column
+      #ifdef MHD_SUPPORT_COOKIES
+      settings->disable_cookies = option->val.disable_cookies;
+      #else
+      if (MHD_NO != option->val.disable_cookies)
+        return MHD_SC_FEATURE_DISABLED;
+      #endif
+      continue;
     case MHD_D_O_DAEMON_READY_CALLBACK:
       settings->daemon_ready_callback.v_cb = option->val.daemon_ready_callback.v_cb;
       settings->daemon_ready_callback.v_cb_cls = option->val.daemon_ready_callback.v_cb_cls;

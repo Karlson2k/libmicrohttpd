@@ -129,6 +129,10 @@ daemon_set_basic_settings (struct MHD_Daemon *restrict d,
 {
   d->req_cfg.strictness = s->protocol_strict_level.v_sl;
 
+#ifdef MHD_SUPPORT_COOKIES
+  d->req_cfg.disable_cookies = (MHD_NO != s->disable_cookies);
+#endif
+
   d->req_cfg.suppress_date = (MHD_NO != s->suppress_date_header);
 
   return MHD_SC_OK;

@@ -4400,6 +4400,18 @@ MHD_D_OPTION_DISALLOW_SUSPEND_RESUME (
   );
 
 /**
+ * Disable cookies parsing.
+ *
+Disable automatic cookies processing if cookies are not used.
+ * Cookies are automatically parsed by default.
+ * @param value the value of the parameter * @return structure with the requested setting
+ */
+struct MHD_DaemonOptionAndValue
+MHD_D_OPTION_DISABLE_COOKIES (
+  enum MHD_Bool value
+  );
+
+/**
  * Set a callback to be called for pre-start finalisation.
  *
 The specified callback will be called one time, after network initialisation, TLS pre-initialisation, but before the start of the internal threads (if allowed)

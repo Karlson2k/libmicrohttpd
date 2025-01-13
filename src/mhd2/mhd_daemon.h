@@ -940,6 +940,13 @@ struct mhd_DaemonRequestProcessingSettings
    */
   enum MHD_ProtocolStrictLevel strictness;
 
+#ifdef MHD_SUPPORT_COOKIES
+  /**
+   * Disable automatic cookies parsing
+   */
+  bool disable_cookies;
+#endif
+
   /**
    * Early URI callback
    */

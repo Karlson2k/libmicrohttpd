@@ -2745,7 +2745,8 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
 
 #ifdef MHD_SUPPORT_COOKIES
     /* "Cookie:" */
-    if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_COOKIE,
+    if ((! c->daemon->req_cfg.disable_cookies) &&
+        mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_COOKIE,
                                      f->field.nv.name.cstr,
                                      f->field.nv.name.len))
     {

@@ -275,6 +275,15 @@ You should only use this function if you do not use suspend functionality and ne
   ,
 
   /**
+   * Disable cookies parsing.
+   *
+Disable automatic cookies processing if cookies are not used.
+   * Cookies are automatically parsed by default.
+   */
+  MHD_D_O_DISABLE_COOKIES = 324
+  ,
+
+  /**
    * Set a callback to be called for pre-start finalisation.
    *
 The specified callback will be called one time, after network initialisation, TLS pre-initialisation, but before the start of the internal threads (if allowed)
@@ -765,6 +774,11 @@ union MHD_DaemonOptionValue
    * Value for #MHD_D_O_DISALLOW_SUSPEND_RESUME.
    */
   enum MHD_Bool disallow_suspend_resume;
+
+  /**
+   * Value for #MHD_D_O_DISABLE_COOKIES.
+   */
+  enum MHD_Bool disable_cookies;
 
   /**
    * Value for #MHD_D_O_DAEMON_READY_CALLBACK.
@@ -1329,6 +1343,21 @@ You should only use this function if you do not use suspend functionality and ne
         { \
           .opt = MHD_D_O_DISALLOW_SUSPEND_RESUME,  \
           .val.disallow_suspend_resume = (value) \
+        } \
+        MHD_RESTORE_WARN_COMPOUND_LITERALS_
+/**
+ * Disable cookies parsing.
+ *
+Disable automatic cookies processing if cookies are not used.
+ * Cookies are automatically parsed by default.
+ * @param value the value of the parameter * @return structure with the requested setting
+ */
+#  define MHD_D_OPTION_DISABLE_COOKIES(value) \
+        MHD_NOWARN_COMPOUND_LITERALS_ \
+          (const struct MHD_DaemonOptionAndValue) \
+        { \
+          .opt = MHD_D_O_DISABLE_COOKIES,  \
+          .val.disable_cookies = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -2162,6 +2191,27 @@ MHD_D_OPTION_DISALLOW_SUSPEND_RESUME (
 
   opt_val.opt = MHD_D_O_DISALLOW_SUSPEND_RESUME;
   opt_val.val.disallow_suspend_resume = (value); \
+
+  return opt_val;
+}
+
+
+/**
+ * Disable cookies parsing.
+ *
+Disable automatic cookies processing if cookies are not used.
+ * Cookies are automatically parsed by default.
+ * @param value the value of the parameter * @return structure with the requested setting
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_D_OPTION_DISABLE_COOKIES (
+  enum MHD_Bool value
+  )
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_DISABLE_COOKIES;
+  opt_val.val.disable_cookies = (value); \
 
   return opt_val;
 }

@@ -232,6 +232,12 @@ struct DaemonOptions
 
 
   /**
+   * Value for #MHD_D_O_DISABLE_COOKIES.
+   */
+  enum MHD_Bool disable_cookies;
+
+
+  /**
    * Value for #MHD_D_O_DAEMON_READY_CALLBACK.
    * the pre-start callback
    */

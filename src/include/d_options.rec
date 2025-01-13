@@ -385,6 +385,24 @@ Comment: Disable #MHD_action_suspend() functionality.
 + You should only use this function if you do not use suspend functionality and need a generally minor boost in performance.
 + The suspend is not disallowed (suspend is allowed) by default.
 
+Name: DISABLE_COOKIES
+Value: 324
+Type: enum MHD_Bool
+Comment: Disable cookies parsing.
++
++ Disable automatic cookies processing if cookies are not used.
++ Cookies are automatically parsed by default.
+CustomSetter: /* custom setter */
++ /* The is not an easy for automatic generations */
++ // TODO: remove options generator, put preprocessor directives to
++ //       the first column
++ #ifdef MHD_SUPPORT_COOKIES
++ settings->disable_cookies = option->val.disable_cookies;
++ #else
++ if (MHD_NO != option->val.disable_cookies)
++   return MHD_SC_FEATURE_DISABLED;
++ #endif
+
 # Notification callbacks
 
 Name: daemon_ready_callback
