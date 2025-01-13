@@ -189,25 +189,41 @@ typedef int mhd_SCKT_SEND_SIZE;
 #endif
 
 
-#if defined(MHD_socket_nosignal_) || \
-  (defined(SOL_SOCKET) && defined(SO_NOSIGPIPE))
+#if defined(HAVE_DCLR_SOL_SOCKET) && defined(HAVE_DCLR_SO_NOSIGPIPE)
+/**
+ * Helper for mhd_socket_nosignal()
+ */
+#  ifdef HAVE_COMPOUND_LITERALS_LVALUES
+#    define mhd_socket_nosig_helper_int_one ((mhd_SCKT_OPT_BOOL){1})
+#  else
+/**
+ * Internal static const helper for mhd_socket_nosignal()
+ */
+static const mhd_SCKT_OPT_BOOL mhd_socket_nosig_helper_int_one = 1;
+#  endif
+
+/**
+ * Change socket options to no signal on remote disconnect / broken connection.
+ *
+ * @param sock socket to manipulate
+ * @return non-zero if succeeded, zero otherwise
+ */
+#  define mhd_socket_nosignal(sock) \
+        (! setsockopt ((sock),SOL_SOCKET,SO_NOSIGPIPE, \
+                       &mhd_socket_nosig_helper_int_one, \
+                       sizeof(mhd_SCKT_OPT_BOOL)))
+#endif /* SOL_SOCKET && SO_NOSIGPIPE */
+
+
+#if defined(mhd_socket_nosignal) || defined(HAVE_DCLR_MSG_NOSIGNAL)
 /**
  * Indicate that SIGPIPE can be suppressed by MHD for normal send() by flags
  * or socket options.
  * If this macro is undefined, MHD cannot suppress SIGPIPE for socket functions
- * so sendfile() or writev() calls are avoided in application threads.
+ * so application need to handle SIGPIPE.
  */
 #  define mhd_SEND_SPIPE_SUPPRESS_POSSIBLE   1
-#endif /* MHD_SOCKETS_KIND_WINSOCK || MHD_socket_nosignal_ || MSG_NOSIGNAL */
-
-
-#if ! defined(MHD_SOCKETS_KIND_WINSOCK)
-/**
- * Indicate that suppression of SIGPIPE is required for some network
- * system calls.
- */
-#  define mhd_SEND_SPIPE_SUPPRESS_NEEDED     1
-#endif
+#endif /* mhd_socket_nosignal || HAVE_DCLR_MSG_NOSIGNAL */
 
 
 #endif /* ! MHD_SYS_SOCKETS_HEADERS_H */

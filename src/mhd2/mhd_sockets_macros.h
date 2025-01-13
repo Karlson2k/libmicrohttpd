@@ -329,30 +329,4 @@
 /* mhd_socket_pair() implemented in "mhd_sockets_funcs.h" based on local function */
 #endif
 
-#if defined(SOL_SOCKET) && defined(SO_NOSIGPIPE)
-/**
- * Helper for mhd_socket_nosignal()
- */
-#  ifdef HAVE_COMPOUND_LITERALS_LVALUES
-#    define mhd_socket_nosig_helper_int_one ((int){1})
-#  else
-/**
- * Internal static const helper for mhd_socket_nosignal()
- */
-static const int mhd_socket_nosig_helper_int_one = 1;
-#  endif
-
-
-/**
- * Change socket options to no signal on remote disconnect / broken connection.
- *
- * @param sock socket to manipulate
- * @return non-zero if succeeded, zero otherwise
- */
-#  define mhd_socket_nosignal(sock) \
-        (! setsockopt ((sock),SOL_SOCKET,SO_NOSIGPIPE, \
-                       &mhd_socket_nosig_helper_int_one, sizeof(int)))
-#endif /* SOL_SOCKET && SO_NOSIGPIPE */
-
-
 #endif /* ! MHD_SOCKETS_MACROS_H */

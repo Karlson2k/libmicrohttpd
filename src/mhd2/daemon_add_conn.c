@@ -675,9 +675,9 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
 #else  /* MHD_SOCKETS_KIND_WINSOCK */
   sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_SOCKETS_KIND_WINSOCK */
-#if defined(MHD_socket_nosignal_)
+#if defined(mhd_socket_nosignal)
   if (! sk_spipe_supprs)
-    sk_spipe_supprs = MHD_socket_nosignal_ (client_socket);
+    sk_spipe_supprs = mhd_socket_nosignal (client_socket);
   if (! sk_spipe_supprs)
   {
     mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED, \
@@ -694,7 +694,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
     }
 #endif /* HAVE_DCLR_MSG_NOSIGNAL */
   }
-#endif /* MHD_socket_nosignal_ */
+#endif /* mhd_socket_nosignal */
 
   if (1) // TODO: implement turbo
   {
@@ -950,8 +950,8 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
                  "socket.");
   }
 
-#if defined(MHD_socket_nosignal_)
-  if (! sk_spipe_supprs && ! MHD_socket_nosignal_ (s))
+#if defined(mhd_socket_nosignal)
+  if (! sk_spipe_supprs && ! mhd_socket_nosignal (s))
   {
     mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOSIGPIPE_FAILED,
                  "Failed to suppress SIGPIPE on incoming connection " \
@@ -968,7 +968,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
   }
   else
     sk_spipe_supprs = true;
-#endif /* MHD_socket_nosignal_ */
+#endif /* mhd_socket_nosignal */
   return (MHD_SC_OK == internal_add_connection (daemon,
                                                 s,
                                                 &addrstorage,
