@@ -447,3 +447,17 @@ mhd_lib_deinit_global_if_needed (void)
     mhd_lib_global_full_deinit ();
   mhd_mutex_unlock_chk (&mhd_init_mutex);
 }
+
+
+MHD_INTERNAL bool
+mhd_lib_is_fully_initialised_once (void)
+{
+  return mhd_lib_fully_inited_once;
+}
+
+
+MHD_INTERNAL bool
+mhd_lib_is_fully_initialised_now (void)
+{
+  return mhd_lib_fully_inited_once && (0 != mhd_lib_use_counter);
+}

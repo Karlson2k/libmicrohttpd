@@ -46,5 +46,18 @@ mhd_lib_init_global_if_needed (void);
 MHD_INTERNAL void
 mhd_lib_deinit_global_if_needed (void);
 
+/**
+ * Check whether the library has been successfully completely initialised.
+ * @return
+ */
+MHD_INTERNAL bool
+mhd_lib_is_fully_initialised_once (void);
+
+/**
+ * Check whether the library is in fully initialised state now.
+ * @return
+ */
+MHD_INTERNAL bool
+mhd_lib_is_fully_initialised_now (void);
 
 #endif /* ! MHD_LIB_INIT_H */
