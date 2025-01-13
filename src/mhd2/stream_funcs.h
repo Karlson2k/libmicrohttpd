@@ -260,7 +260,7 @@ enum mhd_ConnCloseReason
   mhd_CONN_CLOSE_ERR_REPLY_SENT
   ,
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 
   /* Transition to another protocol */
   /**
@@ -270,7 +270,7 @@ enum mhd_ConnCloseReason
    */
   mhd_CONN_CLOSE_UPGRADE
   ,
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
   /* Graceful closing */
   /**
@@ -307,11 +307,11 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
 /**
  * Abort the stream and log message
  */
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
 #  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_start_closing ((c),(r),(m)))
-#else  /* ! HAVE_LOG_FUNCTIONALITY */
+#else  /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 #  define mhd_STREAM_ABORT(c,r,m) (mhd_conn_start_closing ((c),(r),NULL))
-#endif /* ! HAVE_LOG_FUNCTIONALITY */
+#endif /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 
 /**
  * Perform initial clean-up and mark for closing.
@@ -361,7 +361,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
 #define mhd_conn_start_closing_no_sys_res(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_NO_SYS_RESOURCES, NULL)
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 /**
  * Perform initial clean-up and prepare for HTTP Upgrade.
  * Set the reason to "upgrading".
@@ -369,7 +369,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  */
 #  define mhd_conn_pre_upgrade(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_UPGRADE, NULL)
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
 
 /**

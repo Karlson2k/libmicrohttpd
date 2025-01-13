@@ -38,7 +38,7 @@
 #include "response_funcs.h"
 #include "response_destroy.h"
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 #  include "upgrade_prep.h"
 #endif
 
@@ -143,7 +143,7 @@ MHD_action_parse_post (struct MHD_Request *request,
                        MHD_PostDataFinished done_cb,
                        void *done_cb_cls)
 {
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
   struct MHD_Action *const restrict head_act =
     &(request->app_act.head_act);
   if (mhd_ACTION_NO_ACTION != head_act->act)
@@ -161,16 +161,16 @@ MHD_action_parse_post (struct MHD_Request *request,
   head_act->data.post_parse.done_cb_cls = done_cb_cls;
 
   return head_act;
-#else  /* ! HAVE_POST_PARSER */
+#else  /* ! MHD_SUPPORT_POST_PARSER */
   (void) request; (void) buffer_size; (void) max_nonstream_size;
   (void) enc; (void) stream_reader; (void) reader_cls;
   (void) done_cb; (void) done_cb_cls;
   return NULL;
-#endif /* ! HAVE_POST_PARSER */
+#endif /* ! MHD_SUPPORT_POST_PARSER */
 }
 
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1)
@@ -243,7 +243,7 @@ MHD_upload_action_upgrade (
 }
 
 
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
 
 MHD_EXTERN_ MHD_FN_PAR_NONNULL_ALL_

@@ -46,20 +46,20 @@
 #define mhd_ATOMIC_COUNTER_MAX \
         ((mhd_ATOMIC_COUNTER_TYPE) (~((mhd_ATOMIC_COUNTER_TYPE) 0)))
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 /**
  * Atomic operations are based on locks
  */
 #  define mhd_ATOMIC_BY_LOCKS 1
 
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
 
 /**
  * Atomic because single thread environment is used
  */
 #  define mhd_ATOMIC_SINGLE_THREAD 1
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
 
 
 #if defined(mhd_ATOMIC_BY_LOCKS)

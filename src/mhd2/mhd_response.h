@@ -42,7 +42,7 @@
 
 #include "mhd_iovec.h"
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 #  include "mhd_locks.h"
 #endif
 
@@ -129,7 +129,7 @@ struct mhd_ResponseFD
    */
   bool is_pipe;
 
-#ifdef MHD_USE_SENDFILE
+#ifdef mhd_USE_SENDFILE
   /**
    * Use 'sendfile()' function for the @a FD
    * Initially 'true' (except for pipes) but can be flipped to 'false' if
@@ -212,13 +212,13 @@ struct mhd_ResponseReuseData
    */
   struct mhd_AtomicCounter counter;
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   /**
    * The mutex for @a settings access.
    * Used only when @a reusable is 'true'.
    */
   mhd_mutex settings_lock;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 };
 
 struct mhd_ResponseConfiguration

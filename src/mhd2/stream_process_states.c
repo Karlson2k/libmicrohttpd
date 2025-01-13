@@ -51,9 +51,9 @@
 
 #include "conn_mark_ready.h"
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 #  include "upgrade_proc.h"
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
@@ -120,11 +120,11 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     break;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
     c->event_loop_info = MHD_EVENT_LOOP_INFO_SEND;
     break;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   case mhd_HTTP_STAGE_UNCHUNKED_BODY_UNREADY:
     mhd_assert (0 && "Should not be possible");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
@@ -150,7 +150,7 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     break;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   case mhd_HTTP_STAGE_UPGRADING:
     mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
@@ -163,7 +163,7 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
     mhd_assert (0 && "Should be unreachable");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
     break;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   case mhd_HTTP_STAGE_PRE_CLOSING:
     mhd_assert (0 && "Should be unreachable");
     c->event_loop_info = MHD_EVENT_LOOP_INFO_CLEANUP;
@@ -269,9 +269,9 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   }
 
   daemon_closing = (mhd_DAEMON_STATE_STOPPING == d->state);
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   daemon_closing = daemon_closing || d->threading.stop_requested;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
   if (daemon_closing)
   {
     mhd_conn_start_closing_d_shutdown (c);
@@ -329,9 +329,9 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       if (c->continue_message_write_offset ==
           mhd_SSTR_LEN (mdh_HTTP_1_1_100_CONTINUE_REPLY))
       {
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
         c->rp.sent_100_cntn = true;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
         c->stage = mhd_HTTP_STAGE_BODY_RECEIVING;
         continue;
       }
@@ -406,12 +406,12 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       else
         c->stage = mhd_HTTP_STAGE_FULL_REPLY_SENT;
       continue;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
     case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
       if (! mhd_upgrade_try_start_upgrading (c))
         break;
       continue;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
     case mhd_HTTP_STAGE_UNCHUNKED_BODY_READY:
       mhd_assert (c->rp.props.send_reply_body);
       mhd_assert (! c->rp.props.chunked);
@@ -469,7 +469,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
         && ! c->discard_request
         && ! c->sk.state.rmt_shut_wr);
       continue;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
     case mhd_HTTP_STAGE_UPGRADING:
       if (mhd_upgrade_finish_switch_to_upgraded (c))
         return true;     /* Do not close connection */
@@ -483,7 +483,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
       mhd_assert (0 && "Should be unreachable");
       mhd_UNREACHABLE ();
       break;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
     case mhd_HTTP_STAGE_PRE_CLOSING:
       return false;
     case mhd_HTTP_STAGE_CLOSED:

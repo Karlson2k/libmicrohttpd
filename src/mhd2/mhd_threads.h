@@ -40,13 +40,13 @@
 
 #if defined(mhd_THREADS_KIND_POSIX)
 #  include <pthread.h>
-#  ifndef MHD_USE_THREADS
-#    define MHD_USE_THREADS 1
+#  ifndef MHD_SUPPORT_THREADS
+#    define MHD_SUPPORT_THREADS 1
 #  endif
 #elif defined(mhd_THREADS_KIND_W32)
 #  include <windows.h>
-#  ifndef MHD_USE_THREADS
-#    define MHD_USE_THREADS 1
+#  ifndef MHD_SUPPORT_THREADS
+#    define MHD_SUPPORT_THREADS 1
 #  endif
 #else
 #  error No threading API is available.
@@ -68,12 +68,12 @@
   defined(HAVE_PTHREAD_SETNAME_NP_NETBSD) || \
   defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || \
   defined(HAVE_PTHREAD_ATTR_SETNAME_NP_IBMI)
-#      define MHD_USE_THREAD_NAME_
+#      define mhd_USE_THREAD_NAME
 #    endif /* HAVE_PTHREAD_SETNAME_NP */
 #  elif defined(mhd_THREADS_KIND_W32)
 #    ifdef _MSC_FULL_VER
 /* Thread names only available with VC compiler */
-#      define MHD_USE_THREAD_NAME_
+#      define mhd_USE_THREAD_NAME
 #    endif /* _MSC_FULL_VER */
 #  endif
 #endif
@@ -520,9 +520,9 @@ mhd_create_thread (mhd_thread_handle_ID *handle_id,
                    mhd_THREAD_START_ROUTINE start_routine,
                    void *arg);
 
-#ifndef MHD_USE_THREAD_NAME_
+#ifndef mhd_USE_THREAD_NAME
 #define mhd_create_named_thread(t,n,s,r,a) mhd_create_thread ((t),(s),(r),(a))
-#else  /* MHD_USE_THREAD_NAME_ */
+#else  /* mhd_USE_THREAD_NAME */
 /**
  * Create a named thread and set the attributes according to our options.
  *
@@ -540,6 +540,6 @@ mhd_create_named_thread (mhd_thread_handle_ID *handle_id,
                          mhd_THREAD_START_ROUTINE start_routine,
                          void *arg);
 
-#endif /* MHD_USE_THREAD_NAME_ */
+#endif /* mhd_USE_THREAD_NAME */
 
 #endif /* ! MHD_THREADS_H */

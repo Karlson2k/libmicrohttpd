@@ -39,7 +39,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 #if defined(mhd_THREADS_KIND_W32)
 #  define mhd_MUTEX_KIND_W32_CS 1
@@ -235,7 +235,7 @@ typedef CRITICAL_SECTION mhd_mutex;
           MHD_PANIC ("Failed to unlock mutex.\n"); \
 } while (0)
 
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
 
 #  define mhd_mutex_init(ignored) (! 0)
 #  define mhd_MUTEX_INITIALISER_STAT /* empty */
@@ -247,6 +247,6 @@ typedef CRITICAL_SECTION mhd_mutex;
 #  define mhd_mutex_unlock(ignored) (! 0)
 #  define mhd_mutex_unlock_chk(ignored) (void) 0
 
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
 
 #endif /* ! MHD_LOCKS_H */

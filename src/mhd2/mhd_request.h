@@ -41,7 +41,7 @@
 #include "mhd_action.h"
 #include "mhd_buffer.h"
 
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
 #  include "mhd_postfield_int.h"
 #  include "mhd_post_parser.h"
 #endif
@@ -205,7 +205,7 @@ struct mhd_RequestField
 
 mhd_DLINKEDL_LIST_DEF (mhd_RequestField);
 
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
 
 struct mhd_RequestPostField; /* forward declarations */
 
@@ -238,7 +238,7 @@ struct mhd_RequestPostField
 mhd_DLINKEDL_LIST_DEF (mhd_RequestPostField);
 
 
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
 
 
 /**
@@ -274,12 +274,12 @@ struct mhd_ReqContentData
 
 union mhd_ReqContentParsingData
 {
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
   /**
    * The POST parsing data
    */
   struct mhd_PostParserData post;
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
   // TODO: move "raw" upload processing data here
 };
 
@@ -394,12 +394,12 @@ struct MHD_Request
    */
   mhd_DLNKDL_LIST (mhd_RequestField,fields);
 
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
   /**
    * Linked list of parsed POST fields.
    */
   mhd_DLNKDL_LIST (mhd_RequestPostField,post_fields);
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
 
   /**
    * The action set by the application

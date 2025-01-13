@@ -41,10 +41,10 @@
 #ifdef MHD_ENABLE_HTTPS
 #  include "mhd_tls_choice.h"
 /* Include all supported TLS backends headers */
-#  if defined(MHD_USE_GNUTLS)
+#  if defined(MHD_SUPPORT_GNUTLS)
 #    include "tls_gnu_funcs.h"
 #  endif
-#  if defined(MHD_USE_OPENSSL)
+#  if defined(MHD_SUPPORT_OPENSSL)
 #    include "tls_open_funcs.h"
 #  endif
 #endif
@@ -164,16 +164,16 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
       return_data->v_tls.backend_openssl = MHD_NO;
 #else
       return_data->v_tls.tls_supported = MHD_YES;
-#  ifdef MHD_USE_GNUTLS
+#  ifdef MHD_SUPPORT_GNUTLS
       return_data->v_tls.backend_gnutls = MHD_YES;
-#  else  /* ! MHD_USE_GNUTLS */
+#  else  /* ! MHD_SUPPORT_GNUTLS */
       return_data->v_tls.backend_gnutls = MHD_NO;
-#  endif /* ! MHD_USE_GNUTLS */
-#  ifdef MHD_USE_OPENSSL
+#  endif /* ! MHD_SUPPORT_GNUTLS */
+#  ifdef MHD_SUPPORT_OPENSSL
       return_data->v_tls.backend_openssl = MHD_YES;
-#  else  /* ! MHD_USE_OPENSSL */
+#  else  /* ! MHD_SUPPORT_OPENSSL */
       return_data->v_tls.backend_openssl = MHD_NO;
-#  endif /* ! MHD_USE_OPENSSL */
+#  endif /* ! MHD_SUPPORT_OPENSSL */
 #endif
       return MHD_SC_OK;
     }

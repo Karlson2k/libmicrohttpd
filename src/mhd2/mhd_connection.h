@@ -48,9 +48,9 @@
 #include "mhd_request.h"
 #include "mhd_reply.h"
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 #  include "mhd_upgrade.h"
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
 #include "mhd_socket_error.h"
 
@@ -205,13 +205,13 @@ enum MHD_FIXED_FLAGS_ENUM_ MHD_ConnectionEventLoopInfo
    * We are finished and are awaiting cleanup.
    */
   MHD_EVENT_LOOP_INFO_CLEANUP = 1 << 5
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   ,
   /**
    * We are finished and are awaiting cleanup.
    */
   MHD_EVENT_LOOP_INFO_UPGRADED = 1 << 6
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 };
 
 #define MHD_EVENT_LOOP_INFO_PROCESS_READ \
@@ -378,13 +378,13 @@ enum MHD_FIXED_ENUM_ mhd_HttpStage
    * We have sent the response headers.  Get ready to send the body.
    */
   mhd_HTTP_STAGE_HEADERS_SENT
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   ,
   /**
    * Sending special HTTP "Upgrade" headers
    */
   mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   ,
   /**
    * We are waiting for the client to provide more
@@ -422,7 +422,7 @@ enum MHD_FIXED_ENUM_ mhd_HttpStage
    * Shutdown connection or restart processing to get a new request.
    */
   mhd_HTTP_STAGE_FULL_REPLY_SENT
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   ,
   /**
    * Transition to "Upgraded" state
@@ -440,7 +440,7 @@ enum MHD_FIXED_ENUM_ mhd_HttpStage
    * Closing HTTP-Upgraded connection
    */
   mhd_HTTP_STAGE_UPGRADED_CLEANING
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   ,
   /**
    * Finished regular connection processing.
@@ -541,7 +541,7 @@ struct MHD_Connection
    */
   mhd_DLNKDL_LINKS (MHD_Connection,by_timeout);
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   /**
    * The data for handling HTTP-Upgraded connection
    */
@@ -551,7 +551,7 @@ struct MHD_Connection
    * Double-linke list of HTTP-Upgraded connections waiting for clean-up
    */
   mhd_DLNKDL_LINKS (MHD_Connection,upgr_cleanup);
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
   /**
    * True if connection is suspended
@@ -617,7 +617,7 @@ struct MHD_Connection
    */
   char *write_buffer;
 
-#if defined(MHD_USE_THREADS)
+#if defined(MHD_SUPPORT_THREADS)
   /**
    * Thread handle for this connection (if we are using
    * one thread per connection).
@@ -691,7 +691,7 @@ struct MHD_Connection
    */
   bool discard_request;
 
-#if defined(MHD_USE_THREADS)
+#if defined(MHD_SUPPORT_THREADS)
   /**
    * Set to `true` if the thread has been joined.
    */

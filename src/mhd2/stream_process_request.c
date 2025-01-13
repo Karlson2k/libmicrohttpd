@@ -60,9 +60,9 @@
 #include "stream_funcs.h"
 #include "daemon_funcs.h"
 
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
 #  include "post_parser_funcs.h"
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
 
 #include "mhd_public_api.h"
 
@@ -2221,7 +2221,7 @@ mhd_stream_get_request_headers (struct MHD_Connection *restrict c,
 }
 
 
-#ifdef COOKIE_SUPPORT
+#ifdef MHD_SUPPORT_COOKIES
 
 /**
  * Cookie parsing result
@@ -2568,7 +2568,7 @@ handle_req_cookie_no_space (struct MHD_Connection *restrict c)
 }
 
 
-#endif /* COOKIE_SUPPORT */
+#endif /* MHD_SUPPORT_COOKIES */
 
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
@@ -2743,7 +2743,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
       continue;
     }
 
-#ifdef COOKIE_SUPPORT
+#ifdef MHD_SUPPORT_COOKIES
     /* "Cookie:" */
     if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_COOKIE,
                                      f->field.nv.name.cstr,
@@ -2758,7 +2758,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
       }
       continue;
     }
-#endif /* COOKIE_SUPPORT */
+#endif /* MHD_SUPPORT_COOKIES */
 
     /* "Expect: 100-continue" */
     if (mhd_str_equal_caseless_n_st (MHD_HTTP_HEADER_EXPECT,
@@ -2974,7 +2974,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
     }
     c->stage = mhd_HTTP_STAGE_FULL_REQ_RECEIVED;
     return true;
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
   case mhd_ACTION_POST_PARSE:
     if (0 == c->rq.cntn.cntn_size)
     {
@@ -2994,16 +2994,16 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
     }
     c->stage = mhd_HTTP_STAGE_BODY_RECEIVING;
     return true;
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
   case mhd_ACTION_SUSPEND:
     c->suspended = true;
     return false;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   case mhd_ACTION_UPGRADE:
     mhd_assert (0 == c->rq.cntn.cntn_size);
     c->stage = mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING;
     return false;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   case mhd_ACTION_ABORT:
     mhd_conn_start_closing_app_abort (c);
     return true;
@@ -3059,14 +3059,14 @@ mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
   case mhd_UPLOAD_ACTION_SUSPEND:
     c->suspended = true;
     return false;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   case mhd_UPLOAD_ACTION_UPGRADE:
     mhd_assert (c->rq.cntn.recv_size == c->rq.cntn.cntn_size);
     mhd_assert (! c->rq.have_chunked_upload || \
                 mhd_HTTP_STAGE_FULL_REQ_RECEIVED == c->stage);
     c->stage = mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING;
     return false;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   case mhd_UPLOAD_ACTION_ABORT:
     mhd_conn_start_closing_app_abort (c);
     return true;
@@ -3287,7 +3287,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
     }
     mhd_assert (c->rq.app_aware);
 
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
     if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
     {
       size_t size_provided;
@@ -3307,7 +3307,7 @@ process_request_chunked_body (struct MHD_Connection *restrict c)
       c->rq.cntn.recv_size += size_provided;
     }
     else
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
     if (1)
     {
       mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
@@ -3421,7 +3421,7 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
   read_buf_reuse = false;
   state_updated = false;
 
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
   if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
   {
     size_t size_provided;
@@ -3448,7 +3448,7 @@ process_request_nonchunked_body (struct MHD_Connection *restrict c)
     }
   }
   else
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
   if (1)
   {
     mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
@@ -3518,10 +3518,10 @@ mhd_stream_call_app_final_upload_cb (struct MHD_Connection *restrict c)
   mhd_assert (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act || \
               mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
 
-#ifdef HAVE_POST_PARSER
+#ifdef MHD_SUPPORT_POST_PARSER
   if (mhd_ACTION_POST_PARSE == c->rq.app_act.head_act.act)
     return mhd_stream_process_post_finish (c);
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
 
   mhd_assert (mhd_ACTION_UPLOAD == c->rq.app_act.head_act.act);
 
@@ -3934,12 +3934,12 @@ mhd_stream_check_and_grow_read_buffer_space (struct MHD_Connection *restrict c)
     case mhd_HTTP_STAGE_FULL_REPLY_SENT:
     case mhd_HTTP_STAGE_PRE_CLOSING:
     case mhd_HTTP_STAGE_CLOSED:
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
     case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
     case mhd_HTTP_STAGE_UPGRADING:
     case mhd_HTTP_STAGE_UPGRADED:
     case mhd_HTTP_STAGE_UPGRADED_CLEANING:
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
     default:
       mhd_UNREACHABLE ();
       stage = MHD_PROC_RECV_BODY_NORMAL;

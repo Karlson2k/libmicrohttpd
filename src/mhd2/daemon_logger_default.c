@@ -26,7 +26,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
 
 #include <stdio.h>
 
@@ -54,4 +54,4 @@ mhd_logger_default (void *cls,
 }
 
 
-#endif /* ! HAVE_LOG_FUNCTIONALITY */
+#endif /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */

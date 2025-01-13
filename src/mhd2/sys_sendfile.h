@@ -42,8 +42,8 @@
 #    include <sys/socket.h>
 #  endif
 #  include <sys/uio.h>
-#elif defined(MHD_USE_SENDFILE)
-#error MHD_USE_SENDFILE is defined, while no HAVE_xxx_SENDFILE defined
+#elif defined(mhd_USE_SENDFILE)
+#error mhd_USE_SENDFILE is defined, while no HAVE_xxx_SENDFILE defined
 #endif
 
 #endif /* ! MHD_SYS_SENDFILE_H */

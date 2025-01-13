@@ -322,13 +322,13 @@
 #if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_FREEBSD_SENDFILE) || \
   defined(HAVE_DARWIN_SENDFILE)
 /* Have any supported sendfile() function. */
-#  define MHD_USE_SENDFILE 1
+#  define mhd_USE_SENDFILE 1
 #endif /* HAVE_LINUX_SENDFILE || HAVE_FREEBSD_SENDFILE
           || HAVE_DARWIN_SENDFILE */
 
 #if defined(mhd_THREADS_KIND_POSIX) || defined(mhd_THREADS_KIND_W32)
-#  ifndef MHD_USE_THREADS
-#    define MHD_USE_THREADS 1
+#  ifndef MHD_SUPPORT_THREADS
+#    define MHD_SUPPORT_THREADS 1
 #  endif
 #endif /* mhd_THREADS_KIND_POSIX || mhd_THREADS_KIND_W32 */
 

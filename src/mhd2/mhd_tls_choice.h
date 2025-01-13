@@ -49,7 +49,7 @@
 
 /* * GnuTLS * */
 
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
 /**
  * Defined to one if GnuTLS is enabled at build time or to zero if not enabled
  */
@@ -68,7 +68,7 @@
 
 /* * OpenSSL * */
 
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
 /**
  * Defined to one if OpenSSL is enabled at build time or to zero if not enabled
  */
@@ -142,7 +142,7 @@
  * The TLS back-end identifier for macro names
  */
 #  define mhd_TLS_MACRO_NAME_ID MULTI
-#elif defined(MHD_USE_GNUTLS)
+#elif defined(MHD_SUPPORT_GNUTLS)
 /**
  * The TLS back-end identifier for function names
  */
@@ -155,7 +155,7 @@
  * The TLS back-end identifier for macro names
  */
 #  define mhd_TLS_MACRO_NAME_ID GNU
-#elif defined(MHD_USE_OPENSSL)
+#elif defined(MHD_SUPPORT_OPENSSL)
 /**
  * The TLS back-end identifier for function names
  */
@@ -173,14 +173,14 @@
 
 /* ** Functions replacement macros to simplify the code ** */
 
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
 /**
  * Check whether GnuTLS backend was successfully initialised globally
  */
 #  define mhd_tls_gnu_is_inited_fine()   (! ! 0)
 #endif
 
-#ifndef MHD_USE_OPENSSL
+#ifndef MHD_SUPPORT_OPENSSL
 /**
  * Check whether OpenSSL backend was successfully initialised globally
  */

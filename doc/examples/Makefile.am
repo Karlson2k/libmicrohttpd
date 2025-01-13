@@ -34,7 +34,7 @@ noinst_PROGRAMS += \
 endif
 endif
 
-if HAVE_POST_PARSER
+if MHD_SUPPORT_POST_PARSER
 noinst_PROGRAMS += simplepost largepost sessions 
 endif
 

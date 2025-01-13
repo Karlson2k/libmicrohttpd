@@ -32,7 +32,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef MHD_USE_POLL
+#ifdef MHD_SUPPORT_POLL
 #  include "mhd_socket_type.h"
 #  if defined(MHD_SOCKETS_KIND_POSIX)
 #    include <poll.h>
@@ -81,6 +81,6 @@
 #    define MHD_POLLHUP_ON_REM_SHUT_WR 1
 #  endif
 
-#endif /* MHD_USE_POLL */
+#endif /* MHD_SUPPORT_POLL */
 
 #endif /* ! MHD_SYS_POLL_H */

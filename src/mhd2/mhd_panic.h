@@ -64,7 +64,7 @@ mhd_panic (const char *file,
 #error MHD_PANIC macro is already defined. Check other headers.
 #endif /* MHD_PANIC */
 
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
 #  ifdef MHD_HAVE_MHD_FUNC_
 /**
  * Panic processing for unrecoverable errors.

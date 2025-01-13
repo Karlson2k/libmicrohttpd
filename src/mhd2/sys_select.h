@@ -29,7 +29,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
 #  include "mhd_socket_type.h"
 #  if defined(MHD_SOCKETS_KIND_POSIX)
 #    ifdef HAVE_SYS_SELECT_H
@@ -56,6 +56,6 @@
 #error Uknown sockets type
 #  endif
 
-#endif /* MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_SELECT */
 
 #endif /* ! MHD_SYS_SELECT_H */

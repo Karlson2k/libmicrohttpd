@@ -41,15 +41,15 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_MUST_CHECK_RESULT_ struct MHD_Daemon *
 mhd_daemon_get_master_daemon (struct MHD_Daemon *restrict d)
 {
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   if (mhd_D_HAS_MASTER (d))
     return d->threading.hier.master;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
   return d;
 }
 
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 MHD_INTERNAL bool
 mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d)
@@ -65,7 +65,7 @@ mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d)
 }
 
 
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
 
 MHD_NORETURN_ // TODO: implement

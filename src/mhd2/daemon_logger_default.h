@@ -29,7 +29,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
 
 #include "mhd_public_api.h" /* For enum MHD_StatusCode */
 
@@ -49,7 +49,7 @@ mhd_logger_default (void *cls,
                     const char *fm,
                     va_list ap);
 
-#else /* ! HAVE_LOG_FUNCTIONALITY */
+#else /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 
 #include "sys_null_macro.h"
 

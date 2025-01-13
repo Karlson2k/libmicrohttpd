@@ -57,7 +57,7 @@ respond_with_error_len (struct MHD_Connection *c,
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_CSTR_ (4) MHD_FN_PAR_CSTR_ (6);
 
-#ifdef HAVE_HTTP_AUTO_MESSAGES_BODIES
+#ifdef MHD_ENABLE_AUTO_MESSAGES_BODIES
 /**
  * Transmit static string as error response
  */

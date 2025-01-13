@@ -32,7 +32,7 @@
 #include "sys_base_types.h"
 
 #include "sys_poll.h"
-#ifndef MHD_USE_POLL
+#ifndef MHD_SUPPORT_POLL
 #  include "sys_select.h"
 #endif
 #include "mhd_limits.h"
@@ -50,8 +50,8 @@
 #include "mhd_public_api.h"
 
 
-#if ! defined (MHD_USE_POLL) && \
-  (defined(MHD_SOCKETS_KIND_POSIX) || ! defined(MHD_USE_SELECT))
+#if ! defined (MHD_SUPPORT_POLL) && \
+  (defined(MHD_SOCKETS_KIND_POSIX) || ! defined(MHD_SUPPORT_SELECT))
 #  if defined(_WIN32) || defined(HAVE_NANOSLEEP) || defined(HAVE_USLEEP)
 #    define mhd_HAVE_MHD_SLEEP 1
 
@@ -95,7 +95,8 @@ mhd_sleep (uint_fast32_t millisec)
 
 
 #endif /* _WIN32 || HAVE_NANOSLEEP || HAVE_USLEEP */
-#endif /* ! MHD_USE_POLL) && (MHD_SOCKETS_KIND_POSIX || ! MHD_USE_SELECT) */
+#endif /* ! MHD_SUPPORT_POLL &&
+          (MHD_SOCKETS_KIND_POSIX || ! MHD_SUPPORT_SELECT) */
 
 
 MHD_EXTERN_
@@ -109,9 +110,9 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    uint_fast64_t max_wait_millisec)
 {
   struct MHD_Connection *restrict c = urh->c;
-#if defined(MHD_USE_POLL) || defined(MHD_USE_SELECT)
+#if defined(MHD_SUPPORT_POLL) || defined(MHD_SUPPORT_SELECT)
   const MHD_Socket socket_fd = c->sk.fd;
-#endif /* MHD_USE_POLL || MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_POLL || MHD_SUPPORT_SELECT */
   char *restrict buf_char = (char *) recv_buf;
   size_t last_block_size;
   enum mhd_SocketError res;
@@ -178,7 +179,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
   {
     while (0 != max_wait_millisec)
     {
-#if defined(MHD_USE_POLL)
+#if defined(MHD_SUPPORT_POLL)
       if (1)
       {
         struct pollfd fds[1];
@@ -216,8 +217,8 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
         }
         max_wait_millisec = 0; /* Re-try only one time */
       }
-#else /* ! MHD_USE_POLL */
-#  if defined(MHD_USE_SELECT)
+#else /* ! MHD_SUPPORT_POLL */
+#  if defined(MHD_SUPPORT_SELECT)
       bool use_select;
 #    ifdef MHD_SOCKETS_KIND_POSIX
       use_select = (sk.fd < FD_SETSIZE);
@@ -270,7 +271,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
         max_wait_millisec = 0; /* Re-try only one time */
       }
       else /* combined with the next 'if()' */
-#  endif /* MHD_USE_SELECT */
+#  endif /* MHD_SUPPORT_SELECT */
       if (1)
       {
 #  ifndef mhd_HAVE_MHD_SLEEP
@@ -286,7 +287,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
           max_wait_millisec -= wait_millisec;
 #  endif /* mhd_HAVE_MHD_SLEEP */
       }
-#endif /* ! MHD_USE_POLL */
+#endif /* ! MHD_SUPPORT_POLL */
       last_block_size = 0;
       res = mhd_recv (c,
                       recv_buf_size - *received_size,
@@ -326,9 +327,9 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    enum MHD_Bool more_data_to_come)
 {
   struct MHD_Connection *restrict c = urh->c;
-#if defined(MHD_USE_POLL) || defined(MHD_USE_SELECT)
+#if defined(MHD_SUPPORT_POLL) || defined(MHD_SUPPORT_SELECT)
   const MHD_Socket socket_fd = c->sk.fd;
-#endif /* MHD_USE_POLL || MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_POLL || MHD_SUPPORT_SELECT */
   const char *restrict buf_char = (const char *) send_buf;
   const bool push_data = (MHD_NO == more_data_to_come);
   bool finish_time_set;
@@ -350,9 +351,9 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
     enum mhd_SocketError res;
     size_t last_block_size;
     uint_fast64_t wait_left;
-#if ! defined(MHD_USE_POLL) && defined(MHD_USE_SELECT)
+#if ! defined(MHD_SUPPORT_POLL) && defined(MHD_SUPPORT_SELECT)
     bool use_select;
-#endif /* ! MHD_USE_POLL */
+#endif /* ! MHD_SUPPORT_POLL */
 
     last_block_size = 0;
     res = mhd_send_data (c,
@@ -407,7 +408,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
       }
     }
 
-#if defined(MHD_USE_POLL)
+#if defined(MHD_SUPPORT_POLL)
     if (1)
     {
       struct pollfd fds[1];
@@ -449,8 +450,8 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
           ! mhd_SCKT_ERR_IS_LOW_RESOURCES (wait_err))
         return MHD_SC_UPGRADED_NET_HARD_ERROR;
     }
-#else /* ! MHD_USE_POLL */
-#  if defined(MHD_USE_SELECT)
+#else /* ! MHD_SUPPORT_POLL */
+#  if defined(MHD_SUPPORT_SELECT)
 #    ifdef MHD_SOCKETS_KIND_POSIX
     use_select = (sk.fd < FD_SETSIZE);
 #    else  /* MHD_SOCKETS_KIND_WINSOCK */
@@ -516,7 +517,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
         return MHD_SC_UPGRADED_NET_HARD_ERROR;
     }
     else /* combined with the next 'if()' */
-#  endif /* MHD_USE_SELECT */
+#  endif /* MHD_SUPPORT_SELECT */
     if (1)
     {
 #  ifndef mhd_HAVE_MHD_SLEEP
@@ -530,7 +531,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
       mhd_sleep (wait_millisec);
 #  endif /* mhd_HAVE_MHD_SLEEP */
     }
-#endif /* ! MHD_USE_POLL */
+#endif /* ! MHD_SUPPORT_POLL */
   }
 
   return MHD_SC_OK;

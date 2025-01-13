@@ -26,7 +26,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
 #include <stdarg.h>
 #include "sys_null_macro.h"
 #include "mhd_daemon.h"
@@ -50,4 +50,4 @@ mhd_logger (struct MHD_Daemon *daemon,
 }
 
 
-#endif /* ! HAVE_LOG_FUNCTIONALITY */
+#endif /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */

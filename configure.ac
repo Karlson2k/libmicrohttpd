@@ -1746,7 +1746,7 @@ AS_IF([test "x$USE_THREADS" = "xposix"],
    [AC_DEFINE([mhd_THREADS_KIND_W32],[1],[define to use W32 threads])])])
 AM_CONDITIONAL([USE_POSIX_THREADS], [test "x$USE_THREADS" = "xposix"])
 AM_CONDITIONAL([USE_W32_THREADS], [test "x$USE_THREADS" = "xw32"])
-AM_CONDITIONAL([MHD_USE_THREADS], [test "x$USE_THREADS" != "xnone"])
+AM_CONDITIONAL([MHD_SUPPORT_THREADS], [test "x$USE_THREADS" != "xnone"])
 AM_CONDITIONAL([DISABLE_THREADS], [test "x$USE_THREADS" = "xnone"])
 AC_MSG_RESULT([$USE_THREADS])
 
@@ -2809,7 +2809,7 @@ AS_VAR_IF([mhd_cv_func_select],["yes"],
     AS_IF([test "x$enable_select" != "xno"],
       [
         enable_select="yes"
-        AC_DEFINE([[MHD_USE_SELECT]],[[1]],[Define to '1' to enable use of select() system call])
+        AC_DEFINE([[MHD_SUPPORT_SELECT]],[[1]],[Define to '1' to enable use of select() system call])
       ]
     )
   ],
@@ -2819,7 +2819,7 @@ AS_VAR_IF([mhd_cv_func_select],["yes"],
     )
   ]
 )
-AM_CONDITIONAL([MHD_USE_SELECT],[test "x${enable_select}" = "xyes"])
+AM_CONDITIONAL([MHD_SUPPORT_SELECT],[test "x${enable_select}" = "xyes"])
 
 AC_ARG_ENABLE([[poll]],
   [AS_HELP_STRING([[--enable-poll[=ARG]]], [enable 'poll()' support (yes, no, auto) [auto]])
@@ -2871,7 +2871,7 @@ AS_VAR_IF([have_poll],["yes"],
     AS_IF([test "x$enable_poll" != "xno"],
       [
         enable_poll="yes"
-        AC_DEFINE([[MHD_USE_POLL]],[[1]],[Define to '1' to enable use of select() system call])
+        AC_DEFINE([[MHD_SUPPORT_POLL]],[[1]],[Define to '1' to enable use of select() system call])
       ]
     )
   ],
@@ -2881,7 +2881,7 @@ AS_VAR_IF([have_poll],["yes"],
     )
   ]
 )
-AM_CONDITIONAL([MHD_USE_POLL],[test "x${enable_poll}" = "xyes"])
+AM_CONDITIONAL([MHD_SUPPORT_POLL],[test "x${enable_poll}" = "xyes"])
 
 AC_ARG_ENABLE([[epoll]],
   [AS_HELP_STRING([[--enable-epoll[=ARG]]], [enable epoll support (yes, no, auto) [auto]])
@@ -2903,7 +2903,7 @@ AS_IF([test "$enable_epoll" != "no"],
       [cacheVar="assuming yes"],
       [
         AC_DEFINE([[HAVE_EPOLL]],[[1]],[Define to '1' if epoll is supported on your platform])
-        AC_DEFINE([[MHD_USE_EPOLL]],[[1]],[Define to '1' to enable 'epoll' functionality])
+        AC_DEFINE([[MHD_SUPPORT_EPOLL]],[[1]],[Define to '1' to enable 'epoll' functionality])
         enable_epoll='yes'
       ],
       [
@@ -2932,7 +2932,7 @@ WARNING: "
     )
   ]
 )
-AM_CONDITIONAL([MHD_USE_EPOLL], [[test "x${enable_epoll}" = "xyes"]])
+AM_CONDITIONAL([MHD_SUPPORT_EPOLL], [[test "x${enable_epoll}" = "xyes"]])
 
 AS_IF([test "x$enable_epoll" = "xyes"],
   [
@@ -4851,11 +4851,11 @@ AC_ARG_ENABLE([log-messages],
   [],[enable_log_messages="$enable_messages"]
 )
 AS_VAR_IF([enable_log_messages],["yes"],
-  [AC_DEFINE([HAVE_LOG_FUNCTIONALITY],[1],[Define to '1' to enable internal logging and log messages.])],
+  [AC_DEFINE([MHD_SUPPORT_LOG_FUNCTIONALITY],[1],[Define to '1' to enable internal logging and log messages.])],
   [enable_log_messages="no"]
 )
 AC_MSG_RESULT([[$enable_log_messages]])
-AM_CONDITIONAL([HAVE_LOG_FUNCTIONALITY], [test "x$enable_log_messages" != "xno"])
+AM_CONDITIONAL([MHD_SUPPORT_LOG_FUNCTIONALITY], [test "x$enable_log_messages" != "xno"])
 
 AC_MSG_CHECKING([[whether to build text bodies for automatic HTTP response messages]])
 AC_ARG_ENABLE([http-messages],
@@ -4866,11 +4866,11 @@ AC_ARG_ENABLE([http-messages],
   [],[enable_http_messages="$enable_messages"]
 )
 AS_VAR_IF([enable_http_messages],["yes"],
-  [AC_DEFINE([HAVE_HTTP_AUTO_MESSAGES_BODIES],[1],[Define to '1' to enable verbose text bodies for automatic HTTP replies.])],
+  [AC_DEFINE([MHD_ENABLE_AUTO_MESSAGES_BODIES],[1],[Define to '1' to enable verbose text bodies for automatic HTTP replies.])],
   [enable_http_messages="no"]
 )
 AC_MSG_RESULT([[$enable_http_messages]])
-AM_CONDITIONAL([HAVE_HTTP_AUTO_MESSAGES_BODIES], [test "x$enable_http_messages" != "xno"])
+AM_CONDITIONAL([MHD_ENABLE_AUTO_MESSAGES_BODIES], [test "x$enable_http_messages" != "xno"])
 
 
 # optional: have postprocessor?
@@ -4882,8 +4882,8 @@ AC_ARG_ENABLE([postparser],
    [enable_postparser=yes])
 AS_IF([[test "x$enable_postparser" != "xno"]],
   [ enable_postparser=yes
-    AC_DEFINE([HAVE_POST_PARSER],[1],[Define to 1 if libmicrohttpd is compiled with POST parser support.]) ])
-AM_CONDITIONAL([HAVE_POST_PARSER], [test "x$enable_postparser" != "xno"])
+    AC_DEFINE([MHD_SUPPORT_POST_PARSER],[1],[Define to 1 if libmicrohttpd is compiled with POST parser support.]) ])
+AM_CONDITIONAL([MHD_SUPPORT_POST_PARSER], [test "x$enable_postparser" != "xno"])
 AC_MSG_RESULT([[$enable_postparser]])
 
 have_gnutls=no
@@ -5261,7 +5261,7 @@ choke me now
                 multiple_tls="yes"
               ]
             )
-            AC_DEFINE([MHD_USE_GNUTLS],[1],[Define to '1' i][f GnuTLS library should be used])
+            AC_DEFINE([MHD_SUPPORT_GNUTLS],[1],[Define to '1' i][f GnuTLS library should be used])
             MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}GnuTLS"
             MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_CPPFLAGS],[$GNUTLS_CPPFLAGS])
             MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_LDFLAGS],[$GNUTLS_LDFLAGS])
@@ -5276,7 +5276,7 @@ choke me now
                 multiple_tls="yes"
               ]
             )
-            AC_DEFINE([MHD_USE_OPENSSL],[1],[Define to '1' i][f OpenSSL library should be used])
+            AC_DEFINE([MHD_SUPPORT_OPENSSL],[1],[Define to '1' i][f OpenSSL library should be used])
             MSG_TLS_BACKENDS="${MSG_TLS_BACKENDS}OpenSSL"
             MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_CPPFLAGS],[$OPENSSL_CPPFLAGS])
             MHD_APPEND_FLAG_TO_VAR([MHD_TLS_LIB_LDFLAGS],[$OPENSSL_LDFLAGS])
@@ -5329,11 +5329,11 @@ AS_VAR_IF([enable_https],["yes"],
 )
 AC_MSG_RESULT([$MSG_HTTPS])
 
-AM_CONDITIONAL([MHD_USE_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
+AM_CONDITIONAL([MHD_SUPPORT_GNUTLS], [[test "x$have_gnutls" = "xyes"]])
 AC_SUBST([GNUTLS_CPPFLAGS])
 AC_SUBST([GNUTLS_LDFLAGS])
 AC_SUBST([GNUTLS_LIBS])
-AM_CONDITIONAL([MHD_USE_OPENSSL], [[test "x$have_openssl" = "xyes"]])
+AM_CONDITIONAL([MHD_SUPPORT_OPENSSL], [[test "x$have_openssl" = "xyes"]])
 AC_SUBST([OPENSSL_CPPFLAGS])
 AC_SUBST([OPENSSL_LDFLAGS])
 AC_SUBST([OPENSSL_LIBS])
@@ -5515,8 +5515,8 @@ AC_ARG_ENABLE([[httpupgrade]],
     [[enable_httpupgrade='yes']])
 AS_VAR_IF([[enable_httpupgrade]],[["yes"]],
   [
-   AC_DEFINE([[MHD_UPGRADE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP Upgrade support.]) ])
-AM_CONDITIONAL([MHD_UPGRADE_SUPPORT], [[test "x$enable_httpupgrade" = "xyes"]])
+   AC_DEFINE([[MHD_SUPPORT_UPGRADE]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP Upgrade support.]) ])
+AM_CONDITIONAL([MHD_SUPPORT_UPGRADE], [[test "x$enable_httpupgrade" = "xyes"]])
 AC_MSG_RESULT([[$enable_httpupgrade]])
 
 # optional: HTTP cookie parsing support. Enabled by default
@@ -5527,8 +5527,8 @@ AC_ARG_ENABLE([[cookie]],
     [[enable_cookie='yes']])
 AS_VAR_IF([[enable_cookie]],[["yes"]],
   [
-   AC_DEFINE([[COOKIE_SUPPORT]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP cookie parsing support.]) ])
-AM_CONDITIONAL([ENABLE_COOKIE], [[test "x$enable_cookie" = "xyes"]])
+   AC_DEFINE([[MHD_SUPPORT_COOKIES]],[[1]],[Define to 1 if libmicrohttpd is compiled with HTTP cookie parsing support.]) ])
+AM_CONDITIONAL([MHD_SUPPORT_COOKIES], [[test "x$enable_cookie" = "xyes"]])
 AC_MSG_RESULT([[$enable_cookie]])
 
 # optional: MD5 support for Digest Auth. Enabled by default.

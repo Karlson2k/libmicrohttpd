@@ -68,7 +68,7 @@ mhd_request_get_value_n (struct MHD_Request *restrict request,
     }
   }
 
-#if HAVE_POST_PARSER
+#if MHD_SUPPORT_POST_PARSER
   if (0 != (MHD_VK_POSTDATA & kind))
   {
     struct mhd_RequestPostField *f;
@@ -93,7 +93,7 @@ mhd_request_get_value_n (struct MHD_Request *restrict request,
       }
     }
   }
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
 
   return NULL;
 }
@@ -173,7 +173,7 @@ MHD_request_get_values_cb (struct MHD_Request *request,
     }
   }
 
-#if HAVE_POST_PARSER
+#if MHD_SUPPORT_POST_PARSER
   if (0 != (MHD_VK_POSTDATA & kind))
   {
     struct mhd_RequestPostField *f;
@@ -202,13 +202,13 @@ MHD_request_get_values_cb (struct MHD_Request *request,
       }
     }
   }
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */
 
   return count;
 }
 
 
-#if HAVE_POST_PARSER
+#if MHD_SUPPORT_POST_PARSER
 
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1) size_t
@@ -278,4 +278,4 @@ MHD_request_get_post_data_cb (struct MHD_Request *request,
 }
 
 
-#endif /* HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_POST_PARSER */

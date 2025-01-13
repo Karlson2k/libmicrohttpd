@@ -2007,7 +2007,7 @@ mhd_str_equal_caseless_quoted_bin_n (const char *quoted,
 
 #endif /* MHD_SUPPORT_AUTH_DIGEST */
 
-#if defined(MHD_SUPPORT_AUTH_DIGEST) || defined(HAVE_POST_PARSER)
+#if defined(MHD_SUPPORT_AUTH_DIGEST) || defined(MHD_SUPPORT_POST_PARSER)
 
 MHD_INTERNAL size_t
 mhd_str_unquote (const char *quoted,
@@ -2034,7 +2034,7 @@ mhd_str_unquote (const char *quoted,
 }
 
 
-#endif /* MHD_SUPPORT_AUTH_DIGEST HAVE_POST_PARSER */
+#endif /* MHD_SUPPORT_AUTH_DIGEST || MHD_SUPPORT_POST_PARSER */
 
 #if defined(MHD_SUPPORT_AUTH_DIGEST) || defined(MHD_SUPPORT_AUTH_BASIC)
 

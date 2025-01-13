@@ -175,7 +175,7 @@ tls_open_OPTSOURCES = \
   tls_open_tls_lib.h        tls_open_daemon_data.h    tls_open_conn_data.h \
   tls_open_funcs.c          tls_open_funcs.h
 
-if HAVE_POST_PARSER
+if MHD_SUPPORT_POST_PARSER
   libmicrohttpd2_la_SOURCES += $(post_parser_OPTSOURCES)
 endif
 
@@ -191,7 +191,7 @@ if MHD_SUPPORT_AUTH_DIGEST
   libmicrohttpd2_la_SOURCES += $(auth_digest_OPTSOURCES)
 endif
 
-if MHD_UPGRADE_SUPPORT
+if MHD_SUPPORT_UPGRADE
   libmicrohttpd2_la_SOURCES += $(upgrade_OPTSOURCES)
 endif
 
@@ -202,11 +202,11 @@ if MHD_ENABLE_MULTITLS
   libmicrohttpd2_la_SOURCES += $(tls_multi_OPTSOURCES)
 endif
 
-if MHD_USE_GNUTLS
+if MHD_SUPPORT_GNUTLS
   libmicrohttpd2_la_SOURCES += $(tls_gnu_OPTSOURCES)
 endif
 
-if MHD_USE_OPENSSL
+if MHD_SUPPORT_OPENSSL
   libmicrohttpd2_la_SOURCES += $(tls_open_OPTSOURCES)
 endif
 endif

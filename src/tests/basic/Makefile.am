@@ -34,7 +34,7 @@ check_PROGRAMS = \
   test_create_start_destroy_ipbest \
   $(EMPTY_ITEM)
 
-if MHD_USE_SELECT
+if MHD_SUPPORT_SELECT
 check_PROGRAMS += \
   test_create_destroy_select \
   test_create_start_destroy_select \
@@ -43,7 +43,7 @@ check_PROGRAMS += \
   $(EMPTY_ITEM)
 endif
 
-if MHD_USE_POLL
+if MHD_SUPPORT_POLL
 check_PROGRAMS += \
   test_create_destroy_poll \
   test_create_start_destroy_poll \
@@ -52,7 +52,7 @@ check_PROGRAMS += \
   $(EMPTY_ITEM)
 endif
 
-if MHD_USE_EPOLL
+if MHD_SUPPORT_EPOLL
 check_PROGRAMS += \
   test_create_destroy_epoll \
   test_create_start_destroy_epoll \
@@ -61,7 +61,7 @@ check_PROGRAMS += \
   $(EMPTY_ITEM)
 endif
 
-if MHD_USE_THREADS
+if MHD_SUPPORT_THREADS
 check_PROGRAMS += \
   test_create_destroy_int_thread \
   test_create_start_destroy_int_thread \
@@ -74,21 +74,21 @@ check_PROGRAMS += \
   test_create_start_destroy_thread_pool_ipv4 \
   $(EMPTY_ITEM)
 
-if MHD_USE_SELECT
+if MHD_SUPPORT_SELECT
 check_PROGRAMS += \
   test_create_start_destroy_select_int_thread_ipv4 \
   test_create_start_destroy_select_thread_per_conn_ipv4 \
   $(EMPTY_ITEM)
 endif
 
-if MHD_USE_POLL
+if MHD_SUPPORT_POLL
 check_PROGRAMS += \
   test_create_start_destroy_poll_int_thread_ipv4 \
   test_create_start_destroy_poll_thread_per_conn_ipv4 \
   $(EMPTY_ITEM)
 endif
 
-if MHD_USE_EPOLL
+if MHD_SUPPORT_EPOLL
 check_PROGRAMS += \
   test_create_start_destroy_epoll_int_thread_ipv4 \
   test_create_start_destroy_epoll_thread_pool_ipv4 \

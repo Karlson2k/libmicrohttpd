@@ -57,7 +57,7 @@ THREAD_ONLY_TESTS = \
 check_PROGRAMS = \
   test_https_get_select
 
-if MHD_USE_THREADS
+if MHD_SUPPORT_THREADS
 check_PROGRAMS += \
   $(THREAD_ONLY_TESTS)
 endif

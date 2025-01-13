@@ -129,13 +129,13 @@ static volatile size_t mhd_lib_use_counter;
  * global initialisation (after deinitialisation).
  */
 static volatile bool mhd_lib_fully_inited_once;
-#  ifdef MHD_USE_THREADS
+#  ifdef MHD_SUPPORT_THREADS
 
 /**
  * The mutex to control access to full global initialisers and deinitialisers
  */
 static mhd_mutex mhd_init_mutex;
-#  endif /* MHD_USE_THREADS */
+#  endif /* MHD_SUPPORT_THREADS */
 #else  /* mhd_INIT_LAZY_BY_STATIC */
 /* Markers of performed lazy initialisation */
 /**

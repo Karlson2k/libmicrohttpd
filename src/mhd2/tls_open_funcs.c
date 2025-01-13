@@ -417,7 +417,7 @@ daemon_init_ctx (struct MHD_Daemon *restrict d,
 {
   uint64_t ctx_opts;
 
-#ifndef HAVE_LOG_FUNCTIONALITY
+#ifndef MHD_SUPPORT_LOG_FUNCTIONALITY
   (void) d; /* Mute compiler warning */
 #endif
   (void) s; // TODO: support configuration options

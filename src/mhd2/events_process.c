@@ -35,7 +35,7 @@
 #include "mhd_socket_type.h"
 #include "sys_poll.h"
 #include "sys_select.h"
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 #  include <sys/epoll.h>
 #endif
 #ifdef MHD_SOCKETS_KIND_POSIX
@@ -58,9 +58,9 @@
 #include "conn_data_process.h"
 #include "stream_funcs.h"
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 #  include "upgrade_proc.h"
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
 #include "mhd_public_api.h"
 
@@ -140,7 +140,7 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
       if (slots_left < num_to_accept)
         num_to_accept = slots_left;
     }
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
     else
     {
       /* Has workers thread pool. Care must be taken to evenly distribute
@@ -221,7 +221,7 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
       else if (slots_left > num_to_accept)
         num_to_accept = slots_left;
     }
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
   }
 
   while (0 != --num_to_accept)
@@ -247,14 +247,14 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
 MHD_static_inline_ MHD_FN_PAR_NONNULL_ALL_ bool
 is_conn_excluded_from_http_comm (struct MHD_Connection *restrict c)
 {
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   if (NULL != c->upgr.c)
   {
     mhd_assert ((mhd_HTTP_STAGE_UPGRADED == c->stage) || \
                 (mhd_HTTP_STAGE_UPGRADED_CLEANING == c->stage));
     return true;
   }
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
   // TODO: Support suspended connection
 
@@ -286,7 +286,7 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
 }
 
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 /**
  * Clean-up all HTTP-Upgraded connections scheduled for clean-up
  * @param d the daemon to process
@@ -318,9 +318,9 @@ daemon_cleanup_upgraded_conns (struct MHD_Daemon *restrict d)
 }
 
 
-#else  /* ! MHD_UPGRADE_SUPPORT */
+#else  /* ! MHD_SUPPORT_UPGRADE */
 #define daemon_cleanup_upgraded_conns(d) ((void) d)
-#endif /* ! MHD_UPGRADE_SUPPORT */
+#endif /* ! MHD_SUPPORT_UPGRADE */
 
 static void
 close_all_daemon_conns (struct MHD_Daemon *d)
@@ -335,7 +335,7 @@ close_all_daemon_conns (struct MHD_Daemon *d)
          NULL != c;
          c = mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn))
     {
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
       mhd_assert (mhd_HTTP_STAGE_UPGRADING != c->stage);
       mhd_assert (mhd_HTTP_STAGE_UPGRADED_CLEANING != c->stage);
       if (NULL != c->upgr.c)
@@ -364,7 +364,7 @@ close_all_daemon_conns (struct MHD_Daemon *d)
 }
 
 
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
 
 /**
  * Add socket to the fd_set
@@ -434,7 +434,7 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
   FD_ZERO (efds);
 
   ret = 0;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
   fd_set_wrap (mhd_itc_r_fd (d->threading.itc),
                rfds,
@@ -504,7 +504,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
     return true;
 #endif /* MHD_FAVOR_SMALL_CODE */
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
   if (FD_ISSET (mhd_itc_r_fd (d->threading.itc), efds))
   {
@@ -528,7 +528,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
   if (0 == num_events)
     return true;
 #endif /* MHD_FAVOR_SMALL_CODE */
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
   {
@@ -679,10 +679,10 @@ get_all_net_updates_by_select (struct MHD_Daemon *restrict d,
 }
 
 
-#endif /* MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_SELECT */
 
 
-#ifdef MHD_USE_POLL
+#ifdef MHD_SUPPORT_POLL
 
 static MHD_FN_PAR_NONNULL_ (1) unsigned int
 poll_update_fds (struct MHD_Daemon *restrict d,
@@ -698,7 +698,7 @@ poll_update_fds (struct MHD_Daemon *restrict d,
   mhd_assert (mhd_POLL_TYPE_POLL == d->events.poll_type);
 
   i_s = 0;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
   mhd_assert (d->events.data.poll.fds[i_s].fd == \
               mhd_itc_r_fd (d->threading.itc));
@@ -765,7 +765,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     return true;
 
   i_s = 0;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
   mhd_assert (d->events.data.poll.fds[i_s].fd == \
               mhd_itc_r_fd (d->threading.itc));
@@ -792,7 +792,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
 
   if (0 == num_events)
     return true;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
   {
@@ -932,9 +932,9 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
 }
 
 
-#endif /* MHD_USE_POLL */
+#endif /* MHD_SUPPORT_POLL */
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 
 /**
  * Map events provided by epoll to connection states, ITC and
@@ -1059,7 +1059,7 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
 }
 
 
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
 
 
 static MHD_FN_PAR_NONNULL_ (1) bool
@@ -1070,33 +1070,33 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
   case mhd_POLL_TYPE_EXT:
     return false; // TODO: implement
     break;
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
     if (! get_all_net_updates_by_select (d, false))
       return false;
     break;
-#endif /* MHD_USE_SELECT */
-#ifdef MHD_USE_POLL
+#endif /* MHD_SUPPORT_SELECT */
+#ifdef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
     if (! get_all_net_updates_by_poll (d, false))
       return false;
     break;
-#endif /* MHD_USE_POLL */
-#ifdef MHD_USE_EPOLL
+#endif /* MHD_SUPPORT_POLL */
+#ifdef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
     if (! get_all_net_updates_by_epoll (d))
       return false;
     break;
-#endif /* MHD_USE_EPOLL */
-#ifndef MHD_USE_SELECT
+#endif /* MHD_SUPPORT_EPOLL */
+#ifndef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
-#endif /* ! MHD_USE_SELECT */
-#ifndef MHD_USE_POLL
+#endif /* ! MHD_SUPPORT_SELECT */
+#ifndef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
-#endif /* ! MHD_USE_POLL */
-#ifndef MHD_USE_EPOLL
+#endif /* ! MHD_SUPPORT_POLL */
+#ifndef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
-#endif /* ! MHD_USE_EPOLL */
+#endif /* ! MHD_SUPPORT_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
     mhd_UNREACHABLE ();
@@ -1160,19 +1160,19 @@ process_listening_and_itc_only (struct MHD_Daemon *restrict d)
 {
   if (false)
     (void) 0;
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
   else if (mhd_POLL_TYPE_SELECT == d->events.poll_type)
   {
     return false; // TODO: implement
   }
-#endif /* MHD_USE_SELECT */
-#ifdef MHD_USE_POLL
+#endif /* MHD_SUPPORT_SELECT */
+#ifdef MHD_SUPPORT_POLL
   else if (mhd_POLL_TYPE_POLL == d->events.poll_type)
   {
     if (! get_all_net_updates_by_poll (d, true))
       return false;
   }
-#endif /* MHD_USE_POLL */
+#endif /* MHD_SUPPORT_POLL */
   else
   {
     mhd_assert (0 && "Impossible value");

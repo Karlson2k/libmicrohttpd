@@ -45,14 +45,14 @@ enum mhd_TlsMultiRoute
    * Invalid value if TLS is used.
    */
   mhd_TLS_MULTI_ROUTE_NONE = 0
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   ,
   /**
    * Use GnuTLS backend
    */
   mhd_TLS_MULTI_ROUTE_GNU
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   ,
   /**
    * Use OpenSSL backend

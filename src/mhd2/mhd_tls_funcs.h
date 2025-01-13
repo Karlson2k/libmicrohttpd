@@ -39,9 +39,9 @@
 
 #if defined(MHD_USE_MULTITLS)
 #  include "tls_multi_funcs.h"
-#elif defined(MHD_USE_GNUTLS)
+#elif defined(MHD_SUPPORT_GNUTLS)
 #  include "tls_gnu_funcs.h"
-#elif defined(MHD_USE_OPENSSL)
+#elif defined(MHD_SUPPORT_OPENSSL)
 #  include "tls_open_funcs.h"
 #endif
 

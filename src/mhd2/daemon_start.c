@@ -39,13 +39,13 @@
 #ifdef MHD_SOCKETS_KIND_POSIX
 #  include "sys_errno.h"
 #endif
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 #  include <sys/epoll.h>
 #endif
 
 #ifdef MHD_SOCKETS_KIND_POSIX
 #  include <fcntl.h>
-#  ifdef MHD_USE_SELECT
+#  ifdef MHD_SUPPORT_SELECT
 #    ifdef HAVE_SYS_SELECT_H
 #      include <sys/select.h> /* For FD_SETSIZE */
 #    else
@@ -79,7 +79,7 @@
 #  include "mhd_tls_funcs.h"
 #endif
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 #  include "mhd_itc.h"
 #  include "mhd_threads.h"
 #  include "events_process.h"
@@ -156,7 +156,7 @@ daemon_set_work_mode (struct MHD_Daemon *restrict d,
         "is not compatible with requested socket polling syscall.");
       return MHD_SC_SYSCALL_WORK_MODE_COMBINATION_INVALID;
     }
-#ifndef MHD_USE_EPOLL
+#ifndef MHD_SUPPORT_EPOLL
     mhd_LOG_MSG ( \
       d, MHD_SC_FEATURE_DISABLED, \
       "The epoll is required for the requested work mode " \
@@ -178,19 +178,19 @@ daemon_set_work_mode (struct MHD_Daemon *restrict d,
     }
   /* Intentional fallthrough */
   case MHD_WM_WORKER_THREADS:
-#ifndef MHD_USE_THREADS
+#ifndef MHD_SUPPORT_THREADS
     mhd_LOG_MSG (d, MHD_SC_FEATURE_DISABLED, \
                  "The internal threads modes are not supported by this " \
                  "build of MHD.");
     return MHD_SC_FEATURE_DISABLED;
-#else  /* MHD_USE_THREADS */
+#else  /* MHD_SUPPORT_THREADS */
     if (MHD_WM_THREAD_PER_CONNECTION == s->work_mode.mode)
       d->wmode_int = mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION;
     else if (1 >= s->work_mode.params.num_worker_threads)   /* && (MHD_WM_WORKER_THREADS == s->work_mode.mode) */
       d->wmode_int = mhd_WM_INT_INTERNAL_EVENTS_ONE_THREAD;
     else
       d->wmode_int = mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
     break;
   default:
     mhd_LOG_MSG (d, MHD_SC_CONFIGURATION_UNEXPECTED_WM, \
@@ -1067,7 +1067,7 @@ detect_listen_type_and_port (struct MHD_Daemon *restrict d)
 #endif
 
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 
 /**
  * Initialise daemon's epoll FD
@@ -1138,7 +1138,7 @@ deinit_epoll (struct MHD_Daemon *restrict d)
 }
 
 
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
 
 /**
  * Choose sockets monitoring syscall and pre-initialise it
@@ -1175,36 +1175,36 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
     break;
   case MHD_SPS_SELECT:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
-#ifndef MHD_USE_SELECT
+#ifndef MHD_SUPPORT_SELECT
     mhd_LOG_MSG (d, MHD_SC_SELECT_SYSCALL_NOT_AVAILABLE, \
                  "'select()' is not supported by the platform or " \
                  "this MHD build");
     return MHD_SC_SELECT_SYSCALL_NOT_AVAILABLE;
-#else  /* MHD_USE_SELECT */
+#else  /* MHD_SUPPORT_SELECT */
     chosen_type = mhd_POLL_TYPE_SELECT;
-#endif /* MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_SELECT */
     break;
   case MHD_SPS_POLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
-#ifndef MHD_USE_POLL
+#ifndef MHD_SUPPORT_POLL
     mhd_LOG_MSG (d, MHD_SC_POLL_SYSCALL_NOT_AVAILABLE, \
                  "'poll()' is not supported by the platform or " \
                  "this MHD build");
     return MHD_SC_POLL_SYSCALL_NOT_AVAILABLE;
-#else  /* MHD_USE_POLL */
+#else  /* MHD_SUPPORT_POLL */
     chosen_type = mhd_POLL_TYPE_POLL;
-#endif /* MHD_USE_POLL */
+#endif /* MHD_SUPPORT_POLL */
     break;
   case MHD_SPS_EPOLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
-#ifndef MHD_USE_EPOLL
+#ifndef MHD_SUPPORT_EPOLL
     mhd_LOG_MSG (d, MHD_SC_EPOLL_SYSCALL_NOT_AVAILABLE, \
                  "'epoll' is not supported by the platform or " \
                  "this MHD build");
     return MHD_SC_EPOLL_SYSCALL_NOT_AVAILABLE;
-#else  /* MHD_USE_EPOLL */
+#else  /* MHD_SUPPORT_EPOLL */
     chosen_type = mhd_POLL_TYPE_EPOLL;
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
     break;
   default:
     mhd_LOG_MSG (d, MHD_SC_CONFIGURATION_UNEXPECTED_SPS,
@@ -1216,7 +1216,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 
   if (mhd_POLL_TYPE_NOT_SET_YET == chosen_type)
   {
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
     bool edge_trig_allowed;
     edge_trig_allowed = true;
 #  ifdef MHD_ENABLE_HTTPS
@@ -1224,14 +1224,14 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
         (MHD_TLS_BACKEND_NONE != s->tls))
       edge_trig_allowed = mhd_tls_is_edge_trigg_supported (s);
 #  endif /* MHD_ENABLE_HTTPS */
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
     fallback_syscall_allowed = true;
 
     if (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int))
     {
       chosen_type = mhd_POLL_TYPE_EXT;
     }
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
     else if (MHD_WM_EXTERNAL_SINGLE_FD_WATCH == s->work_mode.mode)
     {
       fallback_syscall_allowed = false;
@@ -1244,9 +1244,9 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #endif
     else
     {
-#if defined(MHD_USE_POLL)
+#if defined(MHD_SUPPORT_POLL)
       chosen_type = mhd_POLL_TYPE_POLL;
-#elif defined(MHD_USE_SELECT)
+#elif defined(MHD_SUPPORT_SELECT)
       chosen_type = mhd_POLL_TYPE_SELECT;
 #else
       (void) 0; /* Do nothing. Mute compiler warning */
@@ -1257,7 +1257,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
     fallback_syscall_allowed = false;
 
   /* Try 'epoll' if possible */
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
   if (mhd_POLL_TYPE_EPOLL == chosen_type)
   {
     enum MHD_StatusCode epoll_res;
@@ -1275,15 +1275,15 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   }
   mhd_assert ((mhd_POLL_TYPE_EPOLL != d->events.poll_type) || \
               (0 < d->events.data.epoll.e_fd));
-#else  /* ! MHD_USE_EPOLL */
+#else  /* ! MHD_SUPPORT_EPOLL */
   (void) fallback_syscall_allowed; /* Mute compiler warning */
-#endif /* ! MHD_USE_EPOLL */
+#endif /* ! MHD_SUPPORT_EPOLL */
 
   if (mhd_POLL_TYPE_NOT_SET_YET == chosen_type)
   {
-#if defined(MHD_USE_POLL)
+#if defined(MHD_SUPPORT_POLL)
     chosen_type = mhd_POLL_TYPE_POLL;
-#elif defined(MHD_USE_SELECT)
+#elif defined(MHD_SUPPORT_SELECT)
     chosen_type = mhd_POLL_TYPE_SELECT;
 #else
     mhd_LOG_MSG (d, MHD_SC_FEATURE_DISABLED, \
@@ -1306,7 +1306,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
     d->events.data.ext.cls =
       s->work_mode.params.v_external_event_loop_cb.reg_cb_cls;
     break;
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     mhd_assert (MHD_WM_EXTERNAL_SINGLE_FD_WATCH != s->work_mode.mode);
@@ -1315,8 +1315,8 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
     d->events.data.select.wfds = NULL; /* Memory allocated during event and threads init */
     d->events.data.select.efds = NULL; /* Memory allocated during event and threads init */
     break;
-#endif /* MHD_USE_SELECT */
-#ifdef MHD_USE_POLL
+#endif /* MHD_SUPPORT_SELECT */
+#ifdef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     mhd_assert (MHD_WM_EXTERNAL_SINGLE_FD_WATCH != s->work_mode.mode);
@@ -1324,8 +1324,8 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
     d->events.data.poll.fds = NULL; /* Memory allocated during event and threads init */
     d->events.data.poll.rel = NULL; /* Memory allocated during event and threads init */
     break;
-#endif /* MHD_USE_POLL */
-#ifdef MHD_USE_EPOLL
+#endif /* MHD_SUPPORT_POLL */
+#ifdef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     /* Pre-initialised by init_epoll() */
@@ -1333,16 +1333,16 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
     mhd_assert (0 <= d->events.data.epoll.e_fd);
     mhd_assert (NULL == d->events.data.epoll.events);
     break;
-#endif /* MHD_USE_EPOLL */
-#ifndef MHD_USE_SELECT
+#endif /* MHD_SUPPORT_EPOLL */
+#ifndef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
-#endif /* ! MHD_USE_SELECT */
-#ifndef MHD_USE_POLL
+#endif /* ! MHD_SUPPORT_SELECT */
+#ifndef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
-#endif /* ! MHD_USE_POLL */
-#ifndef MHD_USE_EPOLL
+#endif /* ! MHD_SUPPORT_POLL */
+#ifndef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
-#endif /* ! MHD_USE_EPOLL */
+#endif /* ! MHD_SUPPORT_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
     mhd_UNREACHABLE ();
@@ -1382,14 +1382,14 @@ daemon_init_net (struct MHD_Daemon *restrict d,
   /* No direct return of error codes is allowed beyond this point.
      Deinit/cleanup must be performed before return of any error. */
 
-#if defined(MHD_SOCKETS_KIND_POSIX) && defined(MHD_USE_SELECT)
+#if defined(MHD_SOCKETS_KIND_POSIX) && defined(MHD_SUPPORT_SELECT)
   if (mhd_POLL_TYPE_SELECT == d->events.poll_type)
   {
     if ((MHD_INVALID_SOCKET == d->net.cfg.max_fd_num) ||
         (FD_SETSIZE < d->net.cfg.max_fd_num))
       d->net.cfg.max_fd_num = FD_SETSIZE;
   }
-#endif /* MHD_SOCKETS_KIND_POSIX && MHD_USE_SELECT */
+#endif /* MHD_SOCKETS_KIND_POSIX && MHD_SUPPORT_SELECT */
 
   if (MHD_SC_OK == ret)
   {
@@ -1427,10 +1427,10 @@ daemon_init_net (struct MHD_Daemon *restrict d,
     }
   }
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
   if ((mhd_POLL_TYPE_EPOLL == d->events.poll_type))
     close (d->events.data.epoll.e_fd);
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
 
   mhd_assert (MHD_SC_OK != ret);
 
@@ -1448,10 +1448,10 @@ daemon_deinit_net (struct MHD_Daemon *restrict d)
   mhd_assert (d->dbg.net_inited);
   mhd_assert (! d->dbg.net_deinited);
   mhd_assert (mhd_POLL_TYPE_NOT_SET_YET != d->events.poll_type);
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
   if (mhd_POLL_TYPE_EPOLL == d->events.poll_type)
     deinit_epoll (d);
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
     mhd_socket_close (d->net.listen.fd);
 
@@ -1724,20 +1724,20 @@ static MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
 allocate_events (struct MHD_Daemon *restrict d)
 {
-#if defined(MHD_USE_POLL) || defined(MHD_USE_EPOLL)
+#if defined(MHD_SUPPORT_POLL) || defined(MHD_SUPPORT_EPOLL)
   /**
    * The number of elements to be monitored by sockets polling function
    */
   unsigned int num_elements;
   num_elements = 0;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   ++num_elements;  /* For the ITC */
 #endif
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
     ++num_elements;  /* For the listening socket */
   if (! mhd_D_HAS_THR_PER_CONN (d))
     num_elements += d->conns.cfg.count_limit;
-#endif /* MHD_USE_POLL || MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_POLL || MHD_SUPPORT_EPOLL */
 
   mhd_assert (0 != d->conns.cfg.count_limit);
   mhd_assert (mhd_D_TYPE_HAS_EVENTS_PROCESSING (d->threading.d_type));
@@ -1753,7 +1753,7 @@ allocate_events (struct MHD_Daemon *restrict d)
 #endif
     return MHD_SC_OK; /* Success exit point */
     break;
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
     /* The pointers have been set to NULL during pre-initialisations of the events */
     mhd_assert (NULL == d->events.data.select.rfds);
@@ -1783,8 +1783,8 @@ allocate_events (struct MHD_Daemon *restrict d)
                  "Failed to allocate memory for fd_sets for the daemon");
     return MHD_SC_FD_SET_MEMORY_ALLOCATE_FAILURE;
     break;
-#endif /* MHD_USE_SELECT */
-#ifdef MHD_USE_POLL
+#endif /* MHD_SUPPORT_SELECT */
+#ifdef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
     /* The pointers have been set to NULL during pre-initialisations of the events */
     mhd_assert (NULL == d->events.data.poll.fds);
@@ -1814,8 +1814,8 @@ allocate_events (struct MHD_Daemon *restrict d)
                  "Failed to allocate memory for poll fds for the daemon");
     return MHD_SC_POLL_FDS_MEMORY_ALLOCATE_FAILURE;
     break;
-#endif /* MHD_USE_POLL */
-#ifdef MHD_USE_EPOLL
+#endif /* MHD_SUPPORT_POLL */
+#ifdef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
     mhd_assert (! mhd_D_HAS_THR_PER_CONN (d));
     /* The event FD has been created during pre-initialisations of the events */
@@ -1850,16 +1850,16 @@ allocate_events (struct MHD_Daemon *restrict d)
                  "Failed to allocate memory for epoll events for the daemon");
     return MHD_SC_EPOLL_EVENTS_MEMORY_ALLOCATE_FAILURE;
     break;
-#endif /* MHD_USE_EPOLL */
-#ifndef MHD_USE_SELECT
+#endif /* MHD_SUPPORT_EPOLL */
+#ifndef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
-#endif /* ! MHD_USE_SELECT */
-#ifndef MHD_USE_POLL
+#endif /* ! MHD_SUPPORT_SELECT */
+#ifndef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
-#endif /* ! MHD_USE_POLL */
-#ifndef MHD_USE_EPOLL
+#endif /* ! MHD_SUPPORT_POLL */
+#ifndef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
-#endif /* ! MHD_USE_EPOLL */
+#endif /* ! MHD_SUPPORT_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
     mhd_UNREACHABLE ();
@@ -1887,7 +1887,7 @@ deallocate_events (struct MHD_Daemon *restrict d)
     mhd_UNREACHABLE ();
     return;
   }
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
   else if (mhd_POLL_TYPE_SELECT == d->events.poll_type)
   {
     mhd_assert (NULL != d->events.data.select.efds);
@@ -1897,8 +1897,8 @@ deallocate_events (struct MHD_Daemon *restrict d)
     free (d->events.data.select.wfds);
     free (d->events.data.select.rfds);
   }
-#endif /* MHD_USE_SELECT */
-#ifdef MHD_USE_POLL
+#endif /* MHD_SUPPORT_SELECT */
+#ifdef MHD_SUPPORT_POLL
   else if (mhd_POLL_TYPE_POLL == d->events.poll_type)
   {
     mhd_assert (NULL != d->events.data.poll.rel);
@@ -1906,15 +1906,15 @@ deallocate_events (struct MHD_Daemon *restrict d)
     free (d->events.data.poll.rel);
     free (d->events.data.poll.fds);
   }
-#endif /* MHD_USE_POLL */
-#ifdef MHD_USE_EPOLL
+#endif /* MHD_SUPPORT_POLL */
+#ifdef MHD_SUPPORT_EPOLL
   else if (mhd_POLL_TYPE_EPOLL == d->events.poll_type)
   {
     mhd_assert (0 != d->events.data.epoll.num_elements);
     mhd_assert (NULL != d->events.data.epoll.events);
     free (d->events.data.epoll.events);
   }
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
 #ifndef NDEBUG
   d->dbg.events_allocated = false;
 #endif
@@ -1934,7 +1934,7 @@ init_itc (struct MHD_Daemon *restrict d)
 {
   mhd_assert (mhd_D_TYPE_IS_VALID (d->threading.d_type));
   mhd_assert (mhd_D_TYPE_HAS_EVENTS_PROCESSING (d->threading.d_type));
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   // TODO: add and process "thread unsafe" daemon's option
   if (! mhd_itc_init (&(d->threading.itc)))
   {
@@ -1967,7 +1967,7 @@ init_itc (struct MHD_Daemon *restrict d)
     mhd_itc_set_invalid (&(d->threading.itc));
     return MHD_SC_ITC_FD_OUTSIDE_OF_SET_RANGE;
   }
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
   return MHD_SC_OK;
 }
 
@@ -1983,11 +1983,11 @@ deinit_itc (struct MHD_Daemon *restrict d)
 {
   mhd_assert (mhd_D_TYPE_IS_VALID (d->threading.d_type));
   mhd_assert (mhd_D_TYPE_HAS_EVENTS_PROCESSING (d->threading.d_type));
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   // TODO: add and process "thread unsafe" daemon's option
   mhd_assert (! mhd_ITC_IS_INVALID (d->threading.itc));
   (void) mhd_itc_destroy (d->threading.itc);
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 }
 
 
@@ -2007,7 +2007,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
   mhd_assert (d->dbg.events_allocated);
   mhd_assert (! d->dbg.events_fully_inited);
   mhd_assert (mhd_D_TYPE_HAS_EVENTS_PROCESSING (d->threading.d_type));
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
 #endif
 
@@ -2019,7 +2019,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
     // FIXME: Register the ITC and the listening NOW?
     return MHD_SC_OK;
     break;
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
     mhd_assert (NULL != d->events.data.select.rfds);
     mhd_assert (NULL != d->events.data.select.wfds);
@@ -2027,8 +2027,8 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
     /* Nothing to do when using 'select()' */
     return MHD_SC_OK;
     break;
-#endif /* MHD_USE_SELECT */
-#ifdef MHD_USE_POLL
+#endif /* MHD_SUPPORT_SELECT */
+#ifdef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
     mhd_assert (NULL != d->events.data.poll.fds);
     mhd_assert (NULL != d->events.data.poll.rel);
@@ -2036,7 +2036,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
     {
       unsigned int i;
       i = 0;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
       d->events.data.poll.fds[i].fd = mhd_itc_r_fd (d->threading.itc);
       d->events.data.poll.fds[i].events = POLLIN;
       d->events.data.poll.rel[i].fd_id = mhd_SOCKET_REL_MARKER_ITC;
@@ -2051,8 +2051,8 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
     }
     return MHD_SC_OK;
     break;
-#endif /* MHD_USE_POLL */
-#ifdef MHD_USE_EPOLL
+#endif /* MHD_SUPPORT_POLL */
+#ifdef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
     mhd_assert (MHD_INVALID_SOCKET != d->events.data.epoll.e_fd);
     mhd_assert (NULL != d->events.data.epoll.events);
@@ -2060,7 +2060,7 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
     if (1)
     {
       struct epoll_event reg_event;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
       reg_event.events = EPOLLIN;
       reg_event.data.u64 = (uint64_t) mhd_SOCKET_REL_MARKER_ITC; /* uint64_t is used in the epoll header */
       if (0 != epoll_ctl (d->events.data.epoll.e_fd, EPOLL_CTL_ADD,
@@ -2086,16 +2086,16 @@ add_itc_and_listen_to_monitoring (struct MHD_Daemon *restrict d)
     }
     return MHD_SC_OK;
     break;
-#endif /* MHD_USE_EPOLL */
-#ifndef MHD_USE_SELECT
+#endif /* MHD_SUPPORT_EPOLL */
+#ifndef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
-#endif /* ! MHD_USE_SELECT */
-#ifndef MHD_USE_POLL
+#endif /* ! MHD_SUPPORT_SELECT */
+#ifndef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
-#endif /* ! MHD_USE_POLL */
-#ifndef MHD_USE_EPOLL
+#endif /* ! MHD_SUPPORT_POLL */
+#ifndef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
-#endif /* ! MHD_USE_EPOLL */
+#endif /* ! MHD_SUPPORT_EPOLL */
   case mhd_POLL_TYPE_NOT_SET_YET:
   default:
     mhd_UNREACHABLE ();
@@ -2133,7 +2133,7 @@ init_individual_conns (struct MHD_Daemon *restrict d,
   else if (256 > d->conns.cfg.mem_pool_size)
     d->conns.cfg.mem_pool_size = 256;
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   mhd_DLINKEDL_INIT_LIST (&(d->conns.upgr),upgr_cleanup);
   if (! mhd_mutex_init (&(d->conns.upgr.ucu_lock)))
   {
@@ -2142,7 +2142,7 @@ init_individual_conns (struct MHD_Daemon *restrict d,
                  "connection list.");
     return MHD_SC_MUTEX_INIT_FAILURE;
   }
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
 #ifndef NDEBUG
   d->dbg.connections_inited = true;
@@ -2158,12 +2158,12 @@ init_individual_conns (struct MHD_Daemon *restrict d,
 static MHD_FN_PAR_NONNULL_ (1) void
 deinit_individual_conns (struct MHD_Daemon *restrict d)
 {
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   mhd_assert (NULL == mhd_DLINKEDL_GET_FIRST (&(d->conns.upgr),upgr_cleanup));
   mhd_assert (NULL == mhd_DLINKEDL_GET_LAST (&(d->conns.upgr),upgr_cleanup));
 
   mhd_mutex_destroy_chk (&(d->conns.upgr.ucu_lock));
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
   mhd_assert (0 != d->conns.cfg.mem_pool_size);
   mhd_assert (0 == d->conns.count);
@@ -2210,10 +2210,10 @@ init_individual_thread_data_events_conns (struct MHD_Daemon *restrict d,
 #ifndef NDEBUG
       d->dbg.events_fully_inited = true;
 #endif
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
       mhd_thread_handle_ID_set_invalid (&(d->threading.tid));
       d->threading.stop_requested = false;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 #ifndef NDEBUG
       d->dbg.threading_inited = true;
 #endif
@@ -2291,10 +2291,10 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
     }
   }
   num_worker_daemons = 1;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   if (mhd_D_TYPE_HAS_WORKERS (d->threading.d_type))
     num_worker_daemons = s->work_mode.params.num_worker_threads;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
   limit_by_conf = s->global_connection_limit;
   limit_by_num = UINT_MAX;
@@ -2311,9 +2311,9 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
          The real limit is lower, as any other process FDs will use the slots
          in the allowed numbers range */
       limit_by_num -= 3; /* The numbers zero, one and two are used typically */
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
       limit_by_num -= mhd_ITC_NUM_FDS * num_worker_daemons;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
       if (MHD_INVALID_SOCKET != d->net.listen.fd)
         --limit_by_num; /* One FD is used for the listening socket */
       if ((num_worker_daemons > limit_by_num) ||
@@ -2340,7 +2340,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
 #elif defined(MHD_SOCKETS_KIND_WINSOCK)
   if (1)
   {
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
     if ((mhd_DAEMON_TYPE_SINGLE == d->threading.d_type) &&
         (mhd_POLL_TYPE_SELECT == d->events.poll_type))
     {
@@ -2350,9 +2350,9 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
       limit_per_worker = FD_SETSIZE;
       if (MHD_INVALID_SOCKET != d->net.listen.fd)
         --limit_per_worker;  /* The slot for the listening socket */
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
       --limit_per_worker;  /* The slot for the ITC */
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
       if ((0 == limit_per_worker) || (limit_per_worker > FD_SETSIZE))
         error_by_fd_setsize = true;
       else
@@ -2362,7 +2362,7 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
           limit_by_select = UINT_MAX;
       }
     }
-#endif /* MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_SELECT */
     (void) 0; /* Mute compiler warning */
   }
 #endif /* MHD_SOCKETS_KIND_POSIX */
@@ -2388,9 +2388,9 @@ set_connections_total_limits (struct MHD_Daemon *restrict d,
 #define TYPICAL_NOFILES_LIMIT (1024)  /* The usual limit for the number of open FDs */
     suggested_limit = TYPICAL_NOFILES_LIMIT;
     suggested_limit -= 3; /* The numbers zero, one and two are used typically */
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
     suggested_limit -= mhd_ITC_NUM_FDS * num_worker_daemons;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
     if (MHD_INVALID_SOCKET != d->net.listen.fd)
       --suggested_limit; /* One FD is used for the listening socket */
     if (suggested_limit > TYPICAL_NOFILES_LIMIT)
@@ -2443,18 +2443,18 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
     mhd_assert (! mhd_WM_INT_HAS_THREADS (d->wmode_int));
     mhd_assert (mhd_POLL_TYPE_EXT == d->events.poll_type);
     mhd_assert (NULL != d->events.data.ext.cb);
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
     d->threading.d_type = mhd_DAEMON_TYPE_SINGLE;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
     return MHD_SC_OK;
   case mhd_WM_INT_INTERNAL_EVENTS_NO_THREADS:
     mhd_assert (! mhd_WM_INT_HAS_THREADS (d->wmode_int));
     mhd_assert (mhd_POLL_TYPE_EXT != d->events.poll_type);
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
     d->threading.d_type = mhd_DAEMON_TYPE_SINGLE;
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
     return MHD_SC_OK;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   case mhd_WM_INT_INTERNAL_EVENTS_ONE_THREAD:
     mhd_assert (mhd_WM_INT_HAS_THREADS (d->wmode_int));
     mhd_assert (mhd_POLL_TYPE_EXT != d->events.poll_type);
@@ -2471,11 +2471,11 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
     mhd_assert (mhd_POLL_TYPE_EXT != d->events.poll_type);
     d->threading.d_type = mhd_DAEMON_TYPE_MASTER_CONTROL_ONLY;
     return MHD_SC_OK;
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
   case mhd_WM_INT_INTERNAL_EVENTS_ONE_THREAD:
   case mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION:
   case mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL:
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
   default:
     break;
   }
@@ -2484,7 +2484,7 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
 }
 
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 /**
  * De-initialise workers pool, including workers daemons.
@@ -2513,10 +2513,10 @@ deinit_workers_pool (struct MHD_Daemon *restrict d,
   { /* Note: loop exits after underflow of 'i' */
     struct MHD_Daemon *const worker = d->threading.hier.pool.workers + i;
     deinit_individual_thread_data_events_conns (worker);
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
     if (mhd_POLL_TYPE_EPOLL == worker->events.poll_type)
       deinit_epoll (worker);
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
   }
   free (d->threading.hier.pool.workers);
 #ifndef NDEBUG
@@ -2614,7 +2614,7 @@ init_workers_pool (struct MHD_Daemon *restrict d,
     worker->conns.cfg.count_limit = conn_per_daemon;
     if (conn_remainder > i)
       worker->conns.cfg.count_limit++; /* Distribute the reminder */
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
     if (mhd_POLL_TYPE_EPOLL == worker->events.poll_type)
     {
       if (0 == i)
@@ -2627,7 +2627,7 @@ init_workers_pool (struct MHD_Daemon *restrict d,
       else
         res = init_epoll (worker);
     }
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
     if (MHD_SC_OK == res)
     {
       res = init_individual_thread_data_events_conns (worker, s);
@@ -2636,10 +2636,10 @@ init_workers_pool (struct MHD_Daemon *restrict d,
 
       /* Below is a clean-up of the current slot */
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
       if (mhd_POLL_TYPE_EPOLL == worker->events.poll_type)
         deinit_epoll (worker);
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
     }
     break;
   }
@@ -2662,7 +2662,7 @@ init_workers_pool (struct MHD_Daemon *restrict d,
 }
 
 
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
 /**
  * Initialise threading and inter-thread communications.
@@ -2697,7 +2697,7 @@ daemon_init_threading_and_conn (struct MHD_Daemon *restrict d,
 
   if (! mhd_D_TYPE_HAS_WORKERS (d->threading.d_type))
     res = init_individual_thread_data_events_conns (d, s);
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   else
   {
     res = init_workers_pool (d, s);
@@ -2708,7 +2708,7 @@ daemon_init_threading_and_conn (struct MHD_Daemon *restrict d,
         d->threading.hier.pool.workers[0].conns.cfg.mem_pool_size;
     }
   }
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
   if (MHD_SC_OK == res)
   {
     mhd_assert (d->dbg.events_allocated || \
@@ -2753,22 +2753,22 @@ daemon_deinit_threading_and_conn (struct MHD_Daemon *restrict d)
   }
   else
   {
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
     mhd_assert (mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL == d->wmode_int);
     mhd_assert (! d->dbg.connections_inited);
     mhd_assert (! d->dbg.events_allocated);
     mhd_assert (d->dbg.thread_pool_inited);
     deinit_workers_pool (d, d->threading.hier.pool.num);
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
     mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     (void) 0;
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
   }
 }
 
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 /**
  * Start the daemon individual single thread.
@@ -2958,7 +2958,7 @@ start_worker_pool_threads (struct MHD_Daemon *restrict d)
 }
 
 
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
 /**
  * Start the daemon internal threads, if the daemon configured to use them.
@@ -2976,7 +2976,7 @@ daemon_start_threads (struct MHD_Daemon *restrict d)
   mhd_assert (! mhd_D_TYPE_IS_INTERNAL_ONLY (d->threading.d_type));
   if (mhd_WM_INT_HAS_THREADS (d->wmode_int))
   {
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
     if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL != d->wmode_int)
     {
       mhd_assert (d->dbg.threading_inited);
@@ -2989,11 +2989,11 @@ daemon_start_threads (struct MHD_Daemon *restrict d)
       mhd_assert (mhd_DAEMON_TYPE_MASTER_CONTROL_ONLY == d->threading.d_type);
       return start_worker_pool_threads (d);
     }
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
     mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     return MHD_SC_INTERNAL_ERROR;
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
   }
   return MHD_SC_OK;
 }
@@ -3013,7 +3013,7 @@ daemon_stop_threads (struct MHD_Daemon *restrict d)
   mhd_assert (d->dbg.threading_inited);
   if (mhd_WM_INT_HAS_THREADS (d->wmode_int))
   {
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
     if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL != d->wmode_int)
     {
       mhd_assert (d->dbg.threading_inited);
@@ -3028,11 +3028,11 @@ daemon_stop_threads (struct MHD_Daemon *restrict d)
       stop_worker_pool_threads (d, d->threading.hier.pool.num);
       return;
     }
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
     mhd_assert (0 && "Impossible value");
     mhd_UNREACHABLE ();
     return MHD_SC_INTERNAL_ERROR;
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
   }
 }
 

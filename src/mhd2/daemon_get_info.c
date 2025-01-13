@@ -53,7 +53,7 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
     return_value->v_socket = daemon->net.listen.fd;
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD:
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
     if (! mhd_D_IS_USING_EPOLL (daemon))
       return MHD_SC_INFO_GET_TYPE_UNSUPPORTED;
     if (sizeof(int) > return_value_size)

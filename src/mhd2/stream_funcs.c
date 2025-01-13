@@ -32,7 +32,7 @@
 #include "mhd_unreachable.h"
 
 #include <string.h>
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 #  include <sys/epoll.h>
 #endif
 #include "sys_malloc.h"
@@ -649,9 +649,9 @@ MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
 {
   struct MHD_Daemon *const restrict d = c->daemon;
-#if defined(MHD_USE_THREADS)
+#if defined(MHD_SUPPORT_THREADS)
   mhd_assert (! mhd_D_HAS_WORKERS (d));
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
   mhd_assert (! c->suspended);
 
@@ -813,12 +813,12 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
                MHD_REQUEST_ENDED_NO_RESOURCES :
                MHD_REQUEST_ENDED_HTTP_PROTOCOL_ERROR;
     break;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   case mhd_CONN_CLOSE_UPGRADE:
     close_hard = false;
     end_code = MHD_REQUEST_ENDED_COMPLETED_OK_UPGRADE;
     break;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   case mhd_CONN_CLOSE_HTTP_COMPLETED:
     close_hard = false;
     end_code = MHD_REQUEST_ENDED_COMPLETED_OK;
@@ -834,14 +834,14 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 
   mhd_assert ((NULL == log_msg) || (MHD_SC_INTERNAL_ERROR != sc));
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   if (mhd_CONN_CLOSE_UPGRADE == reason)
   {
     mhd_assert (mhd_HTTP_STAGE_UPGRADING == c->stage);
     c->event_loop_info = MHD_EVENT_LOOP_INFO_UPGRADED;
   }
   else
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   /* Make changes on the socket early to let the kernel and the remote
    * to process the changes in parallel. */
   if (close_hard)
@@ -892,14 +892,14 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     }
   }
 
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
   if (NULL != log_msg)
   {
     mhd_LOG_MSG (c->daemon, sc, log_msg);
   }
-#else  /* ! HAVE_LOG_FUNCTIONALITY */
+#else  /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
   (void) log_msg;
-#endif /* ! HAVE_LOG_FUNCTIONALITY */
+#endif /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 
 #if 0 // TODO: notification callback
   mhd_assert ((mhd_HTTP_STAGE_INIT != c->stage) || (! c->rq.app_aware));
@@ -941,7 +941,7 @@ mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
   if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
   if (mhd_POLL_TYPE_EPOLL == c->daemon->events.poll_type)
   {
     struct epoll_event event;
@@ -957,7 +957,7 @@ mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
                    "Failed to remove connection socket from epoll.");
     }
   }
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
 }
 
 
@@ -970,7 +970,7 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
   mhd_assert (c->dbg.closing_started);
   mhd_assert (! c->dbg.pre_cleaned);
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   if (NULL == c->upgr.c)
 #endif
   mhd_conn_pre_clean_part1 (c);

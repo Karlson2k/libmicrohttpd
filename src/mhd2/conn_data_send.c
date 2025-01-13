@@ -218,7 +218,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
                               true,
                               &sent);
       }
-  #if defined(MHD_USE_SENDFILE)
+  #if defined(mhd_USE_SENDFILE)
       else if (mhd_REPLY_CNTN_LOC_FILE == c->rp.cntn_loc)
       {
         mhd_assert (mhd_RESPONSE_CONTENT_DATA_FILE == resp->cntn_dtype);
@@ -234,7 +234,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
           }
         }
       }
-  #endif /* MHD_USE_SENDFILE */
+  #endif /* mhd_USE_SENDFILE */
       else
       {
         mhd_assert (0 && "Should be unreachable");
@@ -286,7 +286,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
                         mhd_HTTP_STAGE_FULL_REPLY_SENT);
     }
     break;
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   case mhd_HTTP_STAGE_UPGRADE_HEADERS_SENDING:
     res = mhd_send_data (c,
                          c->write_buffer_append_offset
@@ -298,7 +298,7 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
     if (mhd_SOCKET_ERR_NO_ERROR == res)
       c->write_buffer_send_offset += sent;
     break;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
   case mhd_HTTP_STAGE_INIT:
   case mhd_HTTP_STAGE_REQ_LINE_RECEIVING:
   case mhd_HTTP_STAGE_REQ_LINE_RECEIVED:
@@ -319,11 +319,11 @@ mhd_conn_data_send (struct MHD_Connection *restrict c)
   case mhd_HTTP_STAGE_FULL_REPLY_SENT:
   case mhd_HTTP_STAGE_PRE_CLOSING:
   case mhd_HTTP_STAGE_CLOSED:
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   case mhd_HTTP_STAGE_UPGRADING:
   case mhd_HTTP_STAGE_UPGRADED:
   case mhd_HTTP_STAGE_UPGRADED_CLEANING:
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
     mhd_assert (0 && "Should be unreachable");
     mhd_UNREACHABLE ();
     res = mhd_SOCKET_ERR_INTERNAL;

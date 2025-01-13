@@ -29,7 +29,7 @@ $(top_builddir)/src/microhttpd/libmicrohttpd.la: $(top_builddir)/src/microhttpd/
 # Tools
 noinst_PROGRAMS = 
 
-if MHD_USE_THREADS
+if MHD_SUPPORT_THREADS
 noinst_PROGRAMS += \
     perf_replies
 endif

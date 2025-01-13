@@ -44,7 +44,7 @@
 #include "sys_ip_headers.h"
 
 #include <string.h>
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 #  include <sys/epoll.h>
 #endif
 
@@ -230,9 +230,9 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
       c->sk.props.is_nonblck = non_blck;
       c->sk.props.is_nonip = sk_is_nonip;
       c->sk.props.has_spipe_supp = sk_spipe_supprs;
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
       mhd_thread_handle_ID_set_invalid (&c->tid);
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
       c->daemon = daemon;
       c->connection_timeout_ms = daemon->conns.cfg.timeout;
       c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
@@ -333,7 +333,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
 
       notify_app_conn (daemon, connection, false);
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
       if (mhd_DAEMON_TYPE_LISTEN_ONLY == daemon->threading.d_type)
       {
         mhd_assert ((mhd_POLL_TYPE_SELECT == daemon->events.poll_type) || \
@@ -366,14 +366,14 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
           return MHD_SC_OK;  /* *** Function success exit point *** */
       }
       else
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
       if (1)
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
       { /* No 'thread-per-connection' */
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
         connection->tid = daemon->threading.tid;
-#endif /* MHD_USE_THREADS */
-#ifdef MHD_USE_EPOLL
+#endif /* MHD_SUPPORT_THREADS */
+#ifdef MHD_SUPPORT_EPOLL
         if (mhd_POLL_TYPE_EPOLL == daemon->events.poll_type)
         {
           struct epoll_event event;
@@ -401,7 +401,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
           }
         }
         else /* No 'epoll' */
-#endif /* MHD_USE_EPOLL */
+#endif /* MHD_SUPPORT_EPOLL */
         return MHD_SC_OK;    /* *** Function success exit point *** */
       }
 
@@ -710,7 +710,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
   addrstorage.ss_len = addrlen; /* Force set the right length */
 #endif /* HAVE_STRUCT_SOCKADDR_STORAGE_SS_LEN */
 
-#if defined(MHD_USE_THREADS)
+#if defined(MHD_SUPPORT_THREADS)
   if (mhd_D_TYPE_HAS_WORKERS (daemon->threading.d_type))
   {
     unsigned int i;
@@ -753,7 +753,7 @@ MHD_daemon_add_connection (struct MHD_Daemon *daemon,
     (void) mhd_socket_close (client_socket);
     return MHD_SC_LIMIT_CONNECTIONS_REACHED;
   }
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
   return internal_add_connection (daemon,
                                   client_socket,
@@ -785,11 +785,11 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
   static const bool use_accept4 = false;
 #endif /* ! USE_ACCEPT4 && ! _DEBUG */
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   mhd_assert ((! mhd_D_HAS_THREADS (daemon)) || \
               mhd_thread_handle_ID_is_current_thread (daemon->threading.tid));
   mhd_assert (! mhd_D_TYPE_HAS_WORKERS (daemon->threading.d_type));
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
   fd = daemon->net.listen.fd;
   mhd_assert (MHD_INVALID_SOCKET != fd);

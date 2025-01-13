@@ -78,7 +78,7 @@ mhd_panic (const char *file,
   if (NULL != user_panic_handler)
     user_panic_handler (user_panic_handler_cls,
                         file, func, line, message);
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
   if (0 == file[0])
     fprintf (stderr,
              "Unrecoverable error detected in GNU libmicrohttpd%s%s\n",
@@ -105,6 +105,6 @@ mhd_panic (const char *file,
                message);
     }
   }
-#endif /* HAVE_LOG_FUNCTIONALITY */
+#endif /* MHD_SUPPORT_LOG_FUNCTIONALITY */
   abort ();
 }

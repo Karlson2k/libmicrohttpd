@@ -162,7 +162,7 @@ libmicrohttpd_la_SOURCES += \
   tsearch.c tsearch.h
 endif
 
-if HAVE_POST_PARSER
+if MHD_SUPPORT_POST_PARSER
 libmicrohttpd_la_SOURCES += \
   postprocessor.c postprocessor.h
 endif
@@ -258,7 +258,7 @@ check_PROGRAMS += \
 endif
 
 if HAVE_POSIX_THREADS
-if MHD_UPGRADE_SUPPORT
+if MHD_SUPPORT_UPGRADE
 if USE_THREADS
 check_PROGRAMS += test_upgrade test_upgrade_large test_upgrade_vlarge
 if MHD_ENABLE_HTTPS
@@ -270,7 +270,7 @@ endif
 endif
 endif
 
-if HAVE_POST_PARSER
+if MHD_SUPPORT_POST_PARSER
 check_PROGRAMS += \
   test_postprocessor \
   test_postprocessor_large \
@@ -295,7 +295,7 @@ endif
 endif
 
 if MHD_SUPPORT_AUTH
-if HAVE_LOG_FUNCTIONALITY
+if MHD_SUPPORT_LOG_FUNCTIONALITY
 check_PROGRAMS += \
   test_auth_parse
 endif

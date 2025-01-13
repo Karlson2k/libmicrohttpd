@@ -102,7 +102,7 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
 MHD_FN_PAR_NONNULL_(1) MHD_FN_PAR_NONNULL_(3)
 MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_IN_SIZE_ (6,5) MHD_FN_PAR_OUT_ (8);
 
-#if defined(MHD_USE_SENDFILE)
+#if defined(mhd_USE_SENDFILE)
 /**
  * Function for sending responses backed by file FD.
  *

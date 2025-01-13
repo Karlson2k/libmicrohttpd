@@ -46,7 +46,7 @@
 #  include "mhd_tls_choice.h"
 #endif
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 #  include "mhd_threads.h"
 #  include "mhd_itc_types.h"
 #  include "mhd_locks.h"
@@ -54,7 +54,7 @@
 
 #include "sys_select.h"
 #include "sys_poll.h"
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 #  include <sys/epoll.h>
 #endif
 
@@ -238,7 +238,7 @@ union mhd_SocketRelation
   struct MHD_Connection *connection;
 };
 
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
 
 /**
  * Daemon's pointers to the preallocated arrays for running sockets monitoring
@@ -260,9 +260,9 @@ struct mhd_DaemonEventsSelectData
   fd_set *efds;
 };
 
-#endif /* MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_SELECT */
 
-#ifdef MHD_USE_POLL
+#ifdef MHD_SUPPORT_POLL
 
 /**
  * Daemon's pointers to the preallocated arrays for running sockets monitoring
@@ -289,9 +289,9 @@ struct mhd_DaemonEventsPollData
   union mhd_SocketRelation *rel;
 };
 
-#endif /* MHD_USE_POLL */
+#endif /* MHD_SUPPORT_POLL */
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 /**
  * Daemon's parameters and pointers to the preallocated memory for running
  * sockets monitoring by epoll.
@@ -336,23 +336,23 @@ struct mhd_DaemonEventsExternal
  */
 union mhd_DaemonEventMonitoringTypeSpecificData
 {
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
   /**
    * Daemon's pointers to the preallocated arrays for running sockets monitoring
    * by poll().
    */
   struct mhd_DaemonEventsSelectData select;
-#endif /* MHD_USE_SELECT */
+#endif /* MHD_SUPPORT_SELECT */
 
-#ifdef MHD_USE_POLL
+#ifdef MHD_SUPPORT_POLL
   /**
    * Daemon's pointers to the preallocated arrays for running sockets monitoring
    * by poll().
    */
   struct mhd_DaemonEventsPollData poll;
-#endif /* MHD_USE_POLL */
+#endif /* MHD_SUPPORT_POLL */
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
   /**
    * Daemon's parameters and pointers to the preallocated memory for running
    * sockets monitoring by epoll.
@@ -493,7 +493,7 @@ struct mhd_DaemonNetwork
    */
   struct mhd_ListenSocket listen;
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
   /**
    * The epoll FD.
    * Set to '-1' when epoll is not used.
@@ -581,7 +581,7 @@ struct mhd_DaemonAuthDigestData
    */
   struct mhd_AtomicCounter num_gen_nonces;
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   /**
    * The mutex to change or access the @a nonces data
    */
@@ -596,7 +596,7 @@ struct mhd_DaemonAuthDigestData
 
 #endif /* MHD_SUPPORT_AUTH_DIGEST */
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 /**
  * The type of the daemon
@@ -667,7 +667,7 @@ enum MHD_FIXED_ENUM_ mhd_DaemonType
 #define mhd_D_TYPE_HAS_MASTER_DAEMON(t) \
         (mhd_DAEMON_TYPE_WORKER == (t))
 
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
 
 /**
  * Check whether the daemon type is allowed to have internal thread with
@@ -695,9 +695,9 @@ enum MHD_FIXED_ENUM_ mhd_DaemonType
  */
 #define mhd_D_TYPE_HAS_MASTER_DAEMON(t)  (0)
 
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 /**
  * Workers pool data
@@ -791,7 +791,7 @@ struct mhd_DaemonThreadingData
   struct mhd_DaemonThreadingDataSettings cfg;
 };
 
-#endif /* MHD_USE_THREADS */
+#endif /* MHD_SUPPORT_THREADS */
 
 /**
  * Configured settings for the daemon's connections
@@ -814,7 +814,7 @@ struct mhd_DaemonConnectionsSettings
   size_t mem_pool_size;
 };
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
 
 /**
  * The data for HTTP-Upgraded connections
@@ -827,7 +827,7 @@ struct mhd_DaemonConnectionsUpgraded
    */
   mhd_DLNKDL_LIST (MHD_Connection,upgr_cleanup);
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   /**
    * The mutex to change or check the @a upgr_cleanup list values
    */
@@ -835,7 +835,7 @@ struct mhd_DaemonConnectionsUpgraded
 #endif
 };
 
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 
 /**
  * Connections handling data
@@ -878,12 +878,12 @@ struct mhd_DaemonConnections
    */
   struct mhd_DaemonConnectionsSettings cfg;
 
-#ifdef MHD_UPGRADE_SUPPORT
+#ifdef MHD_SUPPORT_UPGRADE
   /**
    * The data for HTTP-Upgraded connections
    */
   struct mhd_DaemonConnectionsUpgraded upgr;
-#endif /* MHD_UPGRADE_SUPPORT */
+#endif /* MHD_SUPPORT_UPGRADE */
 };
 
 /**
@@ -911,7 +911,7 @@ struct mhd_DeamonLargeBuffer
    */
   size_t space_left;
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   /**
    * The mutex to change or check the @a space_left value
    */
@@ -953,7 +953,7 @@ struct mhd_DaemonRequestProcessingSettings
   /**
    * Suppress "Date:" header in responses
    */
-  bool suppress_date; // TODO: set from settings
+  bool suppress_date;
 };
 
 
@@ -1031,7 +1031,7 @@ struct MHD_Daemon
   struct mhd_TlsDaemonData *tls;
 #endif
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
   /* Threading data */
 
   /**
@@ -1088,7 +1088,7 @@ struct MHD_Daemon
 #  define mhd_FD_FITS_DAEMON(d_ptr,fd) (! 0)
 #endif
 
-#ifdef MHD_USE_EPOLL
+#ifdef MHD_SUPPORT_EPOLL
 #  define mhd_D_IS_USING_EPOLL(d) \
         (mhd_POLL_TYPE_EPOLL == ((d)->events.poll_type))
 #else
@@ -1102,13 +1102,13 @@ struct MHD_Daemon
         ((mhd_WM_INT_EXTERNAL_EVENTS_EDGE == (d)->wmode_int) || \
          mhd_D_IS_USING_EPOLL (d))
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 #  define mhd_D_HAS_THREADS(d) mhd_WM_INT_HAS_THREADS ((d)->wmode_int)
 #else
 #  define mhd_D_HAS_THREADS(d) (0)
 #endif
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 #  define mhd_D_HAS_THR_PER_CONN(d) \
         (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION == \
          ((d)->wmode_int))

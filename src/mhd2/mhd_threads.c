@@ -31,23 +31,23 @@
 #ifdef mhd_THREADS_KIND_W32
 #  include <process.h>
 #endif
-#if defined(MHD_USE_THREAD_NAME_)
+#if defined(mhd_USE_THREAD_NAME)
 #  if ! defined(MHD_USE_THREAD_ATTR_SETNAME)
 #    include "sys_malloc.h"
 #  endif
 #  ifdef HAVE_PTHREAD_NP_H
 #    include <pthread_np.h>
 #  endif /* HAVE_PTHREAD_NP_H */
-#endif /* MHD_USE_THREAD_NAME_ */
+#endif /* mhd_USE_THREAD_NAME */
 #include "sys_errno.h"
 #include "mhd_assert.h"
 
-#ifndef MHD_USE_THREAD_NAME_
+#ifndef mhd_USE_THREAD_NAME
 
 #  define mhd_set_thread_name(t, n) (void)
 #  define mhd_set_cur_thread_name(n) (void)
 
-#else  /* MHD_USE_THREAD_NAME_ */
+#else  /* mhd_USE_THREAD_NAME */
 
 #  if defined(mhd_THREADS_KIND_POSIX)
 #    if defined(HAVE_PTHREAD_ATTR_SETNAME_NP_NETBSD) || \
@@ -171,7 +171,7 @@ mhd_set_thread_name (const mhd_thread_ID_native thread_id,
 #    endif /* _MSC_FULL_VER */
 #  endif /* mhd_THREADS_KIND_W32 */
 
-#endif /* MHD_USE_THREAD_NAME_ */
+#endif /* mhd_USE_THREAD_NAME */
 
 
 /**
@@ -268,7 +268,7 @@ mhd_create_thread (mhd_thread_handle_ID *handle_id,
 }
 
 
-#ifdef MHD_USE_THREAD_NAME_
+#ifdef mhd_USE_THREAD_NAME
 
 #  ifndef MHD_USE_THREAD_ATTR_SETNAME
 struct mhd_named_helper_param
@@ -419,4 +419,4 @@ mhd_create_named_thread (mhd_thread_handle_ID *handle_id,
 }
 
 
-#endif /* MHD_USE_THREAD_NAME_ */
+#endif /* mhd_USE_THREAD_NAME */

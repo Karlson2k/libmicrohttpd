@@ -43,10 +43,10 @@
 #include "tls_multi_funcs.h"
 
 /* Include all supported TLS backends headers */
-#if defined(MHD_USE_GNUTLS)
+#if defined(MHD_SUPPORT_GNUTLS)
 #  include "tls_gnu_funcs.h"
 #endif
-#if defined(MHD_USE_OPENSSL)
+#if defined(MHD_SUPPORT_OPENSSL)
 #  include "tls_open_funcs.h"
 #endif
 
@@ -77,10 +77,10 @@
 MHD_INTERNAL void
 mhd_tls_multi_global_init_once (void)
 {
-#if defined(MHD_USE_GNUTLS)
+#if defined(MHD_SUPPORT_GNUTLS)
   mhd_tls_gnu_global_init_once ();
 #endif
-#if defined(MHD_USE_OPENSSL)
+#if defined(MHD_SUPPORT_OPENSSL)
   mhd_tls_open_global_init_once ();
 #endif
 }
@@ -90,10 +90,10 @@ MHD_INTERNAL void
 mhd_tls_multi_global_deinit (void)
 {
   /* Note: the order is reversed to match the initialisation */
-#if defined(MHD_USE_OPENSSL)
+#if defined(MHD_SUPPORT_OPENSSL)
   mhd_tls_open_global_deinit ();
 #endif
-#if defined(MHD_USE_GNUTLS)
+#if defined(MHD_SUPPORT_GNUTLS)
   mhd_tls_gnu_global_deinit ();
 #endif
 }
@@ -102,10 +102,10 @@ mhd_tls_multi_global_deinit (void)
 MHD_INTERNAL void
 mhd_tls_multi_global_re_init (void)
 {
-#if defined(MHD_USE_GNUTLS)
+#if defined(MHD_SUPPORT_GNUTLS)
   mhd_tls_gnu_global_re_init ();
 #endif
-#if defined(MHD_USE_OPENSSL)
+#if defined(MHD_SUPPORT_OPENSSL)
   mhd_tls_open_global_re_init ();
 #endif
 }
@@ -122,26 +122,26 @@ mhd_tls_multi_is_edge_trigg_supported (struct DaemonOptions *s)
     mhd_UNREACHABLE ();
     return false;
   case MHD_TLS_BACKEND_ANY:
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
     if (mhd_tls_gnu_is_edge_trigg_supported (s)
         && mhd_tls_gnu_is_inited_fine ())
       return true;
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
     if (mhd_tls_open_is_edge_trigg_supported (s)
         && mhd_tls_open_is_inited_fine ())
       return true;
 #endif
     return false;
   case MHD_TLS_BACKEND_GNUTLS:
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
     /* Ignore "backend inited" status here,
        it will be checked on daemon TLS init */
     return mhd_tls_gnu_is_edge_trigg_supported (s);
 #endif
     break;
   case MHD_TLS_BACKEND_OPENSSL:
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
     /* Ignore "backend inited" status here,
        it will be checked on daemon TLS init */
     return mhd_tls_open_is_edge_trigg_supported (s);
@@ -175,13 +175,13 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
 {
   mhd_StatusCodeInt res;
 
-#ifndef MHD_USE_OPENSSL
+#ifndef MHD_SUPPORT_OPENSSL
   (void) sk_edge_trigg; /* Unused, mute compiler warning */
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
 
   switch (route)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     if (! mhd_tls_gnu_is_inited_fine ())
       return MHD_SC_TLS_BACKEND_UNAVAILABLE;
@@ -200,7 +200,7 @@ tls_daemon_init_try (enum mhd_TlsMultiRoute route,
                         "the daemon, error code: %u", (unsigned) res);
     return res;
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     if (! mhd_tls_open_is_inited_fine ())
       return MHD_SC_TLS_BACKEND_UNAVAILABLE;
@@ -252,10 +252,10 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
     {
       size_t i;
       enum mhd_TlsMultiRoute backends[] = {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
         mhd_TLS_MULTI_ROUTE_GNU,
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
         mhd_TLS_MULTI_ROUTE_OPEN,
 #endif
         mhd_TLS_MULTI_ROUTE_NONE  /* Not used */
@@ -273,7 +273,7 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
       }
     }
     break;
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
     mhd_assert (mhd_tls_gnu_is_inited_fine ()); /* Must be checked earlier */
     res = tls_daemon_init_try (mhd_TLS_MULTI_ROUTE_GNU,
@@ -282,8 +282,8 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
                                s,
                                d_tls);
     break;
-#endif /* MHD_USE_GNUTLS */
-#ifdef MHD_USE_OPENSSL
+#endif /* MHD_SUPPORT_GNUTLS */
+#ifdef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
     mhd_assert (mhd_tls_open_is_inited_fine ()); /* Must be checked earlier */
     res = tls_daemon_init_try (mhd_TLS_MULTI_ROUTE_OPEN,
@@ -291,15 +291,15 @@ mhd_tls_multi_daemon_init (struct MHD_Daemon *restrict d,
                                sk_edge_trigg,
                                s,
                                d_tls);
-#endif /* MHD_USE_OPENSSL */
+#endif /* MHD_SUPPORT_OPENSSL */
     break;
 
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case MHD_TLS_BACKEND_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -323,22 +323,22 @@ mhd_tls_multi_daemon_deinit (struct mhd_TlsMultiDaemonData *restrict d_tls)
 {
   switch (d_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     mhd_tls_gnu_daemon_deinit (d_tls->data.gnutls);
     break;
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     mhd_tls_open_daemon_deinit (d_tls->data.openssl);
     break;
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -358,22 +358,22 @@ mhd_tls_multi_conn_get_tls_size (struct mhd_TlsMultiDaemonData *restrict d_tls)
   data_size = sizeof(struct mhd_TlsMultiConnData);
   switch (d_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     data_size += mhd_tls_gnu_conn_get_tls_size (d_tls->data.gnutls);
     break;
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     data_size += mhd_tls_open_conn_get_tls_size (d_tls->data.openssl);
     break;
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -392,7 +392,7 @@ mhd_tls_multi_conn_init (const struct mhd_TlsMultiDaemonData *restrict d_tls,
   c_tls->choice = d_tls->choice;
   switch (c_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     /* Assume the same alignment requirements for both structures */
     c_tls->data.gnutls = (struct mhd_TlsGnuConnData *) (c_tls + 1);
@@ -400,7 +400,7 @@ mhd_tls_multi_conn_init (const struct mhd_TlsMultiDaemonData *restrict d_tls,
                                   sk,
                                   c_tls->data.gnutls);
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     /* Assume the same alignment requirements for both structures */
     c_tls->data.openssl = (struct mhd_TlsOpenConnData *) (c_tls + 1);
@@ -408,12 +408,12 @@ mhd_tls_multi_conn_init (const struct mhd_TlsMultiDaemonData *restrict d_tls,
                                    sk,
                                    c_tls->data.openssl);
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -434,22 +434,22 @@ mhd_tls_multi_conn_deinit (struct mhd_TlsMultiConnData *restrict c_tls)
 {
   switch (c_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     mhd_tls_gnu_conn_deinit (c_tls->data.gnutls);
     break;
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     mhd_tls_open_conn_deinit (c_tls->data.openssl);
     break;
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -465,20 +465,20 @@ mhd_tls_multi_conn_handshake (struct mhd_TlsMultiConnData *restrict c_tls)
 {
   switch (c_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     return mhd_tls_gnu_conn_handshake (c_tls->data.gnutls);
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     return mhd_tls_open_conn_handshake (c_tls->data.openssl);
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -494,20 +494,20 @@ mhd_tls_multi_conn_shutdown (struct mhd_TlsMultiConnData *restrict c_tls)
 {
   switch (c_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     return mhd_tls_gnu_conn_shutdown (c_tls->data.gnutls);
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     return mhd_tls_open_conn_shutdown (c_tls->data.openssl);
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -529,26 +529,26 @@ mhd_tls_multi_conn_recv (struct mhd_TlsMultiConnData *restrict c_tls,
 {
   switch (c_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     return mhd_tls_gnu_conn_recv (c_tls->data.gnutls,
                                   buf_size,
                                   buf,
                                   received);
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     return mhd_tls_open_conn_recv (c_tls->data.openssl,
                                    buf_size,
                                    buf,
                                    received);
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -563,20 +563,20 @@ mhd_tls_multi_conn_has_data_in (struct mhd_TlsMultiConnData *restrict c_tls)
 {
   switch (c_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     return mhd_tls_gnu_conn_has_data_in (c_tls->data.gnutls);
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     return mhd_tls_open_conn_has_data_in (c_tls->data.openssl);
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();
@@ -596,26 +596,26 @@ mhd_tls_multi_conn_send (struct mhd_TlsMultiConnData *restrict c_tls,
 {
   switch (c_tls->choice)
   {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   case mhd_TLS_MULTI_ROUTE_GNU:
     return mhd_tls_gnu_conn_send (c_tls->data.gnutls,
                                   buf_size,
                                   buf,
                                   sent);
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   case mhd_TLS_MULTI_ROUTE_OPEN:
     return mhd_tls_open_conn_send (c_tls->data.openssl,
                                    buf_size,
                                    buf,
                                    sent);
 #endif
-#ifndef MHD_USE_GNUTLS
+#ifndef MHD_SUPPORT_GNUTLS
   case MHD_TLS_BACKEND_GNUTLS:
-#endif /* ! MHD_USE_GNUTLS */
-#ifndef MHD_USE_OPENSSL
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
   case MHD_TLS_BACKEND_OPENSSL:
-#endif /* ! MHD_USE_OPENSSL */
+#endif /* ! MHD_SUPPORT_OPENSSL */
   case mhd_TLS_MULTI_ROUTE_NONE:
   default:
     mhd_UNREACHABLE ();

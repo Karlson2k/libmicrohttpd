@@ -29,7 +29,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef HAVE_LOG_FUNCTIONALITY
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
 
 #include "mhd_public_api.h" /* For enum MHD_StatusCode */
 
@@ -76,7 +76,7 @@ mhd_logger (struct MHD_Daemon *daemon,
  */
 #define mhd_LOG_FMT(format_string) format_string
 
-#else  /* ! HAVE_LOG_FUNCTIONALITY */
+#else  /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 
 
 #ifdef HAVE_MACRO_VARIADIC
@@ -138,6 +138,6 @@ mhd_LOG_PRINT (struct MHD_Daemon *daemon,
  */
 #define mhd_LOG_FMT(format_string) NULL
 
-#endif /* ! HAVE_LOG_FUNCTIONALITY */
+#endif /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 
 #endif /* ! MHD_DAEMON_LOGGER_H */

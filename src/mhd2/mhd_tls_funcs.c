@@ -29,10 +29,10 @@
 #include "mhd_tls_funcs.h"
 
 /* Include all supported TLS backends headers */
-#if defined(MHD_USE_GNUTLS)
+#if defined(MHD_SUPPORT_GNUTLS)
 #  include "tls_gnu_funcs.h"
 #endif
-#if defined(MHD_USE_OPENSSL)
+#if defined(MHD_SUPPORT_OPENSSL)
 #  include "tls_open_funcs.h"
 #endif
 
@@ -51,13 +51,13 @@ mhd_tls_is_backend_available (struct DaemonOptions *s)
             || mhd_tls_open_is_inited_fine ()) ?
            mhd_TLS_BACKEND_AVAIL_OK :
            mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE;
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   if (MHD_TLS_BACKEND_GNUTLS == s->tls)
     return mhd_tls_gnu_is_inited_fine () ?
            mhd_TLS_BACKEND_AVAIL_OK :
            mhd_TLS_BACKEND_AVAIL_NOT_AVAILABLE;
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   if (MHD_TLS_BACKEND_OPENSSL == s->tls)
     return mhd_tls_open_is_inited_fine () ?
            mhd_TLS_BACKEND_AVAIL_OK :

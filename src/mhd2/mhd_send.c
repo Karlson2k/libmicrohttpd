@@ -1148,7 +1148,7 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
 }
 
 
-#if defined(MHD_USE_SENDFILE)
+#if defined(mhd_USE_SENDFILE)
 
 #if defined(HAVE_LINUX_SENDFILE) && defined(HAVE_SENDFILE64)
 #  define mhd_off_t off64_t
@@ -1377,7 +1377,7 @@ mhd_send_sendfile (struct MHD_Connection *restrict c,
 }
 
 
-#endif /* MHD_USE_SENDFILE */
+#endif /* mhd_USE_SENDFILE */
 
 #if defined(mhd_USE_VECT_SEND)
 

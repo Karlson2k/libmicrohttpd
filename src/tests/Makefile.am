@@ -2,7 +2,7 @@
 
 SUBDIRS = basic
 
-if MHD_UPGRADE_SUPPORT
+if MHD_SUPPORT_UPGRADE
 SUBDIRS += upgrade
 endif
 

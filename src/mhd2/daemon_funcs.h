@@ -45,7 +45,7 @@ MHD_INTERNAL struct MHD_Daemon *
 mhd_daemon_get_master_daemon (struct MHD_Daemon *restrict d)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
 
-#ifdef MHD_USE_THREADS
+#ifdef MHD_SUPPORT_THREADS
 
 /**
  * Trigger daemon ITC.
@@ -57,10 +57,10 @@ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_MUST_CHECK_RESULT_;
 MHD_INTERNAL bool
 mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d);
 
-#else  /* ! MHD_USE_THREADS */
+#else  /* ! MHD_SUPPORT_THREADS */
 
 #define mhd_daemon_trigger_itc (d) ((void) d, ! 0)
-#endif /* ! MHD_USE_THREADS */
+#endif /* ! MHD_SUPPORT_THREADS */
 
 
 /**

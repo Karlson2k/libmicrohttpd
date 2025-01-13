@@ -29,7 +29,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifndef MHD_USE_OPENSSL
+#ifndef MHD_SUPPORT_OPENSSL
 #error This header can be used only if GnuTLS is enabled
 #endif
 

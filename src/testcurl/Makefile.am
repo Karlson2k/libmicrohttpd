@@ -149,7 +149,7 @@ check_PROGRAMS = \
   test_put_header_double_fold_large \
   $(EMPTY_ITEM)
 
-if ENABLE_COOKIE
+if MHD_SUPPORT_COOKIES
 check_PROGRAMS += \
   test_parse_cookies_discp_p2 \
   test_parse_cookies_discp_p1 \
@@ -169,7 +169,7 @@ check_PROGRAMS += \
   test_basicauth_oldapi test_basicauth_preauth_oldapi
 endif
 
-if HAVE_POST_PARSER
+if MHD_SUPPORT_POST_PARSER
 check_PROGRAMS += \
   test_post \
   test_postform \

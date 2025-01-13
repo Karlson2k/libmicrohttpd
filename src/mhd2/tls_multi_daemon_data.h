@@ -35,10 +35,10 @@
 #error This header can be used only if MultiTLS is enabled
 #endif
 
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
 struct mhd_TlsGnuDaemonData;    /* forward declaration */
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
 struct mhd_TlsOpenDaemonData;   /* forward declaration */
 #endif
 
@@ -47,13 +47,13 @@ struct mhd_TlsOpenDaemonData;   /* forward declaration */
  */
 struct mhd_TlsMultiDaemonRoutePtr
 {
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   /**
    * Pointer to GnuTLS daemon-specific data
    */
   struct mhd_TlsGnuDaemonData *gnutls;
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   /**
    * Pointer to OpenSSL daemon-specific data
    */
