@@ -115,6 +115,27 @@ dsettings_release (struct DaemonOptions *s)
 
 
 /**
+ * Set basic daemon parameters that not require additional initialisation.
+ * Mostly copy such parameters from the settings object to the daemon object.
+ * @param d the daemon object
+ * @param s the user settings
+ * @return MHD_SC_OK on success,
+ *         the error code otherwise
+ */
+static MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2)
+MHD_FN_MUST_CHECK_RESULT_ enum MHD_StatusCode
+daemon_set_basic_settings (struct MHD_Daemon *restrict d,
+                           struct DaemonOptions *restrict s)
+{
+  d->req_cfg.strictness = s->protocol_strict_level.v_sl;
+
+  d->req_cfg.suppress_date = (MHD_NO != s->suppress_date_header);
+
+  return MHD_SC_OK;
+}
+
+
+/**
  * Set the daemon work mode and perform some related checks.
  * @param d the daemon object
  * @param s the user settings
@@ -3051,6 +3072,10 @@ daemon_start_internal (struct MHD_Daemon *restrict d,
                        struct DaemonOptions *restrict s)
 {
   enum MHD_StatusCode res;
+
+  res = daemon_set_basic_settings (d, s);
+  if (MHD_SC_OK != res)
+    return res;
 
   res = daemon_set_work_mode (d, s);
   if (MHD_SC_OK != res)
