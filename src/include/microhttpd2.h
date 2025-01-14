@@ -9075,6 +9075,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
    * running) the result reflects the current backends availability.
    * If no MHD daemon is active, then this function would try to temporarily
    * enable backends to check for their availability.
+   * If global library initialisation failed, the function returns
+   * #MHD_SC_INFO_GET_TYPE_UNAVAILALBE error code.
    * The result is placed in @a v_tls member.
    */
   MHD_LIB_INFO_DYNAMIC_TYPE_TLS = 100
@@ -9124,7 +9126,9 @@ union MHD_LibInfoDynamicData
  * @param return_data_size the size of the memory area pointed
  *                         by @a return_data, in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a return_data_size is too small,
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         or other error code
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
