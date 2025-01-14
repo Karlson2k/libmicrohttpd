@@ -9005,6 +9005,37 @@ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 #define MHD_lib_get_info_fixed(info,data) \
         MHD_lib_get_info_fixed_sz ((info),(data),sizeof(*(data)))
 
+#ifndef MHD_NO_STATIC_INLINE
+
+/*
+ * A helper below can be used in a simple check to prevent use of downgraded
+ * library version.
+ * New library version may introduce new functionality. If application uses
+ * some new functionality, that is not available on earlier version, and the
+ * library version is downgraded it may fail at run-time.
+ * To prevent run-time failures, application may use a check list this:
+
+ if (MHD_lib_get_info_ver_num() < ((uint_fast32_t) MHD_VERSION)
+   handle_init_failure();
+
+ */
+/**
+ * Get the library version number.
+ * @return the library version number.
+ */
+MHD_STATIC_INLINE_ MHD_FN_PURE_ uint_fast32_t
+MHD_lib_get_info_ver_num (void)
+{
+  union MHD_LibInfoFixedData data;
+  data.v_uint32 = 0; /* Not really necessary */
+  (void) MHD_lib_get_info_fixed (MHD_LIB_INFO_FIXED_VERSION_NUM, \
+                                 &data); /* Never fail */
+  return data.v_uint32;
+}
+
+MHD_STATIC_INLINE_END_
+#endif /* ! MHD_NO_STATIC_INLINE */
+
 /**
  * Types of information about MHD,
  * used by #MHD_lib_get_info_dynamic_sz().
