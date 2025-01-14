@@ -4345,6 +4345,12 @@ union MHD_LibInfoFixedData
  * Get fixed information about MHD that is not changed at run-time.
  * The returned information can be cached by application as it will be not
  * changed at run-time.
+ *
+ * For any valid @a info_type the only possible returned error value is
+ * #MHD_SC_INFO_GET_BUFF_TOO_SMALL. If the buffer is large enough and
+ * the requested type of information is valid, the function always succeeds
+ * and returns #MHD_SC_OK.
+ *
  * The wrapper macro #MHD_lib_get_info_fixed() could be more convenient.
  *
  * @param info_type the type of requested information
@@ -4353,15 +4359,15 @@ union MHD_LibInfoFixedData
  * @param return_data_size the size of the memory area pointed
  *                         by @a return_data, in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a return_data_size is too small,
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
                            union MHD_LibInfoFixedData *return_data,
                            size_t return_data_size)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2)
-MHD_FN_PURE_;
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 
 /**
  * Get fixed information about MHD that is not changed at run-time.

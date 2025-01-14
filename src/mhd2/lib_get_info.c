@@ -78,8 +78,7 @@
 
 
 MHD_EXTERN_
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2)
-MHD_FN_PURE_ enum MHD_StatusCode
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2) enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
                            union MHD_LibInfoFixedData *return_data,
                            size_t return_data_size)
