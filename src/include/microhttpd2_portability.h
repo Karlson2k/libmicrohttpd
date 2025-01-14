@@ -410,14 +410,29 @@
 #endif
 
 #ifdef MHD_HAS_NOWARN_UNUSED_FUNC_
-#  define MHD_STATIC_INLINE_ \
-  MHD_NOWARN_UNUSED_FUNC_ static MHD_INLINE
-#  define MHD_STATIC_INLINE_END_ \
-  MHD_RESTORE_WARN_UNUSED_FUNC_
+/**
+ * The header static inline function.
+ * Tries to prevent compiler warnings.
+ * @warning Must be always followed by #MHD_STATIC_INLINE_END_ after the end of
+ *          function
+ */
+#  define MHD_STATIC_INLINE_    MHD_NOWARN_UNUSED_FUNC_ static MHD_INLINE
+/**
+ * Mark the end of header static inline function.
+ */
+#  define MHD_STATIC_INLINE_END_        MHD_RESTORE_WARN_UNUSED_FUNC_
 #else
-#  define MHD_STATIC_INLINE_ \
-  MHD_NOWARN_EXPRESSION_ static MHD_INLINE
-#  define MHD_STATIC_INLINE_END_         /* empty */
+/**
+ * The header static inline function.
+ * Tries to prevent compiler warnings.
+ * @warning Must be always followed by #MHD_STATIC_INLINE_END_ after the end of
+ *          function
+ */
+#  define MHD_STATIC_INLINE_    MHD_NOWARN_EXPRESSION_ static MHD_INLINE
+/**
+ * Mark the end of header static inline function.
+ */
+#  define MHD_STATIC_INLINE_END_        /* empty */
 #endif
 
 /**
