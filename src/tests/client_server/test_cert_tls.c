@@ -42,7 +42,7 @@ main (int argc, char *argv[])
                                NULL),
     MHD_D_OPTION_TERMINATE ()
   };
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
   struct MHD_DaemonOptionAndValue rca_options_gnu[] = {
     MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
     MHD_D_OPTION_WM_WORKER_THREADS (1),
@@ -53,7 +53,7 @@ main (int argc, char *argv[])
     MHD_D_OPTION_TERMINATE ()
   };
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
   struct MHD_DaemonOptionAndValue rca_options_open[] = {
     MHD_D_OPTION_POLL_SYSCALL (MHD_SPS_AUTO),
     MHD_D_OPTION_WM_WORKER_THREADS (1),
@@ -91,7 +91,7 @@ main (int argc, char *argv[])
 
 
     },
-#ifdef MHD_USE_GNUTLS
+#ifdef MHD_SUPPORT_GNUTLS
     {
       .label = "certs_chain",
       .server_setup = &MHDT_server_setup_minimal,
@@ -111,7 +111,7 @@ main (int argc, char *argv[])
 
     },
 #endif
-#ifdef MHD_USE_OPENSSL
+#ifdef MHD_SUPPORT_OPENSSL
     {
       .label = "certs_chain",
       .server_setup = &MHDT_server_setup_minimal,

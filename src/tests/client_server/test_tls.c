@@ -77,7 +77,7 @@ main (int argc, char *argv[])
     MHDT_ServerRunner server_runner;
     void *server_runner_cls;
   } configs[] = {
-#ifdef MHD_USE_SELECT
+#ifdef MHD_SUPPORT_SELECT
     {
       .label = "single threaded select",
       .server_setup = &MHDT_server_setup_tls,
@@ -90,7 +90,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2select,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if MHD_USE_GNUTLS
+#if MHD_SUPPORT_GNUTLS
     {
       .label = "multi-threaded select, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
@@ -99,7 +99,7 @@ main (int argc, char *argv[])
     },
 #endif
 #endif
-#ifdef MHD_USE_POLL
+#ifdef MHD_SUPPORT_POLL
     {
       .label = "single threaded poll",
       .server_setup = &MHDT_server_setup_tls,
@@ -112,7 +112,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2poll,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if MHD_USE_GNUTLS
+#if MHD_SUPPORT_GNUTLS
     {
       .label = "multi-threaded poll, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
@@ -121,7 +121,7 @@ main (int argc, char *argv[])
     },
 #endif
 #endif
-#if MHD_USE_EPOLL
+#if MHD_SUPPORT_EPOLL
     {
       .label = "single threaded epoll",
       .server_setup = &MHDT_server_setup_tls,
@@ -134,7 +134,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread2epoll,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if MHD_USE_GNUTLS
+#if MHD_SUPPORT_GNUTLS
     {
       .label = "multi-threaded epoll, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
@@ -149,7 +149,7 @@ main (int argc, char *argv[])
       .server_setup_cls = thread1auto,
       .server_runner = &MHDT_server_run_minimal,
     },
-#if MHD_USE_GNUTLS
+#if MHD_SUPPORT_GNUTLS
     {
       .label = "auto-selected mode, single threaded, forcing GnuTLS",
       .server_setup = &MHDT_server_setup_gnutls,
@@ -157,7 +157,7 @@ main (int argc, char *argv[])
       .server_runner = &MHDT_server_run_minimal,
     },
 #endif
-#if MHD_USE_OPENSSL
+#if MHD_SUPPORT_OPENSSL
     {
       .label = "auto-selected mode, single threaded, forcing OpenSSL",
       .server_setup = &MHDT_server_setup_openssl,
