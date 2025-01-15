@@ -1471,7 +1471,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_CONFIGURATION_UNEXPECTED_WM = 60022
   ,
   /**
-   * Parameter specified unknown socket poll syscall.
+   * Parameter specified unknown Sockets Polling Syscall (SPS).
    */
   MHD_SC_CONFIGURATION_UNEXPECTED_SPS = 60023
   ,
