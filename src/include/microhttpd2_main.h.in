@@ -4354,19 +4354,20 @@ union MHD_LibInfoFixedData
  * The wrapper macro #MHD_lib_get_info_fixed() could be more convenient.
  *
  * @param info_type the type of requested information
- * @param[out] return_data the pointer to union to be set to the required
- *                         information
- * @param return_data_size the size of the memory area pointed
- *                         by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a return_data_size is too small,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
-                           union MHD_LibInfoFixedData *return_data,
-                           size_t return_data_size)
+                           union MHD_LibInfoFixedData *output_buf,
+                           size_t output_buf_size)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 
 /**
@@ -4375,13 +4376,15 @@ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
  * changed at run-time.
  *
  * @param info the type of requested information
- * @param[out] data the pointer to union to set to the required information
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         or other error code
  * @ingroup specialized
  */
-#define MHD_lib_get_info_fixed(info,data) \
-        MHD_lib_get_info_fixed_sz ((info),(data),sizeof(*(data)))
+#define MHD_lib_get_info_fixed(info,output_buf) \
+        MHD_lib_get_info_fixed_sz ((info),(output_buf),sizeof(*(output_buf)))
 
 #ifndef MHD_NO_STATIC_INLINE
 
@@ -4454,7 +4457,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
    * If no MHD daemon is active, then this function would try to temporarily
    * enable backends to check for their availability.
    * If global library initialisation failed, the function returns
-   * #MHD_SC_INFO_GET_TYPE_UNAVAILALBE error code.
+   * #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE error code.
    * The result is placed in @a v_tls member.
    */
   MHD_LIB_INFO_DYNAMIC_TYPE_TLS = 100
@@ -4499,33 +4502,36 @@ union MHD_LibInfoDynamicData
  * The wrapper macro #MHD_lib_get_info_dynamic() could be more convenient.
  *
  * @param info_type the type of requested information
- * @param[out] return_data the pointer to union to be set to the required
- *                         information
- * @param return_data_size the size of the memory area pointed
- *                         by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a return_data_size is too small,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
  *         or other error code
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_dynamic_sz (enum MHD_LibInfoDynamic info_type,
-                             union MHD_LibInfoDynamicData *return_data,
-                             size_t return_data_size)
+                             union MHD_LibInfoDynamicData *output_buf,
+                             size_t output_buf_size)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 
 /**
  * Get dynamic information about MHD that may be changed at run-time.
  *
  * @param info the type of requested information
- * @param[out] data the pointer to union to set to the required information
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         or other error code
  * @ingroup specialized
  */
-#define MHD_lib_get_info_dynamic(info,data) \
-        MHD_lib_get_info_fixed_sz ((info),(data),sizeof(*(data)))
+#define MHD_lib_get_info_dynamic(info,output_buf) \
+        MHD_lib_get_info_fixed_sz ((info),(output_buf),sizeof(*(output_buf)))
 
 
 /**
