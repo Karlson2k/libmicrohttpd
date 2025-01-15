@@ -61,7 +61,7 @@ struct ResponseOptions
    * the function to call,
    * NULL to not use the callback
    */
-  struct MHD_ResponeOptionValueEndedCB termination_callback;
+  struct MHD_ResponseOptionValueEndedCB termination_callback;
 
 
 };

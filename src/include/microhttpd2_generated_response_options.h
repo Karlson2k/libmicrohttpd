@@ -98,7 +98,7 @@ With this option HTTP/1.0 server is emulated (with support for 'keep-alive' conn
 /**
  * Data for #MHD_R_O_TERMINATION_CALLBACK
  */
-struct MHD_ResponeOptionValueEndedCB
+struct MHD_ResponseOptionValueEndedCB
 {
   /**
    * the function to call,
@@ -158,7 +158,7 @@ union MHD_ResponseOptionValue
    * the function to call,
    * NULL to not use the callback
    */
-  struct MHD_ResponeOptionValueEndedCB termination_callback;
+  struct MHD_ResponseOptionValueEndedCB termination_callback;
 
 };
 
