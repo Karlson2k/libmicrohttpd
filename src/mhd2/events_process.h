@@ -29,7 +29,11 @@
 
 #include "mhd_sys_options.h"
 
+#include "sys_base_types.h"
+
 #include "sys_thread_entry_type.h"
+
+struct MHD_Daemon; /* forward declaration */
 
 /**
  * The entry point for the daemon worker thread
@@ -51,5 +55,15 @@ mhd_worker_listening_only (void *cls);
  */
 mhd_THRD_RTRN_TYPE mhd_THRD_CALL_SPEC
 mhd_worker_connection (void *cls);
+
+/**
+ * Get maximum wait time for the daemon
+ * @param d the daemon to check
+ * @return the maximum wait time,
+ *         #MHD_WAIT_INDEFINITELY if wait time is not limited
+ */
+MHD_INTERNAL uint_fast64_t
+mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
+MHD_FN_PAR_NONNULL_ALL_;
 
 #endif /* ! MHD_EVENTS_PROCESS_H */

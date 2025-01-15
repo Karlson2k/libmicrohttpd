@@ -9315,7 +9315,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 enum MHD_DaemonInfoDynamicType
 {
   /**
-   * The the maximum number of microseconds from the current moment until
+   * The the maximum number of millisecond from the current moment until
    * the mandatory call of the daemon data processing function (like
    * #MHD_deamon_process_reg_events(), #MHD_daemon_process_blocking()).
    * If resulting value is zero then daemon data processing function should be
@@ -9324,19 +9324,17 @@ enum MHD_DaemonInfoDynamicType
    * Available only for daemons stated in #MHD_WM_EXTERNAL_PERIODIC,
    * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL, #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE
    * or #MHD_WM_EXTERNAL_SINGLE_FD_WATCH modes.
+   * The function return #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if daemon has
+   * internal handling of events (internal threads).
    * The result is placed in @a v_uint64 member.
    */
   MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT = 1
   ,
   /**
-   * Request the number of current connections handled by the daemon.
-   * No extra arguments should be passed.
-   * Note: when using MHD without internal threads, this type of request
-   * could be used only when MHD is is not processing the connection data
-   * in other thread at the same time.
-   * The result is placed in @a v_uint member.
+   * Check whether the daemon has any connected network clients.
+   * The result is placed in @a v_bool member.
    */
-  MHD_DAEMON_INFO_DYNAMIC_CURRENT_CONNECTIONS = 20
+  MHD_DAEMON_INFO_DYNAMIC_HAS_CONNECTIONS = 20
   ,
   /* * Sentinel * */
   /**
@@ -9354,14 +9352,14 @@ enum MHD_DaemonInfoDynamicType
 union MHD_DaemonInfoDynamicData
 {
   /**
+   * The boolean value
+   */
+  enum MHD_Bool v_bool;
+
+  /**
    * Unsigned 64 bits integer value.
    */
   uint_fast64_t v_uint64;
-
-  /**
-   * Unsigned integer value.
-   */
-  unsigned int v_uint;
 
   /**
    * Unused member.
@@ -9379,19 +9377,30 @@ union MHD_DaemonInfoDynamicData
  *
  * @param daemon the daemon to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
- *                          by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              daemon due to the daemon
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the daemon, but cannot be provided
+ *                                            due to some error or other
+ *                                            reasons,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_get_info_dynamic_sz (struct MHD_Daemon *daemon,
                                 enum MHD_DaemonInfoDynamicType info_type,
-                                union MHD_DaemonInfoDynamicData *return_value,
-                                size_t return_value_size)
+                                union MHD_DaemonInfoDynamicData *output_buf,
+                                size_t output_buf_size)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
@@ -9401,15 +9410,24 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *
  * @param daemon the daemon to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              daemon due to the daemon
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the daemon, but cannot be provided
+ *                                            due to some error or other
+ *                                            reasons,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
-#define MHD_daemon_get_info_dynamic(daemon,info_type,return_value) \
-        MHD_daemon_get_info_dynamic_sz ((daemon), (info_type), (return_value), \
-                                        sizeof(*(return_value)))
+#define MHD_daemon_get_info_dynamic(daemon,info_type,output_buf) \
+        MHD_daemon_get_info_dynamic_sz ((daemon), (info_type), (output_buf), \
+                                        sizeof(*(output_buf)))
 
 
 /**

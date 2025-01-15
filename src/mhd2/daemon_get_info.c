@@ -31,6 +31,7 @@
 
 #include "mhd_socket_type.h"
 #include "mhd_daemon.h"
+#include "events_process.h"
 
 #include "mhd_public_api.h"
 
@@ -79,6 +80,61 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
     output_buf->v_port = daemon->net.listen.port;
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_SENTINEL:
+  default:
+    break;
+  }
+  return MHD_SC_INFO_GET_TYPE_UNKNOWN;
+}
+
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
+MHD_daemon_get_info_dynamic_sz (struct MHD_Daemon *daemon,
+                                enum MHD_DaemonInfoDynamicType info_type,
+                                union MHD_DaemonInfoDynamicData *output_buf,
+                                size_t output_buf_size)
+{
+  switch (info_type)
+  {
+  case MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT:
+    if (mhd_WM_INT_HAS_THREADS (daemon->wmode_int))
+      return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
+    if (sizeof(output_buf->v_uint64) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    output_buf->v_uint64 = mhd_daemon_get_wait_max (daemon);
+    return MHD_SC_OK;
+  case MHD_DAEMON_INFO_DYNAMIC_HAS_CONNECTIONS:
+    if (sizeof(output_buf->v_bool) <= output_buf_size)
+    {
+      enum MHD_Bool res;
+      /*
+         Reading number of connection from the daemon member could be non-atomic
+         and may give wrong result (if it is modified in other thread), however
+         test against zero/non-zero value is valid even if reading is
+         non-atomic.
+       */
+      if (! mhd_D_HAS_WORKERS (daemon))
+        res = (0 != daemon->conns.count) ? MHD_YES : MHD_NO;
+      else
+      {
+        unsigned int i;
+        res = MHD_NO;
+        mhd_assert (NULL != daemon->threading.hier.pool.workers);
+        for (i = 0; i < daemon->threading.hier.pool.num; ++i)
+        {
+          if (0 != daemon->threading.hier.pool.workers[i].conns.count)
+          {
+            res = MHD_YES;
+            break;
+          }
+        }
+      }
+      output_buf->v_bool = res;
+      return MHD_SC_OK;
+    }
+    return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+  case MHD_DAEMON_INFO_DYNAMIC_SENTINEL:
   default:
     break;
   }

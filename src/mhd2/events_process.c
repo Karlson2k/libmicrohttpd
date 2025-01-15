@@ -64,14 +64,16 @@
 
 #include "mhd_public_api.h"
 
-static int
-get_max_wait (struct MHD_Daemon *restrict d)
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ uint_fast64_t
+mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
 {
   bool zero_wait = d->events.zero_wait;
+
+  mhd_assert (! mhd_D_HAS_WORKERS (d));
+
   if (d->events.act_req.accept && d->conns.block_new)
     d->events.act_req.accept = false;
 
-  d->events.zero_wait = false; /* Reset as this pending data will be processed */
   if (d->events.act_req.accept)
     return 0;
   if (zero_wait)
@@ -79,8 +81,31 @@ get_max_wait (struct MHD_Daemon *restrict d)
   if (NULL != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready))
     return 0;
 
-  return INT_MAX; // TODO: calculate correct timeout value
+  return MHD_WAIT_INDEFINITELY; // TODO: calculate correct timeout value
 }
+
+
+mhd_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE
+
+static MHD_FN_PAR_NONNULL_ALL_ int
+get_max_wait (struct MHD_Daemon *restrict d)
+{
+  uint_fast64_t ui64_wait = mhd_daemon_get_wait_max (d);
+  int i_wait = (int) ui64_wait;
+
+  // TODO: move reset to the processing loop
+  d->events.zero_wait = false; /* Reset as this pending data will be processed */
+
+  if ((0 > i_wait) ||
+      (ui64_wait != (uint_fast64_t) i_wait))
+    return INT_MAX;
+
+  return i_wait;
+}
+
+
+mhd_DATA_TRUNCATION_RUNTIME_CHECK_RESTORE
+/* End of warning-less data truncation */
 
 
 MHD_FN_PAR_NONNULL_ (1) static void
