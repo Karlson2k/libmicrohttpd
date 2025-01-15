@@ -1632,7 +1632,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The type of the information is not available due to configuration
    * or state of the object.
    */
-  MHD_SC_INFO_GET_TYPE_UNSUPPORTED = 60203
+  MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE = 60203
   ,
   /**
    * The type of the information should be available for the object, but

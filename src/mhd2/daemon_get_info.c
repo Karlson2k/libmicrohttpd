@@ -36,29 +36,28 @@
 
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
-MHD_FN_PURE_ enum MHD_StatusCode
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
 MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
                               enum MHD_DaemonInfoFixedType info_type,
-                              union MHD_DaemonInfoFixedData *return_value,
-                              size_t return_value_size)
+                              union MHD_DaemonInfoFixedData *output_buf,
+                              size_t output_buf_size)
 {
   switch (info_type)
   {
   case MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET:
     if (MHD_INVALID_SOCKET == daemon->net.listen.fd)
-      return MHD_SC_INFO_GET_TYPE_UNSUPPORTED;
-    if (sizeof(MHD_Socket) > return_value_size)
+      return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
+    if (sizeof(MHD_Socket) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    return_value->v_socket = daemon->net.listen.fd;
+    output_buf->v_socket = daemon->net.listen.fd;
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD:
 #ifdef MHD_SUPPORT_EPOLL
     if (! mhd_D_IS_USING_EPOLL (daemon))
-      return MHD_SC_INFO_GET_TYPE_UNSUPPORTED;
-    if (sizeof(int) > return_value_size)
+      return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
+    if (sizeof(int) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    return_value->v_fd = daemon->events.data.epoll.e_fd;
+    output_buf->v_fd = daemon->events.data.epoll.e_fd;
     return MHD_SC_OK;
 #else
     return MHD_SC_INFO_GET_TYPE_NOT_SUPP_BY_BUILD;
@@ -66,18 +65,18 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
     break;
   case MHD_DAEMON_INFO_FIXED_BIND_PORT:
     if (MHD_INVALID_SOCKET == daemon->net.listen.fd)
-      return MHD_SC_INFO_GET_TYPE_UNSUPPORTED;
+      return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
     if (mhd_SOCKET_TYPE_UNKNOWN > daemon->net.listen.type)
-      return MHD_SC_INFO_GET_TYPE_UNSUPPORTED;
+      return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
     if (0 == daemon->net.listen.port)
     {
       if (mhd_SOCKET_TYPE_IP != daemon->net.listen.type)
-        return MHD_SC_INFO_GET_TYPE_UNSUPPORTED;
-      return MHD_SC_INFO_GET_TYPE_UNAVAILALBE;
+        return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
+      return MHD_SC_INFO_GET_TYPE_UNOBTAINABLE;
     }
-    if (sizeof(return_value->v_port) > return_value_size)
+    if (sizeof(output_buf->v_port) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    return_value->v_port = daemon->net.listen.port;
+    output_buf->v_port = daemon->net.listen.port;
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_SENTINEL:
   default:

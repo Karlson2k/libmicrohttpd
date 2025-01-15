@@ -1632,7 +1632,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The type of the information is not available due to configuration
    * or state of the object.
    */
-  MHD_SC_INFO_GET_TYPE_UNSUPPORTED = 60203
+  MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE = 60203
   ,
   /**
    * The type of the information should be available for the object, but
@@ -9167,6 +9167,11 @@ enum MHD_DaemonInfoFixedType
 
   /**
    * Request the file descriptor for the listening socket.
+   * The provided socket must be used as 'read-only': only select() or similar
+   * functions should be used. Any modifications (changing socket attributes,
+   * calling accept(), closing it etc.) will lead to undefined behaviour.
+   * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
+   * does not have listening socket.
    * The result is placed in @a v_socket member.
    */
   MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET = 1
@@ -9175,15 +9180,26 @@ enum MHD_DaemonInfoFixedType
    * Request the file descriptor for the single FD that triggered when
    * any MHD event happens.
    * This FD can be watched as aggregate indicator for all MHD events.
+   * The provided socket must be used as 'read-only': only select() or similar
+   * functions should be used. Any modifications (changing socket attributes,
+   * calling accept() closing it etc.) will lead to undefined behaviour.
+   * The function returns #MHD_SC_INFO_GET_TYPE_NOT_SUPP_BY_BUILD if the library
+   * does not support mode with agregate FD.
+   * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
+   * is not configured to use this mode.
    * The result is placed in @a v_fd member.
    */
   MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD
   ,
   /**
    * Request the port number of daemon's listen socket.
-   * No extra arguments should be passed.
-   * Note: if port '0' was specified for #MHD_D_OPTION_BIND_PORT(), returned
-   * value will be real port number.
+   * Note: if port '0' (auto port) was specified for #MHD_D_OPTION_BIND_PORT(),
+   * returned value will be the real port number.
+   * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
+   * does not have listening socket or if listening socket is non-IP.
+   * The function returns #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the port number
+   * detection failed or not supported by the platform.
+   * If the function succeed, the returned port number is never zero.
    * The result is placed in @a v_port member.
    */
   MHD_DAEMON_INFO_FIXED_BIND_PORT
@@ -9237,22 +9253,32 @@ union MHD_DaemonInfoFixedData
  *
  * @param daemon the daemon to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
- *                          by @a return_data, in bytes
+ * @param[out] output_buf pointer to union where requested information will
+ *                        be stored
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              daemon due to the daemon
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the daemon, but cannot be provided
+ *                                            due to some error or other
+ *                                            reasons,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
                               enum MHD_DaemonInfoFixedType info_type,
-                              union MHD_DaemonInfoFixedData *return_value,
-                              size_t return_value_size)
+                              union MHD_DaemonInfoFixedData *output_buf,
+                              size_t output_buf_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
-MHD_FN_PURE_;
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 /**
  * Obtain fixed information about the given daemon.
@@ -9261,15 +9287,24 @@ MHD_FN_PURE_;
  *
  * @param daemon the daemon to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
+ * @param[out] output_buf pointer to union where requested information will
  *                          be stored
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              daemon due to the daemon
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the daemon, but cannot be provided
+ *                                            due to some error or other
+ *                                            reasons,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
-#define MHD_daemon_get_info_fixed(daemon,info_type,return_value) \
-        MHD_daemon_get_info_fixed_sz ((daemon), (info_type), (return_value), \
-                                      sizeof(*(return_value)))
+#define MHD_daemon_get_info_fixed(daemon,info_type,output_buf) \
+        MHD_daemon_get_info_fixed_sz ((daemon), (info_type), (output_buf), \
+                                      sizeof(*(output_buf)))
 
 
 /**
