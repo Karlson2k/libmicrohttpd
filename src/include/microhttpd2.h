@@ -9166,6 +9166,19 @@ enum MHD_DaemonInfoFixedType
 {
 
   /**
+   * Request the port number of daemon's listen socket.
+   * Note: if port '0' (auto port) was specified for #MHD_D_OPTION_BIND_PORT(),
+   * returned value will be the real port number.
+   * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
+   * does not have listening socket or if listening socket is non-IP.
+   * The function returns #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the port number
+   * detection failed or not supported by the platform.
+   * If the function succeed, the returned port number is never zero.
+   * The result is placed in @a v_port member.
+   */
+  MHD_DAEMON_INFO_FIXED_BIND_PORT = 1
+  ,
+  /**
    * Request the file descriptor for the listening socket.
    * The provided socket must be used as 'read-only': only select() or similar
    * functions should be used. Any modifications (changing socket attributes,
@@ -9174,7 +9187,7 @@ enum MHD_DaemonInfoFixedType
    * does not have listening socket.
    * The result is placed in @a v_socket member.
    */
-  MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET = 1
+  MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET = 2
   ,
   /**
    * Request the file descriptor for the single FD that triggered when
@@ -9189,21 +9202,9 @@ enum MHD_DaemonInfoFixedType
    * is not configured to use this mode.
    * The result is placed in @a v_fd member.
    */
-  MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD
+  MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD = 3
   ,
-  /**
-   * Request the port number of daemon's listen socket.
-   * Note: if port '0' (auto port) was specified for #MHD_D_OPTION_BIND_PORT(),
-   * returned value will be the real port number.
-   * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
-   * does not have listening socket or if listening socket is non-IP.
-   * The function returns #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the port number
-   * detection failed or not supported by the platform.
-   * If the function succeed, the returned port number is never zero.
-   * The result is placed in @a v_port member.
-   */
-  MHD_DAEMON_INFO_FIXED_BIND_PORT
-  ,
+
   /* * Sentinel * */
   /**
    * The sentinel value.
