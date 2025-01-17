@@ -9166,7 +9166,7 @@ enum MHD_DaemonInfoFixedType
 {
 
   /**
-   * Request the port number of daemon's listen socket.
+   * Get the port number of daemon's listen socket.
    * Note: if port '0' (auto port) was specified for #MHD_D_OPTION_BIND_PORT(),
    * returned value will be the real port number.
    * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
@@ -9179,7 +9179,7 @@ enum MHD_DaemonInfoFixedType
   MHD_DAEMON_INFO_FIXED_BIND_PORT = 1
   ,
   /**
-   * Request the file descriptor for the listening socket.
+   * Get the file descriptor for the listening socket.
    * The provided socket must be used as 'read-only': only select() or similar
    * functions should be used. Any modifications (changing socket attributes,
    * calling accept(), closing it etc.) will lead to undefined behaviour.
@@ -9190,7 +9190,7 @@ enum MHD_DaemonInfoFixedType
   MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET = 2
   ,
   /**
-   * Request the file descriptor for the single FD that triggered when
+   * Get the file descriptor for the single FD that triggered when
    * any MHD event happens.
    * This FD can be watched as aggregate indicator for all MHD events.
    * The provided socket must be used as 'read-only': only select() or similar
