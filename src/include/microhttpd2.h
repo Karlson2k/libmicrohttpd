@@ -9259,6 +9259,9 @@ union MHD_DaemonInfoFixedData
  *                        (provided by the caller for storing the requested
  *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
+ *         #MHD_SC_TOO_EARLY if the daemon has not been started yet,
+ *         #MHD_SC_TOO_LATE if the daemon is being stopped or has failed,
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
  *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
@@ -9290,6 +9293,9 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  * @param[out] output_buf pointer to union where requested information will
  *                          be stored
  * @return #MHD_SC_OK if succeed,
+ *         #MHD_SC_TOO_EARLY if the daemon has not been started yet,
+ *         #MHD_SC_TOO_LATE if the daemon is being stopped or has failed,
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
  *                                              daemon due to the daemon
@@ -9383,6 +9389,9 @@ union MHD_DaemonInfoDynamicData
  *                        (provided by the caller for storing the requested
  *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
+ *         #MHD_SC_TOO_EARLY if the daemon has not been started yet,
+ *         #MHD_SC_TOO_LATE if the daemon is being stopped or has failed,
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
  *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
@@ -9413,6 +9422,9 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  * @param[out] output_buf the pointer to union to be set to the requested
  *                        information
  * @return #MHD_SC_OK if succeed,
+ *         #MHD_SC_TOO_EARLY if the daemon has not been started yet,
+ *         #MHD_SC_TOO_LATE if the daemon is being stopped or has failed,
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
  *                                              daemon due to the daemon

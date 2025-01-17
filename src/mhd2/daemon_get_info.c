@@ -43,6 +43,11 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
                               union MHD_DaemonInfoFixedData *output_buf,
                               size_t output_buf_size)
 {
+  if (mhd_DAEMON_STATE_STARTED > daemon->state)
+    return MHD_SC_TOO_EARLY;
+  if (mhd_DAEMON_STATE_STARTED < daemon->state)
+    return MHD_SC_TOO_LATE;
+
   switch (info_type)
   {
   case MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET:
@@ -95,6 +100,11 @@ MHD_daemon_get_info_dynamic_sz (struct MHD_Daemon *daemon,
                                 union MHD_DaemonInfoDynamicData *output_buf,
                                 size_t output_buf_size)
 {
+  if (mhd_DAEMON_STATE_STARTED > daemon->state)
+    return MHD_SC_TOO_EARLY;
+  if (mhd_DAEMON_STATE_STARTED < daemon->state)
+    return MHD_SC_TOO_LATE;
+
   switch (info_type)
   {
   case MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT:
