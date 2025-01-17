@@ -67,7 +67,7 @@
 #include "response_destroy.h"
 #include "conn_mark_ready.h"
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_funcs.h"
 #endif
 
@@ -169,7 +169,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
   *conn_out = NULL;
 
   tls_data_size = 0;
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   if (mhd_D_HAS_TLS (daemon))
     tls_data_size = mhd_tls_conn_get_tls_size (daemon->tls);
 #endif
@@ -184,7 +184,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
   }
   else
   {
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
     if (0 != tls_data_size)
       c->tls = (struct mhd_TlsConnData *) (c + 1);
 #  ifndef HAVE_NULL_PTR_ALL_ZEROS
@@ -421,7 +421,7 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
   }
   /* Free resources allocated before the call of this functions */
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   if (mhd_C_HAS_TLS (connection))
     mhd_tls_conn_deinit (connection->tls);
 #endif
@@ -1041,7 +1041,7 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   mhd_assert (c != mhd_DLINKEDL_GET_FIRST (&(c->daemon->conns), all_conn));
   mhd_assert (c != mhd_DLINKEDL_GET_LAST (&(c->daemon->conns), all_conn));
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   if (mhd_C_HAS_TLS (c))
   {
     mhd_assert (mhd_D_HAS_TLS (c->daemon));

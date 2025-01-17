@@ -58,12 +58,12 @@
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
 {
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   mhd_assert (! mhd_C_HAS_TLS (c) || \
               (mhd_CONN_STATE_TLS_CONNECTED == c->conn_state));
   mhd_assert (mhd_C_HAS_TLS (c) || \
               (mhd_CONN_STATE_TCP_CONNECTED == c->conn_state));
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
   switch (c->stage)
   {
@@ -280,12 +280,12 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 
   while (! c->suspended)
   {
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
     mhd_assert (! mhd_C_HAS_TLS (c) || \
                 (mhd_CONN_STATE_TLS_CONNECTED == c->conn_state));
     mhd_assert (mhd_C_HAS_TLS (c) || \
                 (mhd_CONN_STATE_TCP_CONNECTED == c->conn_state));
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
     switch (c->stage)
     {
     case mhd_HTTP_STAGE_INIT:

@@ -195,7 +195,7 @@ if MHD_SUPPORT_UPGRADE
   libmicrohttpd2_la_SOURCES += $(upgrade_OPTSOURCES)
 endif
 
-if MHD_ENABLE_HTTPS
+if MHD_SUPPORT_HTTPS
   libmicrohttpd2_la_SOURCES += $(tls_common_OPTSOURCES)
 
 if MHD_ENABLE_MULTITLS

@@ -208,7 +208,7 @@ libmicrohttpd_la_SOURCES += \
   basicauth.c basicauth.h
 endif
 
-if MHD_ENABLE_HTTPS
+if MHD_SUPPORT_HTTPS
 libmicrohttpd_la_SOURCES += \
   connection_https.c connection_https.h
 endif
@@ -261,7 +261,7 @@ if HAVE_POSIX_THREADS
 if MHD_SUPPORT_UPGRADE
 if USE_THREADS
 check_PROGRAMS += test_upgrade test_upgrade_large test_upgrade_vlarge
-if MHD_ENABLE_HTTPS
+if MHD_SUPPORT_HTTPS
 if USE_UPGRADE_TLS_TESTS
 check_PROGRAMS += test_upgrade_tls test_upgrade_large_tls test_upgrade_vlarge_tls
 endif

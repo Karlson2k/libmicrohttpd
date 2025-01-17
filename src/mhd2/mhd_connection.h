@@ -56,7 +56,7 @@
 
 #include "mhd_public_api.h"
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_choice.h" /* For the TLS struct forward declaration */
 #endif
 
@@ -160,7 +160,7 @@ enum MHD_FIXED_ENUM_ mhd_ConnState
   mhd_CONN_STATE_CLOSED = mhd_CONN_FLAG_CLOSED
 };
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 /**
  * The status of TLS buffer for incoming (receive) data
  */
@@ -176,7 +176,7 @@ enum mhd_TlsBufDataIn
    */
   mhd_TLS_BUF_HAS_DATA_IN = mhd_SOCKET_NET_STATE_RECV_READY
 };
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
 
 /**
@@ -505,7 +505,7 @@ struct MHD_Connection
    */
   struct mhd_ConnSocket sk;
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   /**
    * Connection-specific TLS data.
    * NULL if TLS is not used (plain HTTP connection).
@@ -523,7 +523,7 @@ struct MHD_Connection
    * Status of TLS buffer for the incoming data
    */
   enum mhd_TlsBufDataIn tls_has_data_in;
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
   /**
    * 'true' if connection is in 'process ready' list,
@@ -721,32 +721,32 @@ struct MHD_Connection
 #endif
 };
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 /**
  * Returns non-zero if connection has TLS enabled or zero otherwise
  */
 #  define mhd_C_HAS_TLS(c) (((c)->tls) ? (! 0) : (0))
-#else  /* ! MHD_ENABLE_HTTPS */
+#else  /* ! MHD_SUPPORT_HTTPS */
 /**
  * Returns non-zero if connection has TLS enabled or zero otherwise
  */
 #  define mhd_C_HAS_TLS(c) (0)
-#endif /* ! MHD_ENABLE_HTTPS */
+#endif /* ! MHD_SUPPORT_HTTPS */
 
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 /**
  * Returns #mhd_SOCKET_NET_STATE_RECV_READY if connection has incoming data
  * pending in TLS buffers
  */
 #  define mhd_C_HAS_TLS_DATA_IN(c) \
         (((c)->tls) ? ((unsigned int) ((c)->tls_has_data_in)) : (0u))
-#else  /* ! MHD_ENABLE_HTTPS */
+#else  /* ! MHD_SUPPORT_HTTPS */
 /**
  * Returns #mhd_SOCKET_NET_STATE_RECV_READY if connection has incoming data
  * pending in TLS buffers
  */
 #  define mhd_C_HAS_TLS_DATA_IN(c) (0)
-#endif /* ! MHD_ENABLE_HTTPS */
+#endif /* ! MHD_SUPPORT_HTTPS */
 
 #endif /* ! MHD_CONNECTION_H */

@@ -5278,7 +5278,7 @@ choke me now
           [MSG_HTTPS="yes (single backend)"]
         )
         AS_IF([test -z "$MSG_TLS_BACKENDS"],[AC_MSG_FAILURE([configure internal error: no TLS backends])])
-        AC_DEFINE([MHD_ENABLE_HTTPS],[1],[Define to '1' i][f HTTPS protocol should be enabled])
+        AC_DEFINE([MHD_SUPPORT_HTTPS],[1],[Define to '1' i][f HTTPS protocol should be supported])
       ],
       [
         AS_VAR_IF([enable_https],["yes"],
@@ -5325,7 +5325,7 @@ AC_SUBST([OPENSSL_CPPFLAGS])
 AC_SUBST([OPENSSL_LDFLAGS])
 AC_SUBST([OPENSSL_LIBS])
 AM_CONDITIONAL([MHD_ENABLE_MULTITLS], [test "x$multiple_tls" = "xyes"])
-AM_CONDITIONAL([MHD_ENABLE_HTTPS], [test "x$enable_https" = "xyes"])
+AM_CONDITIONAL([MHD_SUPPORT_HTTPS], [test "x$enable_https" = "xyes"])
 
 AS_VAR_IF([have_gnutls], ["yes"],
   [

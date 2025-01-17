@@ -47,9 +47,9 @@
 #include "conn_data_send.h"
 #include "stream_process_states.h"
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "conn_tls_check.h"
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ bool
 mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
@@ -58,7 +58,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
   bool has_sock_err;
   bool data_processed;
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   if (mhd_C_HAS_TLS (c))
   {
     switch (mhd_conn_tls_check (c))
@@ -75,7 +75,7 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
       break;
     }
   }
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
   /* The "send-ready" state is known if system polling call is edge-triggered
      (it always checks for both send- and recv-ready) or if connection needs

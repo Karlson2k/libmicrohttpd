@@ -21,7 +21,7 @@ if USE_COVERAGE
   AM_CFLAGS += -fprofile-arcs -ftest-coverage
 endif
 
-if MHD_ENABLE_HTTPS
+if MHD_SUPPORT_HTTPS
   SUBDIRS += https
 endif
 

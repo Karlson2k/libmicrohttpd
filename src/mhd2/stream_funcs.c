@@ -54,7 +54,7 @@
 #include "conn_mark_ready.h"
 #include "stream_process_reply.h"
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_funcs.h"
 #endif
 
@@ -861,7 +861,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     use_graceful_closing = ! c->sk.state.rmt_shut_wr;
     if (use_graceful_closing)
     {
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
       if (mhd_C_HAS_TLS (c))
       {
         if ((0 != (((unsigned int) c->sk.ready)
@@ -871,7 +871,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
             (mhd_TLS_PROCED_FAILED != mhd_tls_conn_shutdown (c->tls));
       }
       else
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
       if (1)
       {
         use_graceful_closing = mhd_socket_shut_wr (c->sk.fd);

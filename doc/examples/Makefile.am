@@ -28,7 +28,7 @@ noinst_PROGRAMS = \
 if MHD_SUPPORT_AUTH_BASIC
 noinst_PROGRAMS += \
   basicauthentication
-if MHD_ENABLE_HTTPS
+if MHD_SUPPORT_HTTPS
 noinst_PROGRAMS += \
   tlsauthentication
 endif

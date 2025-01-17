@@ -29,7 +29,7 @@ check_PROGRAMS = \
   test_authentication \
   test_postprocessor
 
-if MHD_ENABLE_HTTPS
+if MHD_SUPPORT_HTTPS
 check_PROGRAMS += \
   test_tls \
   test_cert_tls

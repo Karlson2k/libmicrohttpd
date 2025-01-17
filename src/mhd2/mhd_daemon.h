@@ -42,7 +42,7 @@
 #  include "mhd_digest_auth_data.h"
 #endif
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_choice.h"
 #endif
 
@@ -1029,7 +1029,7 @@ struct MHD_Daemon
   struct mhd_DaemonAuthDigestData auth_dg;
 #endif /* MHD_SUPPORT_AUTH_DIGEST */
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   /**
    * The pointer to the daemon TLS data.
    * If set to non-NULL then HTTPS protocol is used, if set to NULL then
@@ -1134,7 +1134,7 @@ struct MHD_Daemon
         (mhd_D_IS_USING_EPOLL (d) || \
          (mhd_WM_INT_EXTERNAL_EVENTS_EDGE ==((d)->wmode_int)))
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 /**
  * Returns non-zero if daemon has TLS enabled or zero otherwise
  */

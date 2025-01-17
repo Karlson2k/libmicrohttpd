@@ -75,7 +75,7 @@
 #include "mhd_lib_init.h"
 #include "daemon_logger.h"
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_funcs.h"
 #endif
 
@@ -1244,11 +1244,11 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #ifdef MHD_SUPPORT_EPOLL
     bool edge_trig_allowed;
     edge_trig_allowed = true;
-#  ifdef MHD_ENABLE_HTTPS
+#  ifdef MHD_SUPPORT_HTTPS
     if ((edge_trig_allowed) &&
         (MHD_TLS_BACKEND_NONE != s->tls))
       edge_trig_allowed = mhd_tls_is_edge_trigg_supported (s);
-#  endif /* MHD_ENABLE_HTTPS */
+#  endif /* MHD_SUPPORT_HTTPS */
 #endif /* MHD_SUPPORT_EPOLL */
     fallback_syscall_allowed = true;
 
@@ -1621,7 +1621,7 @@ daemon_init_tls (struct MHD_Daemon *restrict d,
   mhd_StatusCodeInt ret;
 
   mhd_assert (! d->dbg.tls_inited);
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   d->tls = NULL;
 #endif
 
@@ -1632,12 +1632,12 @@ daemon_init_tls (struct MHD_Daemon *restrict d,
 #endif
     return MHD_SC_OK;
   }
-#ifndef MHD_ENABLE_HTTPS
+#ifndef MHD_SUPPORT_HTTPS
   mhd_LOG_MSG (d, \
                MHD_SC_TLS_DISABLED, \
                "HTTPS is not supported by this MHD build");
   return MHD_SC_TLS_DISABLED;
-#else  /* MHD_ENABLE_HTTPS */
+#else  /* MHD_SUPPORT_HTTPS */
   if (1)
   {
     enum mhd_TlsBackendAvailable tls_avail;
@@ -1669,7 +1669,7 @@ daemon_init_tls (struct MHD_Daemon *restrict d,
   d->dbg.tls_inited = (MHD_SC_OK == ret);
 #endif
   return (enum MHD_StatusCode) ret;
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 }
 
 
@@ -1681,7 +1681,7 @@ MHD_FN_PAR_NONNULL_ (1) static void
 daemon_deinit_tls (struct MHD_Daemon *restrict d)
 {
   mhd_assert (d->dbg.tls_inited);
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   if (NULL != d->tls)
     mhd_tls_daemon_deinit (d->tls);
 #endif

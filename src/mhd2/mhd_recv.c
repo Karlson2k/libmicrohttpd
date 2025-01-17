@@ -39,7 +39,7 @@
 #include "mhd_assert.h"
 #include "mhd_socket_error_funcs.h"
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_funcs.h"
 #endif
 
@@ -81,7 +81,7 @@ mhd_recv_plain (struct MHD_Connection *restrict c,
 }
 
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 
 static MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
@@ -124,7 +124,7 @@ mhd_recv_tls (struct MHD_Connection *restrict c,
 }
 
 
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_OUT_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4) enum mhd_SocketError
@@ -136,13 +136,13 @@ mhd_recv (struct MHD_Connection *restrict c,
   mhd_assert (MHD_INVALID_SOCKET != c->sk.fd);
   mhd_assert (mhd_HTTP_STAGE_CLOSED != c->stage);
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   if (mhd_C_HAS_TLS (c))
     return mhd_recv_tls (c,
                          buf_size,
                          buf,
                          received);
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
   return mhd_recv_plain (c, buf_size, buf, received);
 }

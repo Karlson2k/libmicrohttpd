@@ -71,7 +71,7 @@
 
 #include "mhd_limits.h"
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_funcs.h"
 #endif
 
@@ -823,7 +823,7 @@ mhd_send_plain (struct MHD_Connection *restrict c,
 }
 
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 
 static MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_IN_SIZE_ (3,2)
@@ -867,7 +867,7 @@ mhd_send_tls (struct MHD_Connection *restrict c,
 }
 
 
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_PAR_IN_SIZE_ (3,2)
@@ -881,14 +881,14 @@ mhd_send_data (struct MHD_Connection *restrict connection,
   mhd_assert (MHD_INVALID_SOCKET != connection->sk.fd);
   mhd_assert (mhd_HTTP_STAGE_CLOSED != connection->stage);
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
   if (mhd_C_HAS_TLS (connection))
     return mhd_send_tls (connection,
                          buf_size,
                          buf,
                          push_data,
                          sent);
-#endif /* MHD_ENABLE_HTTPS */
+#endif /* MHD_SUPPORT_HTTPS */
 
   return mhd_send_plain (connection,
                          buf_size,
@@ -1536,7 +1536,7 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
 
 #endif /* mhd_USE_VECT_SEND */
 
-#if ! defined(mhd_USE_VECT_SEND) || defined(MHD_ENABLE_HTTPS) || \
+#if ! defined(mhd_USE_VECT_SEND) || defined(MHD_SUPPORT_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
 
 
@@ -1618,7 +1618,7 @@ send_iov_emu (struct MHD_Connection *restrict connection,
 }
 
 
-#endif /* !mhd_USE_VECT_SEND || MHD_ENABLE_HTTPS
+#endif /* !mhd_USE_VECT_SEND || MHD_SUPPORT_HTTPS
           || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
@@ -1629,10 +1629,10 @@ mhd_send_iovec (struct MHD_Connection *restrict connection,
                 size_t *restrict sent)
 {
 #ifdef mhd_USE_VECT_SEND
-#if defined(MHD_ENABLE_HTTPS) || \
+#if defined(MHD_SUPPORT_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
   bool use_iov_send = true;
-#endif /* MHD_ENABLE_HTTPS || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+#endif /* MHD_SUPPORT_HTTPS || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 #endif /* mhd_USE_VECT_SEND */
 
   mhd_assert (NULL != connection->rp.resp_iov.iov);
@@ -1640,7 +1640,7 @@ mhd_send_iovec (struct MHD_Connection *restrict connection,
               connection->rp.response->cntn_dtype);
   mhd_assert (connection->rp.resp_iov.cnt > connection->rp.resp_iov.sent);
 #ifdef mhd_USE_VECT_SEND
-#if defined(MHD_ENABLE_HTTPS) || \
+#if defined(MHD_SUPPORT_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
   use_iov_send = use_iov_send &&
                  (! mhd_C_HAS_TLS (connection));
@@ -1649,13 +1649,13 @@ mhd_send_iovec (struct MHD_Connection *restrict connection,
                                   connection->sk.props.has_spipe_supp);
 #endif /* mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
   if (use_iov_send)
-#endif /* MHD_ENABLE_HTTPS || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
+#endif /* MHD_SUPPORT_HTTPS || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
   return send_iov_nontls (connection, r_iov, push_data, sent);
 #endif /* mhd_USE_VECT_SEND */
 
-#if ! defined(mhd_USE_VECT_SEND) || defined(MHD_ENABLE_HTTPS) || \
+#if ! defined(mhd_USE_VECT_SEND) || defined(MHD_SUPPORT_HTTPS) || \
   defined(mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED)
   return send_iov_emu (connection, r_iov, push_data, sent);
-#endif /* !mhd_USE_VECT_SEND || MHD_ENABLE_HTTPS
+#endif /* !mhd_USE_VECT_SEND || MHD_SUPPORT_HTTPS
           || mhd_VECT_SEND_NEEDS_SPIPE_SUPPRESSED */
 }

@@ -47,7 +47,7 @@
 #  include "mhd_str.h"
 #endif
 
-#ifdef MHD_ENABLE_HTTPS
+#ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_choice.h"
 /* Include all supported TLS backends headers */
 #  if defined(MHD_SUPPORT_GNUTLS)
@@ -406,7 +406,7 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
   case MHD_LIB_INFO_FIXED_HAS_TLS_KEY_PASSWORD: /* Both backends have support */
     if (sizeof(output_buf->v_tls) <= output_buf_size)
     {
-#ifndef MHD_ENABLE_HTTPS
+#ifndef MHD_SUPPORT_HTTPS
       output_buf->v_tls.tls_supported = MHD_NO;
       output_buf->v_tls.backend_gnutls = MHD_NO;
       output_buf->v_tls.backend_openssl = MHD_NO;
@@ -459,7 +459,7 @@ MHD_lib_get_info_dynamic_sz (enum MHD_LibInfoDynamic info_type,
   case MHD_LIB_INFO_DYNAMIC_TYPE_TLS:
     if (sizeof(output_buf->v_tls) <= output_buf_size)
     {
-#ifndef MHD_ENABLE_HTTPS
+#ifndef MHD_SUPPORT_HTTPS
       output_buf->v_tls.tls_supported = MHD_NO;
       output_buf->v_tls.backend_gnutls = MHD_NO;
       output_buf->v_tls.backend_openssl = MHD_NO;

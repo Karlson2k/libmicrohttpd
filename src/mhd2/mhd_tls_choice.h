@@ -29,7 +29,7 @@
 
 #include "mhd_sys_options.h"
 
-#ifndef MHD_ENABLE_HTTPS
+#ifndef MHD_SUPPORT_HTTPS
 #error This header should be used only if HTTPS is enabled
 #endif
 
