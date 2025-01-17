@@ -9204,6 +9204,15 @@ enum MHD_DaemonInfoFixedType
    */
   MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD = 3
   ,
+  /**
+   * Get the TLS backend used by the daemon.
+   * The value #MHD_TLS_BACKEND_ANY is never set in the returned data.
+   * The value #MHD_TLS_BACKEND_NONE is set if the daemon does not use TLS.
+   * If MHD built without TLS support then #MHD_TLS_BACKEND_NONE is always set.
+   * The result is placed in @a v_tls_backend member.
+   */
+  MHD_DAEMON_INFO_FIXED_TLS_TYPE = 100
+  ,
 
   /* * Sentinel * */
   /**
@@ -9236,6 +9245,11 @@ union MHD_DaemonInfoFixedData
    * Port number
    */
   uint_least16_t v_port;
+
+  /**
+   * The TLS backend
+   */
+  enum MHD_TlsBackend v_tls_backend;
 
   /**
    * Unused member.

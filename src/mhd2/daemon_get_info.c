@@ -26,12 +26,20 @@
 
 #include "mhd_sys_options.h"
 
+#include "mhd_unreachable.h"
+
 #include "sys_base_types.h"
 #include "sys_sockets_types.h"
 
 #include "mhd_socket_type.h"
 #include "mhd_daemon.h"
 #include "events_process.h"
+#ifdef MHD_SUPPORT_HTTPS
+#  include "mhd_tls_choice.h"
+#  ifdef MHD_USE_MULTITLS
+#    include "tls_multi_daemon_data.h"
+#  endif
+#endif
 
 #include "mhd_public_api.h"
 
@@ -84,6 +92,44 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
     return MHD_SC_INFO_GET_TYPE_NOT_SUPP_BY_BUILD;
 #endif
     break;
+  case MHD_DAEMON_INFO_FIXED_TLS_TYPE:
+    if (sizeof(output_buf->v_tls_backend) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    if (! mhd_D_HAS_TLS (daemon))
+      output_buf->v_tls_backend = MHD_TLS_BACKEND_NONE;
+    else
+    {
+#if ! defined(MHD_SUPPORT_HTTPS)
+      mhd_UNREACHABLE ();
+#elif defined(MHD_USE_MULTITLS)
+      switch (daemon->tls->choice)
+      {
+#  ifdef MHD_SUPPORT_GNUTLS
+      case mhd_TLS_MULTI_ROUTE_GNU:
+        output_buf->v_tls_backend = MHD_TLS_BACKEND_GNUTLS;
+        break;
+#  endif
+#  ifdef MHD_SUPPORT_OPENSSL
+      case mhd_TLS_MULTI_ROUTE_OPEN:
+        output_buf->v_tls_backend = MHD_TLS_BACKEND_OPENSSL;
+        break;
+#  endif
+      case mhd_TLS_MULTI_ROUTE_NONE:
+      default:
+        mhd_UNREACHABLE ();
+        break;
+      }
+#elif defined(MHD_SUPPORT_GNUTLS)
+      output_buf->v_tls_backend = MHD_TLS_BACKEND_GNUTLS;
+#elif defined(MHD_SUPPORT_OPENSSL)
+      output_buf->v_tls_backend = MHD_TLS_BACKEND_OPENSSL;
+#else
+#error No TLS backends enabled, while TLS support is enabled
+#endif
+    }
+    break;
+    return MHD_SC_OK;
+
   case MHD_DAEMON_INFO_FIXED_SENTINEL:
   default:
     break;
