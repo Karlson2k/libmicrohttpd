@@ -4842,14 +4842,25 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 enum MHD_ConnectionInfoFixedType
 {
   /**
-   * Obtain IP address of the client.
-   * The result is placed in @a vs_sa member.
+   * Get the network address of the client.
+   * If the connection does not have known remote address (was not provided
+   * by the system or by the application in case of externally added
+   * connection) then error code #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE is
+   * returned if connection is IP type or unknown type or error code
+   * #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if connection type is non-IP.
+   * The @a sa pointer is never NULL if the function succeed (#MHD_SC_OK
+   * returned).
+   * The result is placed in @a v_sa_info member.
    * @ingroup request
    */
   MHD_CONNECTION_INFO_FIXED_CLIENT_ADDRESS = 1
   ,
   /**
-   * Request the file descriptor for the connection socket.
+   * Get the file descriptor for the connection socket.
+   * The provided socket must be used as 'read-only': only select() or similar
+   * functions should be used. Any modifications (changing socket attributes,
+   * calling send() or recv(), closing it etc.) will lead to undefined
+   * behaviour.
    * The result is placed in @a v_fd member.
    * @ingroup request
    */
@@ -4871,6 +4882,18 @@ enum MHD_ConnectionInfoFixedType
   MHD_CONNECTION_INFO_FIXED_SENTINEL = 65535
 };
 
+struct MHD_ConnInfoFixedSockAddr
+{
+  /**
+   * The size of the @a sa
+   */
+  size_t sa_size;
+
+  /**
+   * Socket Address type
+   */
+  const struct sockaddr *sa;
+};
 
 /**
  * Information about a connection.
@@ -4881,7 +4904,7 @@ union MHD_ConnectionInfoFixedData
   /**
    * Socket Address type
    */
-  const struct sockaddr *vs_sa;
+  struct MHD_ConnInfoFixedSockAddr v_sa_info;
 
   /**
    * Socket type
@@ -4902,23 +4925,34 @@ union MHD_ConnectionInfoFixedData
  *
  * @param connection the connection to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
-                            by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              connection due to the connection
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the connection, but cannot be
+ *                                            provided due to some error or
+ *                                            other reasons,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_connection_get_info_fixed_sz (
   struct MHD_Connection *connection,
   enum MHD_ConnectionInfoFixedType info_type,
-  union MHD_ConnectionInfoFixedData *return_value,
-  size_t return_value_size)
+  union MHD_ConnectionInfoFixedData *output_buf,
+  size_t output_buf_size)
 MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
-MHD_FN_PURE_;
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
 /**
@@ -4927,16 +4961,26 @@ MHD_FN_PURE_;
  *
  * @param connection the connection to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              connection due to the connection
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the connection, but cannot be
+ *                                            provided due to some error or
+ *                                            other reasons,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
-#define MHD_connection_get_info_fixed(connection,info_type,return_value) \
-        MHD_connection_get_info_fixed_sz ((connection),(info_type),(return_value \
-                                                                    ), \
-                                          sizeof(*(return_value)))
+#define MHD_connection_get_info_fixed(connection,info_type,output_buf) \
+        MHD_connection_get_info_fixed_sz ((connection),(info_type), \
+                                          (output_buf), sizeof(*(output_buf)))
 
 
 /**
