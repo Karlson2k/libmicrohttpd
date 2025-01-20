@@ -161,6 +161,9 @@ MHD_request_get_values_cb (struct MHD_Request *request,
     for (f = mhd_DLINKEDL_GET_FIRST (request, fields); NULL != f;
          f = mhd_DLINKEDL_GET_NEXT (f, fields))
     {
+      if (0 == (kind & f->field.kind))
+        continue;
+
       ++count;
       if (NULL != iterator)
       {
