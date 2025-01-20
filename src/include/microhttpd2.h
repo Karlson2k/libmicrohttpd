@@ -9613,13 +9613,20 @@ enum MHD_ConnectionInfoDynamicType
 {
   /**
    * Get current version of HTTP protocol used for connection.
+   * If connection is handling HTTP/1.x requests the function may return
+   * error code #MHD_SC_TOO_EARLY if the full request line has not been received
+   * yet for the current request.
    * The result is placed in @a v_http_ver member.
    * @ingroup request
    */
   MHD_CONNECTION_INFO_DYNAMIC_HTTP_VER = 1
   ,
   /**
-   * Get connection timeout.
+   * Get connection timeout value.
+   * This is the total number of seconds after which the idle connection is
+   * automatically disconnected.
+   * Note: the value set is NOT the number of seconds left before automatic
+   * disconnection.
    * The result is placed in @a v_uint member.
    * @ingroup request
    */
@@ -9642,17 +9649,26 @@ enum MHD_ConnectionInfoDynamicType
   ,
   /**
    * Get current version of TLS transport protocol used for connection
+   * If plain TCP connection is used then #MHD_TLS_VERSION_NO_TLS set in
+   * the data.
+   * It TLS handshake is not yet finished then error code #MHD_SC_TOO_EARLY is
+   * returned. If TLS has failed or being closed then #MHD_SC_TOO_LATE error
+   * code is returned.
+   * If TLS version cannot be detected for any reason then error code
+   * #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE is returned.
    * The result is placed in @a v_tls_ver member.
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_DYNAMIC_TLS_VER = 1
+  MHD_CONNECTION_INFO_DYNAMIC_TLS_VER = 105
   ,
   /**
-   * Get the GnuTLS session handle.
-   * The result is placed in @a v_gnutls_session member.
+   * Get the TLS backend session handle.
+   * If plain TCP connection is used then the function returns error code
+   * #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE.
+   * The result is placed in @a v_tls_session member.
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_DYNAMIC_GNUTLS_SESSION = 40
+  MHD_CONNECTION_INFO_DYNAMIC_TLS_SESSION = 140
   ,
 
   /* * Sentinel * */
@@ -9783,20 +9799,36 @@ union MHD_ConnectionInfoDynamicData
  *
  * @param connection the connection to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
-                            by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_TOO_EARLY if the connection has not reached yet required
+ *                           state,
+ *         #MHD_SC_TOO_LATE if the connection is already in state where
+ *                          the requested information is not available,
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              connection due to the connection
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the connection, but cannot be
+ *                                            provided due to some error or
+ *                                            other reasons,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_connection_get_info_dynamic_sz (
   struct MHD_Connection *connection,
   enum MHD_ConnectionInfoDynamicType info_type,
-  union MHD_ConnectionInfoDynamicData *return_value,
-  size_t return_value_size)
+  union MHD_ConnectionInfoDynamicData *output_buf,
+  size_t output_buf_size)
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
@@ -9807,16 +9839,29 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *
  * @param connection the connection to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_TOO_EARLY if the connection has not reached yet required
+ *                           state,
+ *         #MHD_SC_TOO_LATE if the connection is already in state where
+ *                          the requested information is not available,
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
+ *                                              is not available for this
+ *                                              connection due to the connection
+ *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
+ *                                            should be available for
+ *                                            the connection, but cannot be
+ *                                            provided due to some error or
+ *                                            other reasons,
+ *         other error code in case of other errors
  * @ingroup specialized
  */
-#define MHD_connection_get_info_dynamic(connection,info_type,return_value) \
-        MHD_connection_get_info_dynamic_sz ((connection),(info_type),( \
-                                              return_value), \
-                                            sizeof(*(return_value)))
+#define MHD_connection_get_info_dynamic(connection,info_type,output_buf) \
+        MHD_connection_get_info_dynamic_sz ((connection),(info_type), \
+                                            (output_buf),sizeof(*(output_buf)))
 
 
 /**

@@ -81,3 +81,87 @@ MHD_connection_get_info_fixed_sz (
   }
   return MHD_SC_INFO_GET_TYPE_UNKNOWN;
 }
+
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
+MHD_connection_get_info_dynamic_sz (
+  struct MHD_Connection *connection,
+  enum MHD_ConnectionInfoDynamicType info_type,
+  union MHD_ConnectionInfoDynamicData *output_buf,
+  size_t output_buf_size)
+{
+  switch (info_type)
+  {
+  case MHD_CONNECTION_INFO_DYNAMIC_HTTP_VER:
+    if (mhd_HTTP_STAGE_REQ_LINE_RECEIVED > connection->stage)
+      return MHD_SC_TOO_EARLY;
+    if (sizeof(output_buf->v_http_ver) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    output_buf->v_http_ver = connection->rq.http_ver;
+    return MHD_SC_OK;
+  case MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_TIMEOUT:
+    if (sizeof(output_buf->v_uint) <= output_buf_size)
+    {
+      const uint_fast64_t tmout_ms = connection->connection_timeout_ms;
+      const unsigned int tmout = (unsigned int) (tmout_ms / 1000);
+      mhd_assert ((1000 * ((uint_fast64_t) tmout)) == tmout_ms);
+      output_buf->v_uint = tmout;
+      return MHD_SC_OK;
+    }
+    return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+  case MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_SUSPENDED:
+    if (sizeof(output_buf->v_bool) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    output_buf->v_bool = connection->suspended ? MHD_YES : MHD_NO;
+    return MHD_SC_OK;
+  case MHD_CONNECTION_INFO_DYNAMIC_SOCKET_CONTEXT:
+    if (sizeof(output_buf->v_pvoid) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    output_buf->v_pvoid = connection->socket_context;
+    return MHD_SC_OK;
+  case MHD_CONNECTION_INFO_DYNAMIC_TLS_VER:
+#ifdef MHD_SUPPORT_HTTPS
+    if ((mhd_CONN_STATE_TCP_CONNECTED != connection->conn_state) &&
+        (mhd_CONN_STATE_TLS_CONNECTED != connection->conn_state))
+    {
+      if (mhd_CONN_FLAG_CLOSING > connection->conn_state)
+        return MHD_SC_TOO_EARLY;
+      else
+        return MHD_SC_TOO_LATE;
+    }
+#endif
+    if (sizeof(output_buf->v_tls_ver) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    if (! mhd_C_HAS_TLS (connection))
+      output_buf->v_tls_ver = MHD_TLS_VERSION_NO_TLS;
+    else
+    {
+#ifdef MHD_SUPPORT_HTTPS
+      if (! mhd_tls_conn_get_tls_ver (connection->tls, \
+                                      &(output_buf->v_tls_ver)))
+        return MHD_SC_INFO_GET_TYPE_UNOBTAINABLE;
+#else  /* ! MHD_SUPPORT_HTTPS */
+      mhd_UNREACHABLE ();
+#endif /* ! MHD_SUPPORT_HTTPS */
+    }
+    return MHD_SC_OK;
+  case MHD_CONNECTION_INFO_DYNAMIC_TLS_SESSION:
+    if (! mhd_C_HAS_TLS (connection))
+      return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
+    if (sizeof(output_buf->v_tls_session) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+#ifndef MHD_SUPPORT_HTTPS
+    mhd_UNREACHABLE ();
+    return MHD_SC_INTERNAL_ERROR;
+#else  /* MHD_SUPPORT_HTTPS */
+    mhd_tls_conn_get_tls_sess (connection->tls, &(output_buf->v_tls_session));
+#endif /* MHD_SUPPORT_HTTPS */
+    break;
+  case MHD_CONNECTION_INFO_DYNAMIC_SENTINEL:
+  default:
+    break;
+  }
+  return MHD_SC_INFO_GET_TYPE_UNKNOWN;
+}
