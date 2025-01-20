@@ -47,7 +47,7 @@ struct mhd_TlsOpenConnDebug
 #endif /* ! NDEBUG */
 
 /**
- * The structure with connection-specific GnuTLS data
+ * The structure with connection-specific OpenSSL data
  */
 struct mhd_TlsOpenConnData
 {
