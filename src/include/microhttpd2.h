@@ -9709,6 +9709,35 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_TlsVersion
 };
 
 /**
+ * Connection TLS session information.
+ * Only one member is valid. Use #MHD_DAEMON_INFO_FIXED_TLS_TYPE to find out
+ * which member should be used.
+ */
+union MHD_ConnInfoDynamicTlsSess
+{
+  /* Include <gnutls/gnutls.h> before this header to get a better type safety */
+  /**
+   * GnuTLS session handle, of type "gnutls_session_t".
+   */
+#if defined(GNUTLS_VERSION_MAJOR) && GNUTLS_VERSION_MAJOR >= 3
+  gnutls_session_t v_gnutls_session;
+#else
+  void * /* gnutls_session_t */ v_gnutls_session;
+#endif
+
+  /* Include <openssl/types.h> or <openssl/crypto.h> before this header to get
+     a better type safety */
+  /**
+   * OpenSSL session handle, of type "SSL*".
+   */
+#if defined(OPENSSL_TYPES_H) && OPENSSL_VERSION_MAJOR >= 3
+  SSL *v_openssl_session;
+#else
+  void /* SSL */ *v_openssl_session;
+#endif
+};
+
+/**
  * Information about a connection.
  */
 union MHD_ConnectionInfoDynamicData
@@ -9738,16 +9767,12 @@ union MHD_ConnectionInfoDynamicData
    */
   enum MHD_TlsVersion v_tls_ver;
 
-  /* Include <gnutls/gnutls.h> before this header to get a better type safety */
   /**
-   * GnuTLS session handle, of type "gnutls_session_t".
+   * Connection TLS session information.
+   * Only one member is valid. Use #MHD_DAEMON_INFO_FIXED_TLS_TYPE to find out
+   * which member should be used.
    */
-#if defined(GNUTLS_VERSION_MAJOR) && GNUTLS_VERSION_MAJOR >= 3
-  gnutls_session_t
-#else
-  void * /* gnutls_session_t */
-#endif
-  v_gnutls_session;
+  union MHD_ConnInfoDynamicTlsSess v_tls_session;
 };
 
 /**
