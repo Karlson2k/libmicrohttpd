@@ -74,6 +74,11 @@ MHD_connection_get_info_fixed_sz (
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     output_buf->v_daemon = mhd_daemon_get_master_daemon (connection->daemon);
     return MHD_SC_OK;
+  case MHD_CONNECTION_INFO_FIXED_SOCKET_CONTEXT:
+    if (sizeof(output_buf->v_ppvoid) > output_buf_size)
+      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+    output_buf->v_ppvoid = &(connection->socket_context);
+    return MHD_SC_OK;
 
   case MHD_CONNECTION_INFO_FIXED_SENTINEL:
   default:
@@ -115,11 +120,6 @@ MHD_connection_get_info_dynamic_sz (
     if (sizeof(output_buf->v_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     output_buf->v_bool = connection->suspended ? MHD_YES : MHD_NO;
-    return MHD_SC_OK;
-  case MHD_CONNECTION_INFO_DYNAMIC_SOCKET_CONTEXT:
-    if (sizeof(output_buf->v_pvoid) > output_buf_size)
-      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_pvoid = connection->socket_context;
     return MHD_SC_OK;
   case MHD_CONNECTION_INFO_DYNAMIC_TLS_VER:
 #ifdef MHD_SUPPORT_HTTPS

@@ -9498,6 +9498,19 @@ enum MHD_ConnectionInfoFixedType
    */
   MHD_CONNECTION_INFO_FIXED_DAEMON = 20
   ,
+  /**
+   * Returns the pointer to a variable pointing to connection-specific
+   * application context data that was (possibly) set during
+   * a #MHD_NotifyConnectionCallback or provided via @a connection_cntx
+   * parameter of #MHD_daemon_add_connection().
+   * By using provided pointer application may get or set the pointer to
+   * any data specific for the particular connection.
+   * The result is placed in @a v_ppvoid member.
+   * @ingroup request
+   */
+  MHD_CONNECTION_INFO_FIXED_SOCKET_CONTEXT = 30
+  ,
+
   /* * Sentinel * */
   /**
    * The sentinel value.
@@ -9540,6 +9553,11 @@ union MHD_ConnectionInfoFixedData
    * Daemon handler type
    */
   struct MHD_Daemon *v_daemon;
+
+  /**
+   * The pointer to pointer to the data
+   */
+  void **v_ppvoid;
 };
 
 
@@ -9640,14 +9658,6 @@ enum MHD_ConnectionInfoDynamicType
    * @ingroup request
    */
   MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_SUSPENDED = 11
-  ,
-  /**
-   * Returns the connection-specific application context data that was
-   * (possibly) set during a #MHD_NotifyConnectionCallback or provided via
-   * @a connection_cntx parameter of #MHD_daemon_add_connection().
-   * The result is placed in @a v_pvoid member.
-   */
-  MHD_CONNECTION_INFO_DYNAMIC_SOCKET_CONTEXT = 20
   ,
   /**
    * Get current version of TLS transport protocol used for connection
@@ -9774,11 +9784,6 @@ union MHD_ConnectionInfoDynamicData
    * The boolean type
    */
   enum MHD_Bool v_bool;
-
-  /**
-   * The pointer to void type
-   */
-  void *v_pvoid;
 
   /**
    * The TLS version
