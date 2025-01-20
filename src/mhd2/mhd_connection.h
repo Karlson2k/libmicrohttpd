@@ -47,6 +47,7 @@
 
 #include "mhd_request.h"
 #include "mhd_reply.h"
+#include "mhd_stream.h"
 
 #ifdef MHD_SUPPORT_UPGRADE
 #  include "mhd_upgrade.h"
@@ -554,6 +555,17 @@ struct MHD_Connection
 #endif /* MHD_SUPPORT_UPGRADE */
 
   /**
+   * Reference to the MHD_Daemon struct.
+   */
+  struct MHD_Daemon *daemon;
+
+  /**
+   * HTTP/1.x stream data.
+   * Currently not used for the actual data.
+   */
+  struct MHD_Stream h1_stream;
+
+  /**
    * True if connection is suspended
    */
   bool suspended;
@@ -562,11 +574,6 @@ struct MHD_Connection
    * True if connection is resuming
    */
   bool resuming;
-
-  /**
-   * Reference to the MHD_Daemon struct.
-   */
-  struct MHD_Daemon *daemon;
 
   /**
    * Request-specific data

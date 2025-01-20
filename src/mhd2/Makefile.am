@@ -92,7 +92,8 @@ libmicrohttpd2_la_SOURCES = \
   stream_funcs.c            stream_funcs.h \
   stream_process_states.c   stream_process_states.h \
   stream_process_request.c  stream_process_request.h \
-  stream_process_reply.c    stream_process_reply.h
+  stream_process_reply.c    stream_process_reply.h \
+  stream_get_info.c
 
 if ! HAVE_SYS_CALLOC
 libmicrohttpd2_la_SOURCES += \

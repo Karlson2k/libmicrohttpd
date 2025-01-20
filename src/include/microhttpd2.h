@@ -9873,20 +9873,21 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 enum MHD_FIXED_ENUM_APP_SET_ MHD_StreamInfoFixedType
 {
   /**
-   * Get the `struct MHD_Connection *` responsible for managing this stream.
-   * The result is placed in @a v_connection member.
-   * @ingroup request
-   */
-  MHD_STREAM_INFO_FIXED_CONNECTION = 1
-  ,
-  /**
    * Get the `struct MHD_Daemon *` responsible for managing connection which
    * is responsible for this stream.
    * The result is placed in @a v_daemon member.
    * @ingroup request
    */
-  MHD_STREAM_INFO_FIXED_DAEMON = 2
+  MHD_STREAM_INFO_FIXED_DAEMON = 20
   ,
+  /**
+   * Get the `struct MHD_Connection *` responsible for managing this stream.
+   * The result is placed in @a v_connection member.
+   * @ingroup request
+   */
+  MHD_STREAM_INFO_FIXED_CONNECTION = 21
+  ,
+
   /* * Sentinel * */
   /**
    * The sentinel value.
@@ -9920,23 +9921,25 @@ union MHD_StreamInfoFixedData
  *
  * @param stream the stream to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
- *                          by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_stream_get_info_fixed_sz (
-  struct MHD_Stream *stream,
+  struct MHD_Stream *MHD_RESTRICT stream,
   enum MHD_StreamInfoFixedType info_type,
-  union MHD_StreamInfoFixedData *return_value,
-  size_t return_value_size)
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
-MHD_FN_PURE_;
+  union MHD_StreamInfoFixedData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
 /**
@@ -9945,15 +9948,16 @@ MHD_FN_PURE_;
  *
  * @param stream the stream to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
-#define MHD_stream_get_info_fixed(stream,info_type,return_value) \
-        MHD_stream_get_info_fixed_sz ((stream),(info_type),(return_value), \
-                                      sizeof(*(return_value)))
+#define MHD_stream_get_info_fixed(stream,info_type,output_buf) \
+        MHD_stream_get_info_fixed_sz ((stream),(info_type),(output_buf), \
+                                      sizeof(*(output_buf)))
 
 
 /**
@@ -9964,11 +9968,12 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_StreamInfoDynamicType
 {
   /**
    * Get the `struct MHD_Request *` for current request processed by the stream.
-   * If no request is being processed, the resulting pointer is NULL.
+   * If no request is being processed, the error code #MHD_SC_TOO_EARLY is
+   * returned.
    * The result is placed in @a v_request member.
    * @ingroup request
    */
-  MHD_STREAM_INFO_DYNAMIC_REQUEST = 1
+  MHD_STREAM_INFO_DYNAMIC_REQUEST = 20
   ,
 
   /* * Sentinel * */
@@ -10000,21 +10005,25 @@ union MHD_StreamInfoDynamicData
  *
  * @param stream the stream to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
-                            by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_TOO_EARLY if the stream has not reached yet required state,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_stream_get_info_dynamic_sz (
-  struct MHD_Stream *stream,
+  struct MHD_Stream *MHD_RESTRICT stream,
   enum MHD_StreamInfoDynamicType info_type,
-  union MHD_StreamInfoDynamicData *return_value,
-  size_t return_value_size)
-MHD_FN_PAR_NONNULL_ (1)
+  union MHD_StreamInfoDynamicData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
@@ -10024,15 +10033,17 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *
  * @param stream the stream to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_TOO_EARLY if the stream has not reached yet required state,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
-#define MHD_stream_get_info_dynamic(stream,info_type,return_value) \
-        MHD_stream_get_info_dynamic_sz ((stream),(info_type),(return_value), \
-                                        sizeof(*(return_value)))
+#define MHD_stream_get_info_dynamic(stream,info_type,output_buf) \
+        MHD_stream_get_info_dynamic_sz ((stream),(info_type),(output_buf), \
+                                        sizeof(*(output_buf)))
 
 
 /**
