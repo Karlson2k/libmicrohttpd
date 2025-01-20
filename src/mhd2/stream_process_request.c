@@ -2787,6 +2787,7 @@ mhd_stream_parse_request_headers (struct MHD_Connection *restrict c)
     }
   }
 
+  c->rq.cntn.cntn_present = (has_trenc || has_cntnlen);
   if (has_trenc && has_cntnlen)
   {
     if (0 < c->daemon->req_cfg.strictness)

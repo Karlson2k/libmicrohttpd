@@ -253,6 +253,11 @@ struct mhd_ReqContentData
   struct mhd_Buffer lbuf;
 
   /**
+   * 'true' if request has any (even zero-sized) upload (content/body)
+   */
+  bool cntn_present;
+
+  /**
    * The total size of the request content.
    * #MHD_SIZE_UNKNOWN if the size is not yet known (chunked upload).
    */

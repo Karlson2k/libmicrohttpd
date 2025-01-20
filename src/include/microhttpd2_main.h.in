@@ -5436,30 +5436,13 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoFixedType
 {
   /**
-   * Return which stream the request is associated with.
-   * The result is placed in @a v_stream member.
-   */
-  MHD_REQUEST_INFO_FIXED_STREAM = 1
-  ,
-  /**
-   * Return which connection is associated with the stream which is associated
-   * with the request.
-   * The result is placed in @a v_connection member.
-   */
-  MHD_REQUEST_INFO_FIXED_CONNECTION = 2
-  ,
-  /**
-   * Return MHD daemon to which the request belongs to.
-   * The result is placed in @a v_daemon member.
-   */
-  MHD_REQUEST_INFO_FIXED_DAEMON = 3
-  ,
-  /**
    * Get the version of HTTP protocol used for the request.
+   * If request line has not been fully received yet then #MHD_SC_TOO_EARLY
+   * error code is returned.
    * The result is placed in @a v_http_ver member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_FIXED_HTTP_VER = 4
+  MHD_REQUEST_INFO_FIXED_HTTP_VER = 1
   ,
   /**
    * Get the HTTP method used for the request (as a enum).
@@ -5467,7 +5450,37 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoFixedType
    * @sa #MHD_REQUEST_INFO_DYNAMIC_HTTP_METHOD_STR
    * @ingroup request
    */
-  MHD_REQUEST_INFO_FIXED_HTTP_METHOD = 5
+  MHD_REQUEST_INFO_FIXED_HTTP_METHOD = 2
+  ,
+  /**
+   * Return MHD daemon to which the request belongs to.
+   * The result is placed in @a v_daemon member.
+   */
+  MHD_REQUEST_INFO_FIXED_DAEMON = 20
+  ,
+  /**
+   * Return which connection is associated with the stream which is associated
+   * with the request.
+   * The result is placed in @a v_connection member.
+   */
+  MHD_REQUEST_INFO_FIXED_CONNECTION = 21
+  ,
+  /**
+   * Return which stream the request is associated with.
+   * The result is placed in @a v_stream member.
+   */
+  MHD_REQUEST_INFO_FIXED_STREAM = 22
+  ,
+  /**
+   * Returns the pointer to a variable pointing to request-specific
+   * application context data. The same data is provided for
+   * #MHD_EarlyUriLogCallback and #MHD_RequestTerminationCallback.
+   * By using provided pointer application may get or set the pointer to
+   * any data specific for the particular request.
+   * The result is placed in @a v_ppvoid member.
+   * @ingroup request
+   */
+  MHD_REQUEST_INFO_FIXED_APP_CONTEXT = 30
   ,
 
   /* * Sentinel * */
@@ -5510,6 +5523,11 @@ union MHD_RequestInfoFixedData
    * The HTTP method type.
    */
   enum MHD_HTTP_Method v_http_method;
+
+  /**
+   * The pointer to pointer to the data.
+   */
+  void **v_ppvoid;
 };
 
 /**
@@ -5519,23 +5537,27 @@ union MHD_RequestInfoFixedData
  *
  * @param request the request to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
- *                          by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_TOO_EARLY if the request processing has not reached yet
+ *                           the required state,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_request_get_info_fixed_sz (
   struct MHD_Request *MHD_RESTRICT request,
   enum MHD_RequestInfoFixedType info_type,
-  union MHD_RequestInfoFixedData *MHD_RESTRICT return_value,
-  size_t return_value_size)
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3)
-MHD_FN_PURE_;
+  union MHD_RequestInfoFixedData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
 /**
@@ -5544,15 +5566,18 @@ MHD_FN_PURE_;
  *
  * @param request the request to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
  * @return #MHD_SC_OK if succeed,
- *         error code otherwise
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_TOO_EARLY if the request processing has not reached yet
+ *                           the required state,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
-#define MHD_request_get_info_fixed(request,info_type,return_value) \
-        MHD_request_get_info_fixed_sz ((request), (info_type), (return_value), \
-                                       sizeof(*(return_value)))
+#define MHD_request_get_info_fixed(request,info_type,output_buf) \
+        MHD_request_get_info_fixed_sz ((request), (info_type), (output_buf), \
+                                       sizeof(*(output_buf)))
 
 
 /**
@@ -5596,11 +5621,19 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   MHD_REQUEST_INFO_DYNAMIC_NUMBER_COOKIES = 4
   ,
   /**
+   * Return length of the client's HTTP request header.
+   * This is a total raw size of the header (after TLS decipher if any)
+   * The result is placed in @a v_sizet member.
+   * @ingroup request
+   */
+  MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE = 5
+  ,
+  /**
    * Get the number of decoded POST entries in the request.
    * The result is placed in @a v_sizet member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_NUMBER_POST_PARAMS = 5
+  MHD_REQUEST_INFO_DYNAMIC_NUMBER_POST_PARAMS = 6
   ,
   /**
    * Get whether the upload content is present in the request.
@@ -5612,13 +5645,21 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_PRESENT = 10
   ,
   /**
+   * Get whether the chunked upload content is present in the request.
+   * The result is #MHD_YES if chunked upload content is present.
+   * The result is placed in @a v_bool member.
+   * @ingroup request
+   */
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_CHUNKED = 11
+  ,
+  /**
    * Get the total content upload size.
    * Resulted in zero if no content upload or upload content size is zero,
    * #MHD_SIZE_UNKNOWN if size is not known (chunked upload).
    * The result is placed in @a v_uint64 member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TOTAL = 11
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TOTAL = 12
   ,
   /**
    * Get the total size of the content upload already received from the client.
@@ -5627,7 +5668,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * The result is placed in @a v_uint64 member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_RECIEVED = 12
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_RECIEVED = 13
   ,
   /**
    * Get the total size of the content upload left to be received from
@@ -5636,7 +5677,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * The result is placed in @a v_uint64 member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_RECIEVE = 13
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_RECIEVE = 14
   ,
   /**
    * Get the total size of the content upload already processed (upload callback
@@ -5646,7 +5687,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * The result is placed in @a v_uint64 member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_PROCESSED = 14
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_PROCESSED = 15
   ,
   /**
    * Get the total size of the content upload left to be processed.
@@ -5658,26 +5699,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * The result is placed in @a v_uint64 member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_PROCESS = 15
-  ,
-  /**
-   * Return length of the client's HTTP request header.
-   * This is a total raw size of the header (after TLS decipher if any)
-   * The result is placed in @a v_sizet member.
-   * @ingroup request
-   */
-  MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE = 21
-  ,
-  /**
-   * Returns the request-specific pointer to a `void *`. The pointer obtainable
-   * by this pointer is the same as provided for #MHD_EarlyUriLogCallback and
-   * #MHD_RequestTerminationCallback.
-   * By using provided pointer application may get or set the pointer to
-   * any data specific for the particular request.
-   * The result is placed in @a v_ppvoid member.
-   * @ingroup request
-   */
-  MHD_REQUEST_INFO_DYNAMIC_APP_CONTEXT = 31
+  MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_PROCESS = 16
   ,
   /**
    * Returns pointer to information about username in client's digest auth
@@ -5745,10 +5767,6 @@ union MHD_RequestInfoDynamicData
    * The unsigned 64 bits integer
    */
   uint_fast64_t v_uint64;
-  /**
-   * The pointer to pointer to the data.
-   */
-  void **v_ppvoid;
 
   /**
    * The information about client provided username for digest auth
@@ -5772,6 +5790,9 @@ union MHD_RequestInfoDynamicData
 /**
  * Obtain dynamic information about the given request.
  * This information may be changed during the lifetime of the request.
+ * Most of the data provided is available only when the request line or complete
+ * request headers are processed and not available if responding has been
+ * started.
  * The wrapper macro #MHD_request_get_info_dynamic() could be more convenient.
  *
  * Any pointers in the returned data are valid until any MHD_Action or
@@ -5780,18 +5801,62 @@ union MHD_RequestInfoDynamicData
  *
  * @param request the request to get information about
  * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @param return_value_size the size of the memory area pointed
- *                          by @a return_data, in bytes
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @param output_buf_size the size of the memory area pointed by @a output_buf
+ *                        (provided by the caller for storing the requested
+ *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a return_value_size is too small,
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if requested information type is
+ *                                       not recognized by MHD,
  *         #MHD_SC_TOO_LATE if request is already being closed or the response
  *                          is being sent
  *         #MHD_SC_TOO_EARLY if requested data is not yet ready (for example,
  *                           headers are not yet received),
+ *         #MHD_SC_FEATURE_DISABLED if requested functionality is not supported
+ *                                  by this MHD build,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         #MHD_SC_AUTH_ABSENT if request does not have particular Auth data,
+ *         #MHD_SC_CONNECTION_POOL_NO_MEM_AUTH_DATA if connection memory pool
+ *                                                  has no space to put decoded
+ *                                                  authentication data,
+ *         #MHD_SC_REQ_AUTH_DATA_BROKEN if the format of authentication data is
+ *                                      incorrect or broken,
+ *         other error codes in case of other errors
+ * @ingroup specialized
+ */
+MHD_EXTERN_ enum MHD_StatusCode
+MHD_request_get_info_dynamic_sz (
+  struct MHD_Request *MHD_RESTRICT request,
+  enum MHD_RequestInfoDynamicType info_type,
+  union MHD_RequestInfoDynamicData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
+
+
+/**
+ * Obtain dynamic information about the given request.
+ * This information may be changed during the lifetime of the request.
+ * Most of the data provided is available only when the request line or complete
+ * request headers are processed and not available if responding has been
+ * started.
+ *
+ * Any pointers in the returned data are valid until any MHD_Action or
+ * MHD_UploadAction is provided. If the data is needed beyond this point,
+ * it should be copied.
+ *
+ * @param request the request to get information about
+ * @param info_type the type of information requested
+ * @param[out] output_buf the pointer to union to be set to the requested
+ *                        information
+ * @return #MHD_SC_OK if succeed,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if requested information type is
  *                                       not recognized by MHD,
+ *         #MHD_SC_TOO_LATE if request is already being closed or the response
+ *                          is being sent
+ *         #MHD_SC_TOO_EARLY if requested data is not yet ready (for example,
+ *                           headers are not yet received),
  *         #MHD_SC_FEATURE_DISABLED if requested functionality is not supported
  *                                  by this MHD build,
  *         #MHD_SC_AUTH_ABSENT if request does not have particular Auth data,
@@ -5800,35 +5865,13 @@ union MHD_RequestInfoDynamicData
  *                                                  authentication data,
  *         #MHD_SC_REQ_AUTH_DATA_BROKEN if the format of authentication data is
  *                                      incorrect or broken,
- *         other error code otherwise
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
-MHD_EXTERN_ enum MHD_StatusCode
-MHD_request_get_info_dynamic_sz (
-  struct MHD_Request *MHD_RESTRICT request,
-  enum MHD_RequestInfoDynamicType info_type,
-  union MHD_RequestInfoDynamicData *MHD_RESTRICT return_value,
-  size_t return_value_size)
-MHD_FN_PAR_NONNULL_ (1)
-MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
-
-
-/**
- * Obtain dynamic information about the given request.
- * This information may be changed during the lifetime of the request.
- *
- * @param request the request to get information about
- * @param info_type the type of information requested
- * @param[out] return_value pointer to union where requested information will
- *                          be stored
- * @return #MHD_SC_OK if succeed,
- *         error code otherwise
- * @ingroup specialized
- */
-#define MHD_request_get_info_dynamic(request,info_type,return_value) \
+#define MHD_request_get_info_dynamic(request,info_type,output_buf) \
         MHD_request_get_info_dynamic_sz ((request), (info_type), \
-                                         (return_value), \
-                                         sizeof(*(return_value)))
+                                         (output_buf), \
+                                         sizeof(*(output_buf)))
 
 /**
  * Callback for serious error condition. The default action is to print
