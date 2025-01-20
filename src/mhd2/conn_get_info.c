@@ -37,13 +37,13 @@
 
 #include "mhd_public_api.h"
 
-MHD_EXTERN_
+MHD_EXTERN_ MHD_FN_MUST_CHECK_RESULT_
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
 MHD_connection_get_info_fixed_sz (
-  struct MHD_Connection *connection,
+  struct MHD_Connection *MHD_RESTRICT connection,
   enum MHD_ConnectionInfoFixedType info_type,
-  union MHD_ConnectionInfoFixedData *output_buf,
+  union MHD_ConnectionInfoFixedData *MHD_RESTRICT output_buf,
   size_t output_buf_size)
 {
   switch (info_type)
@@ -83,13 +83,13 @@ MHD_connection_get_info_fixed_sz (
 }
 
 
-MHD_EXTERN_
+MHD_EXTERN_ MHD_FN_MUST_CHECK_RESULT_
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
 MHD_connection_get_info_dynamic_sz (
-  struct MHD_Connection *connection,
+  struct MHD_Connection *MHD_RESTRICT connection,
   enum MHD_ConnectionInfoDynamicType info_type,
-  union MHD_ConnectionInfoDynamicData *output_buf,
+  union MHD_ConnectionInfoDynamicData *MHD_RESTRICT output_buf,
   size_t output_buf_size)
 {
   switch (info_type)

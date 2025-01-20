@@ -43,13 +43,14 @@
 
 #include "mhd_public_api.h"
 
-MHD_EXTERN_
+MHD_EXTERN_ MHD_FN_MUST_CHECK_RESULT_
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
-MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
-                              enum MHD_DaemonInfoFixedType info_type,
-                              union MHD_DaemonInfoFixedData *output_buf,
-                              size_t output_buf_size)
+MHD_daemon_get_info_fixed_sz (
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  enum MHD_DaemonInfoFixedType info_type,
+  union MHD_DaemonInfoFixedData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
 {
   if (mhd_DAEMON_STATE_STARTED > daemon->state)
     return MHD_SC_TOO_EARLY;
@@ -138,13 +139,14 @@ MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
 }
 
 
-MHD_EXTERN_
+MHD_EXTERN_ MHD_FN_MUST_CHECK_RESULT_
 MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3) enum MHD_StatusCode
-MHD_daemon_get_info_dynamic_sz (struct MHD_Daemon *daemon,
-                                enum MHD_DaemonInfoDynamicType info_type,
-                                union MHD_DaemonInfoDynamicData *output_buf,
-                                size_t output_buf_size)
+MHD_daemon_get_info_dynamic_sz (
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  enum MHD_DaemonInfoDynamicType info_type,
+  union MHD_DaemonInfoDynamicData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
 {
   if (mhd_DAEMON_STATE_STARTED > daemon->state)
     return MHD_SC_TOO_EARLY;

@@ -80,7 +80,7 @@
 MHD_EXTERN_
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2) enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
-                           union MHD_LibInfoFixedData *output_buf,
+                           union MHD_LibInfoFixedData *MHD_RESTRICT output_buf,
                            size_t output_buf_size)
 {
   switch (info_type)
@@ -435,12 +435,13 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
 }
 
 
-MHD_EXTERN_
+MHD_EXTERN_ MHD_FN_MUST_CHECK_RESULT_
 MHD_FN_PAR_NONNULL_ (2)
 MHD_FN_PAR_OUT_ (2) enum MHD_StatusCode
-MHD_lib_get_info_dynamic_sz (enum MHD_LibInfoDynamic info_type,
-                             union MHD_LibInfoDynamicData *output_buf,
-                             size_t output_buf_size)
+MHD_lib_get_info_dynamic_sz (
+  enum MHD_LibInfoDynamic info_type,
+  union MHD_LibInfoDynamicData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
 {
   switch (info_type)
   {

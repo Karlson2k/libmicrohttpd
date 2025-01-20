@@ -1,6 +1,6 @@
 /*
   This file is part of GNU libmicrohttpd
-  Copyright (C) 2006-2024 Christian Grothoff, Karlson2k (Evgeny Grin)
+  Copyright (C) 2006-2025 Christian Grothoff, Karlson2k (Evgeny Grin)
   (and other contributing authors)
 
   GNU libmicrohttpd is free software; you can redistribute it and/or
@@ -8988,7 +8988,7 @@ union MHD_LibInfoFixedData
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
-                           union MHD_LibInfoFixedData *output_buf,
+                           union MHD_LibInfoFixedData *MHD_RESTRICT output_buf,
                            size_t output_buf_size)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 
@@ -9136,10 +9136,11 @@ union MHD_LibInfoDynamicData
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_lib_get_info_dynamic_sz (enum MHD_LibInfoDynamic info_type,
-                             union MHD_LibInfoDynamicData *output_buf,
-                             size_t output_buf_size)
-MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
+MHD_lib_get_info_dynamic_sz (
+  enum MHD_LibInfoDynamic info_type,
+  union MHD_LibInfoDynamicData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 
 /**
  * Get dynamic information about MHD that may be changed at run-time.
@@ -9291,11 +9292,12 @@ union MHD_DaemonInfoFixedData
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_get_info_fixed_sz (struct MHD_Daemon *daemon,
-                              enum MHD_DaemonInfoFixedType info_type,
-                              union MHD_DaemonInfoFixedData *output_buf,
-                              size_t output_buf_size)
-MHD_FN_PAR_NONNULL_ (1)
+MHD_daemon_get_info_fixed_sz (
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  enum MHD_DaemonInfoFixedType info_type,
+  union MHD_DaemonInfoFixedData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 /**
@@ -9421,11 +9423,12 @@ union MHD_DaemonInfoDynamicData
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_daemon_get_info_dynamic_sz (struct MHD_Daemon *daemon,
-                                enum MHD_DaemonInfoDynamicType info_type,
-                                union MHD_DaemonInfoDynamicData *output_buf,
-                                size_t output_buf_size)
-MHD_FN_PAR_NONNULL_ (1)
+MHD_daemon_get_info_dynamic_sz (
+  struct MHD_Daemon *MHD_RESTRICT daemon,
+  enum MHD_DaemonInfoDynamicType info_type,
+  union MHD_DaemonInfoDynamicData *MHD_RESTRICT output_buf,
+  size_t output_buf_size)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 /**
@@ -9569,11 +9572,11 @@ union MHD_ConnectionInfoFixedData
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_connection_get_info_fixed_sz (
-  struct MHD_Connection *connection,
+  struct MHD_Connection *MHD_RESTRICT connection,
   enum MHD_ConnectionInfoFixedType info_type,
-  union MHD_ConnectionInfoFixedData *output_buf,
+  union MHD_ConnectionInfoFixedData *MHD_RESTRICT output_buf,
   size_t output_buf_size)
-MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
@@ -9824,11 +9827,11 @@ union MHD_ConnectionInfoDynamicData
  */
 MHD_EXTERN_ enum MHD_StatusCode
 MHD_connection_get_info_dynamic_sz (
-  struct MHD_Connection *connection,
+  struct MHD_Connection *MHD_RESTRICT connection,
   enum MHD_ConnectionInfoDynamicType info_type,
-  union MHD_ConnectionInfoDynamicData *output_buf,
+  union MHD_ConnectionInfoDynamicData *MHD_RESTRICT output_buf,
   size_t output_buf_size)
-MHD_FN_PAR_NONNULL_ (1)
+MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (1)
 MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
 
 
