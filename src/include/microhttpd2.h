@@ -8982,8 +8982,8 @@ union MHD_LibInfoFixedData
  *                        (provided by the caller for storing the requested
  *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
- *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown
+ *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -9130,8 +9130,8 @@ union MHD_LibInfoDynamicData
  *                        (provided by the caller for storing the requested
  *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         or other error code
  * @ingroup specialized
  */
@@ -9277,7 +9277,6 @@ union MHD_DaemonInfoFixedData
  *         #MHD_SC_TOO_EARLY if the daemon has not been started yet,
  *         #MHD_SC_TOO_LATE if the daemon is being stopped or has failed,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
  *                                              daemon due to the daemon
@@ -9287,7 +9286,8 @@ union MHD_DaemonInfoFixedData
  *                                            the daemon, but cannot be provided
  *                                            due to some error or other
  *                                            reasons,
- *         other error code in case of other errors
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -9320,7 +9320,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *                                            the daemon, but cannot be provided
  *                                            due to some error or other
  *                                            reasons,
- *         other error code in case of other errors
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 #define MHD_daemon_get_info_fixed(daemon,info_type,output_buf) \
@@ -9407,7 +9407,6 @@ union MHD_DaemonInfoDynamicData
  *         #MHD_SC_TOO_EARLY if the daemon has not been started yet,
  *         #MHD_SC_TOO_LATE if the daemon is being stopped or has failed,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
  *                                              daemon due to the daemon
@@ -9417,7 +9416,8 @@ union MHD_DaemonInfoDynamicData
  *                                            the daemon, but cannot be provided
  *                                            due to some error or other
  *                                            reasons,
- *         other error code in case of other errors
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -9449,7 +9449,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *                                            the daemon, but cannot be provided
  *                                            due to some error or other
  *                                            reasons,
- *         other error code in case of other errors
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 #define MHD_daemon_get_info_dynamic(daemon,info_type,output_buf) \
@@ -9554,7 +9554,6 @@ union MHD_ConnectionInfoFixedData
  *                        information), in bytes
  * @return #MHD_SC_OK if succeed,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
  *                                              connection due to the connection
@@ -9564,7 +9563,8 @@ union MHD_ConnectionInfoFixedData
  *                                            the connection, but cannot be
  *                                            provided due to some error or
  *                                            other reasons,
- *         other error code in case of other errors
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -9587,7 +9587,6 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *                        information
  * @return #MHD_SC_OK if succeed,
  *         #MHD_SC_INFO_GET_TYPE_UNKNOWN if @a info_type value is unknown,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information
  *                                              is not available for this
  *                                              connection due to the connection
@@ -9597,7 +9596,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *                                            the connection, but cannot be
  *                                            provided due to some error or
  *                                            other reasons,
- *         other error code in case of other errors
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 #define MHD_connection_get_info_fixed(connection,info_type,output_buf) \
@@ -9814,13 +9813,13 @@ union MHD_ConnectionInfoDynamicData
  *                                              is not available for this
  *                                              connection due to the connection
  *                                              configuration/mode,
+ *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
  *         #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the requested information
  *                                            should be available for
  *                                            the connection, but cannot be
  *                                            provided due to some error or
  *                                            other reasons,
- *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
- *         other error code in case of other errors
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -9856,7 +9855,7 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *                                            the connection, but cannot be
  *                                            provided due to some error or
  *                                            other reasons,
- *         other error code in case of other errors
+ *         other error codes in case of other errors
  * @ingroup specialized
  */
 #define MHD_connection_get_info_dynamic(connection,info_type,output_buf) \
