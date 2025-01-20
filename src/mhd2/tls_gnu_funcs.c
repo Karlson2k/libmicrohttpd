@@ -50,8 +50,6 @@
 #include "tls_gnu_funcs.h"
 
 #include "daemon_options.h"
-
-#include "mhd_public_api.h"
 #include "daemon_logger.h"
 
 #ifdef  mhd_TLS_GNU_DH_PARAMS_NEEDS_PKCS3
@@ -61,6 +59,8 @@
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 #  include <stdio.h> /* For TLS debug printing */
 #endif
+
+#include "mhd_public_api.h"
 
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 static void
@@ -782,4 +782,47 @@ mhd_tls_gnu_conn_send (struct mhd_TlsGnuConnData *restrict c_tls,
 
   *sent = (size_t) res;
   return mhd_SOCKET_ERR_NO_ERROR;
+}
+
+
+/* ** TLS connection information ** */
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) void
+mhd_tls_gnu_conn_get_tls_sess (
+  struct mhd_TlsGnuConnData *restrict c_tls,
+  union MHD_ConnInfoDynamicTlsSess *restrict tls_sess_out)
+{
+  tls_sess_out->v_gnutls_session = c_tls->sess;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) bool
+mhd_tls_gnu_conn_get_tls_ver (struct mhd_TlsGnuConnData *restrict c_tls,
+                              enum MHD_TlsVersion *restrict tls_ver_out)
+{
+  gnutls_protocol_t gtls_tls_ver;
+
+  mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+
+  gtls_tls_ver = gnutls_protocol_get_version (c_tls->sess);
+#if GNUTLS_VERSION_NUMBER >= 0x030603
+  if (GNUTLS_TLS1_3 == gtls_tls_ver)
+    *tls_ver_out = MHD_TLS_VERSION_1_3;
+  else
+#endif
+  if (GNUTLS_TLS1_2 == gtls_tls_ver)
+    *tls_ver_out = MHD_TLS_VERSION_1_2;
+  else if (GNUTLS_TLS1_1 == gtls_tls_ver)
+    *tls_ver_out = MHD_TLS_VERSION_1_1;
+  else if (GNUTLS_TLS1_0 == gtls_tls_ver)
+    *tls_ver_out = MHD_TLS_VERSION_1_0;
+  else if (GNUTLS_VERSION_UNKNOWN == gtls_tls_ver)
+    return false;
+  else
+    /* The TLS version is know for GnuTLS, but cannot be mapped */
+    *tls_ver_out = MHD_TLS_VERSION_UNKNOWN;
+
+  return true;
 }

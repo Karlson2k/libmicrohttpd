@@ -51,13 +51,13 @@
 #endif
 
 #include "daemon_options.h"
-
-#include "mhd_public_api.h"
 #include "daemon_logger.h"
 
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 #  include <stdio.h> /* For TLS debug printing */
 #endif
+
+#include "mhd_public_api.h"
 
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 #  define mhd_M_DEBUG_PRINT(msg) \
@@ -622,4 +622,72 @@ mhd_tls_multi_conn_send (struct mhd_TlsMultiConnData *restrict c_tls,
     break;
   }
   return mhd_SOCKET_ERR_INTERNAL;
+}
+
+
+/* ** TLS connection information ** */
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) void
+mhd_tls_multi_conn_get_tls_sess (
+  struct mhd_TlsMultiConnData *restrict c_tls,
+  union MHD_ConnInfoDynamicTlsSess *restrict tls_sess_out)
+{
+  switch (c_tls->choice)
+  {
+#ifdef MHD_SUPPORT_GNUTLS
+  case mhd_TLS_MULTI_ROUTE_GNU:
+    mhd_tls_gnu_conn_get_tls_sess (c_tls->data.gnutls,
+                                   tls_sess_out);
+    break;
+#endif
+#ifdef MHD_SUPPORT_OPENSSL
+  case mhd_TLS_MULTI_ROUTE_OPEN:
+    mhd_tls_open_conn_get_tls_sess (c_tls->data.openssl,
+                                    tls_sess_out);
+    break;
+#endif
+#ifndef MHD_SUPPORT_GNUTLS
+  case MHD_TLS_BACKEND_GNUTLS:
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
+  case MHD_TLS_BACKEND_OPENSSL:
+#endif /* ! MHD_SUPPORT_OPENSSL */
+  case mhd_TLS_MULTI_ROUTE_NONE:
+  default:
+    mhd_UNREACHABLE ();
+    break;
+  }
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) bool
+mhd_tls_multi_conn_get_tls_ver (struct mhd_TlsMultiConnData *restrict c_tls,
+                                enum MHD_TlsVersion *restrict tls_ver_out)
+{
+  switch (c_tls->choice)
+  {
+#ifdef MHD_SUPPORT_GNUTLS
+  case mhd_TLS_MULTI_ROUTE_GNU:
+    return mhd_tls_gnu_conn_get_tls_ver (c_tls->data.gnutls,
+                                         tls_ver_out);
+#endif
+#ifdef MHD_SUPPORT_OPENSSL
+  case mhd_TLS_MULTI_ROUTE_OPEN:
+    return mhd_tls_open_conn_get_tls_ver (c_tls->data.openssl,
+                                          tls_ver_out);
+#endif
+#ifndef MHD_SUPPORT_GNUTLS
+  case MHD_TLS_BACKEND_GNUTLS:
+#endif /* ! MHD_SUPPORT_GNUTLS */
+#ifndef MHD_SUPPORT_OPENSSL
+  case MHD_TLS_BACKEND_OPENSSL:
+#endif /* ! MHD_SUPPORT_OPENSSL */
+  case mhd_TLS_MULTI_ROUTE_NONE:
+  default:
+    mhd_UNREACHABLE ();
+    break;
+  }
+  return false;
 }

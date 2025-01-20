@@ -51,6 +51,9 @@ struct mhd_TlsGnuDaemonData;    /* Forward declaration */
  */
 struct mhd_TlsGnuConnData;      /* Forward declaration */
 
+union MHD_ConnInfoDynamicTlsSess; /* Forward declaration */
+
+enum MHD_TlsVersion;      /* Forward declaration */
 
 /* ** Global initialisation / de-initialisation ** */
 
@@ -248,5 +251,31 @@ mhd_tls_gnu_conn_send (struct mhd_TlsGnuConnData *restrict c_tls,
                        const char buf[MHD_FN_PAR_DYN_ARR_SIZE_ (buf_size)],
                        size_t *restrict sent)
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2) MHD_FN_PAR_OUT_ (4);
+
+
+/* ** TLS connection information ** */
+
+/**
+ * Get the TLS session used in connection
+ * @param c_tls the connection TLS handle
+ * @param tls_ver_out the pointer to variable to be set to the TLS version
+ */
+MHD_INTERNAL void
+mhd_tls_gnu_conn_get_tls_sess (
+  struct mhd_TlsGnuConnData *restrict c_tls,
+  union MHD_ConnInfoDynamicTlsSess *restrict tls_sess_out)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
+
+/**
+ * Get the TLS version used in connection
+ * @param c_tls the connection TLS handle
+ * @param tls_ver_out the pointer to variable to be set to the TLS version
+ * @return 'true' is TLS version information set successfully,
+ *         'false' if TLS version information cannot be obtained or mapped
+ */
+MHD_INTERNAL bool
+mhd_tls_gnu_conn_get_tls_ver (struct mhd_TlsGnuConnData *restrict c_tls,
+                              enum MHD_TlsVersion *restrict tls_ver_out)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
 
 #endif /* ! MHD_TLS_GNU_FUNCS_H */

@@ -49,11 +49,11 @@
 
 #include "daemon_logger.h"
 
-#include "mhd_public_api.h"
-
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 #  include <stdio.h> /* For TLS debug printing */
 #endif
+
+#include "mhd_public_api.h"
 
 #ifdef mhd_USE_TLS_DEBUG_MESSAGES
 
@@ -1185,4 +1185,50 @@ mhd_tls_open_conn_send (struct mhd_TlsOpenConnData *restrict c_tls,
   c_tls->dbg.is_failed = true;
 #endif /* ! NDEBUG */
   return mhd_SOCKET_ERR_TLS;
+}
+
+
+/* ** TLS connection information ** */
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) void
+mhd_tls_open_conn_get_tls_sess (
+  struct mhd_TlsOpenConnData *restrict c_tls,
+  union MHD_ConnInfoDynamicTlsSess *restrict tls_sess_out)
+{
+  tls_sess_out->v_openssl_session = c_tls->sess;
+}
+
+
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_OUT_ (2) bool
+mhd_tls_open_conn_get_tls_ver (struct mhd_TlsOpenConnData *restrict c_tls,
+                               enum MHD_TlsVersion *restrict tls_ver_out)
+{
+  int openssl_tls_ver;
+
+  mhd_assert (c_tls->dbg.is_tls_handshake_completed);
+
+  openssl_tls_ver = SSL_version (c_tls->sess);
+  switch (openssl_tls_ver)
+  {
+  case TLS1_VERSION:
+    *tls_ver_out = MHD_TLS_VERSION_1_0;
+    break;
+  case TLS1_1_VERSION:
+    *tls_ver_out = MHD_TLS_VERSION_1_1;
+    break;
+  case TLS1_2_VERSION:
+    *tls_ver_out = MHD_TLS_VERSION_1_2;
+    break;
+  case TLS1_3_VERSION:
+    *tls_ver_out = MHD_TLS_VERSION_1_3;
+    break;
+  case SSL3_VERSION:
+  default:
+    *tls_ver_out = MHD_TLS_VERSION_UNKNOWN;
+    break;
+  }
+
+  return true;
 }

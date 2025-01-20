@@ -186,6 +186,27 @@
         mhd_TLS_FUNC (_conn_send)((c_tls),(buf_size),(buf),(sent))
 
 
+/* ** TLS connection information ** */
+
+/**
+ * Get the TLS session used in connection
+ * @param c_tls the connection TLS handle
+ * @param tls_ver_out the pointer to variable to be set to the TLS version
+ */
+#define mhd_tls_conn_get_tls_sess(c_tls,tls_sess_out) \
+        mhd_TLS_FUNC (_conn_get_tls_sess)((c_tls),(tls_sess_out))
+
+/**
+ * Get the TLS version used in connection
+ * @param c_tls the connection TLS handle
+ * @param tls_ver_out the pointer to variable to be set to the TLS version
+ * @return 'true' is TLS version information set successfully,
+ *         'false' if TLS version information cannot be obtained or mapped
+ */
+#define mhd_tls_conn_get_tls_ver(c_tls,tls_ver_out)     \
+        mhd_TLS_FUNC (_conn_get_tls_ver)((c_tls),(tls_ver_out))
+
+
 /* ** General information function ** */
 
 /**
