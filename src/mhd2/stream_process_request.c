@@ -1186,7 +1186,10 @@ mhd_parse_get_args (size_t args_len,
     }
     if (i < args_len) /* Zero-terminate if not terminated */
       args[i] = 0;
-    mhd_assert (0 == args[i]);
+
+    /* assert below does not work correctly when compiler checks for
+       the provided buffer size */
+    /* mhd_assert (0 == args[i]);  */
 
     /* Store found parameter */
 
