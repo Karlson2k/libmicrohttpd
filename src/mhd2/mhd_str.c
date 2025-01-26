@@ -1549,7 +1549,8 @@ mhd_uint8_to_str_pad (uint8_t val,
 }
 
 
-MHD_INTERNAL size_t
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (1, 2) MHD_FN_PAR_OUT_ (3) size_t
 mhd_bin_to_hex (const void *restrict bin,
                 size_t size,
                 char *restrict hex)
@@ -1569,7 +1570,8 @@ mhd_bin_to_hex (const void *restrict bin,
 }
 
 
-MHD_INTERNAL size_t
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
+MHD_FN_PAR_IN_SIZE_ (1, 2) MHD_FN_PAR_OUT_ (3) size_t
 mhd_bin_to_hex_z (const void *restrict bin,
                   size_t size,
                   char *restrict hex)
