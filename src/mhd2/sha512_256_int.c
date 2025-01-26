@@ -458,12 +458,7 @@ mhd_SHA512_256_update (struct mhd_Sha512_256CtxInt *restrict ctx,
   unsigned int bytes_have; /**< Number of bytes in the context buffer */
   uint64_t count_hi; /**< The high part to be moved to another variable */
 
-  mhd_assert ((data != NULL) || (size == 0));
-
-#ifndef MHD_FAVOR_SMALL_CODE
-  if (0 == size)
-    return; /* Shortcut, do nothing */
-#endif /* ! MHD_FAVOR_SMALL_CODE */
+  mhd_assert (0 != size);
 
   /* Note: (count & (mhd_SHA512_256_BLOCK_SIZE-1))
            equals (count % mhd_SHA512_256_BLOCK_SIZE) for this block size. */

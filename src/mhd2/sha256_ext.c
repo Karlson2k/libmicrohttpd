@@ -68,6 +68,8 @@ mhd_SHA256_update (struct mhd_Sha256CtxExt *ctx,
                    size_t size,
                    const uint8_t *data)
 {
+  mhd_assert (0 != size);
+
   if (0 == ctx->ext_error)
     ctx->ext_error = gnutls_hash (ctx->handle, data, size);
 }

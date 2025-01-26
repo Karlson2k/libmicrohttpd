@@ -399,12 +399,7 @@ mhd_SHA256_update (struct mhd_Sha256CtxInt *restrict ctx,
 {
   unsigned bytes_have; /**< Number of bytes in buffer */
 
-  mhd_assert ((data != NULL) || (size == 0));
-
-#ifndef MHD_FAVOR_SMALL_CODE
-  if (0 == size)
-    return; /* Shortcut, do nothing */
-#endif /* MHD_FAVOR_SMALL_CODE */
+  mhd_assert (0 != size);
 
   /* Note: (count & (mhd_SHA256_BLOCK_SIZE-1))
            equals (count % mhd_SHA256_BLOCK_SIZE) for this block size. */
