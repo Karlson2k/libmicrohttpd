@@ -35,6 +35,14 @@
 #include <curl/curl.h>
 #include <assert.h>
 
+#ifndef CURL_VERSION_BITS
+#  define CURL_VERSION_BITS(x,y,z) ((x) << 16 | (y) << 8 | (z))
+#endif
+#ifndef CURL_AT_LEAST_VERSION
+#  define CURL_AT_LEAST_VERSION(x,y,z) \
+        (LIBCURL_VERSION_NUM >= CURL_VERSION_BITS (x, y, z))
+#endif
+
 const struct MHD_Action *
 MHDT_server_reply_text (
   void *cls,
@@ -799,7 +807,11 @@ MHDT_server_reply_check_digest_auth (
   const char *password;
   enum MHD_DigestAuthResult dar;
   const char *realm = "test-realm";
+#if CURL_AT_LEAST_VERSION (7,57,0)
   enum MHD_DigestAuthAlgo algo = MHD_DIGEST_AUTH_ALGO_SHA256;
+#else
+  enum MHD_DigestAuthAlgo algo = MHD_DIGEST_AUTH_ALGO_MD5;
+#endif
   size_t digest_len = MHD_digest_get_hash_size (algo);
 
   if (0 == digest_len)
