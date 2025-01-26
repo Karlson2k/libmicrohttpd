@@ -2187,7 +2187,7 @@ MHD_digest_auth_calc_userhash_hex (
   size_t hex_buf_size,
   char userhash_hex[MHD_FN_PAR_DYN_ARR_SIZE_ (hex_buf_size)])
 {
-  uint8_t userhash_bin[mhd_MAX_DIGEST];
+  uint8_t userhash_bin[mhd_MAX_DIGEST] = { 0u /* mute compiler warning */ };
   size_t digest_size;
   enum MHD_StatusCode res;
 
