@@ -102,6 +102,8 @@ check_PROGRAMS += \
   test_create_start_destroy_ipv6
 endif
 
+check_PROGRAMS += test_lib_info_version
+
 TESTS = $(check_PROGRAMS)
 
 # The universal sources used in all tests
