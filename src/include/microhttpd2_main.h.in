@@ -4389,14 +4389,14 @@ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 #ifndef MHD_NO_STATIC_INLINE
 
 /*
- * A helper below can be used in a simple check to prevent use of downgraded
+ * A helper below can be used in a simple check preventing use of downgraded
  * library version.
- * New library version may introduce new functionality. If application uses
- * some new functionality, that is not available on earlier version, and the
- * library version is downgraded it may fail at run-time.
- * To prevent run-time failures, application may use a check list this:
+ * As new library version may introduce new functionality, and the application
+ * may detect some functionality available at application build-time, use of
+ * previous versions may lead to run-time failures.
+ * To prevent run-time failures, application may use a check like:
 
- if (MHD_lib_get_info_ver_num() < ((uint_fast32_t) MHD_VERSION)
+ if (MHD_lib_get_info_ver_num() < ((uint_fast32_t) MHD_VERSION))
    handle_init_failure();
 
  */
