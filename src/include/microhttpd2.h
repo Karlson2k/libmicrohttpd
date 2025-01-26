@@ -9036,6 +9036,25 @@ MHD_lib_get_info_ver_num (void)
   return data.v_uint32;
 }
 
+
+MHD_STATIC_INLINE_END_
+/**
+ * Get the fixed boolean information about the library.
+ * @param info the type of requested information, must be the value with
+ *             the boolean resulting data; behaviour is undefined if other
+ *             types of requested information is used
+ * @return #MHD_YES or #MHD_NO
+ */
+MHD_STATIC_INLINE_ MHD_FN_PURE_ enum MHD_Bool
+MHD_lib_get_fixed_info_bool (enum MHD_LibInfoFixed info_type)
+{
+  union MHD_LibInfoFixedData data;
+  (void) MHD_lib_get_info_fixed (info_type, \
+                                 &data); /* Never fail */
+  return data.v_bool;
+}
+
+
 MHD_STATIC_INLINE_END_
 #endif /* ! MHD_NO_STATIC_INLINE */
 
