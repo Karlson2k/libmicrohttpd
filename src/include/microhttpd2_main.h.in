@@ -1476,10 +1476,10 @@ MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
  *               needs to be valid while the response is used
  * @param free_cb the callback to free any allocated data, called
  *                when response is being destroyed, can be NULL
- *                to skip the free/cleanup callback
+ *                to skip the free/cleanup callback;
  * @param free_cb_cls the parameter for @a free_cb
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * FIXME: Call free callback on error?
+ *   on error, @a free_cb is NOT called
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
