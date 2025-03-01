@@ -718,7 +718,7 @@ struct mhd_DaemonWorkerPoolData
 /**
  * Hierarchy data for the daemon
  */
-union mhd_DeamonHierarchyData
+union mhd_DaemonHierarchyData
 {
   /**
    * The pointer to the master daemon
@@ -783,7 +783,7 @@ struct mhd_DaemonThreadingData
    * Used only when @a d_type is #mhd_DAEMON_TYPE_MASTER_CONTROL_ONLY or
    * #mhd_DAEMON_TYPE_WORKER.
    */
-  union mhd_DeamonHierarchyData hier;
+  union mhd_DaemonHierarchyData hier;
 
   /**
    * Configured settings for threading
@@ -904,7 +904,7 @@ struct mhd_DaemonRequestUriCB
 /**
  * Shared large buffer data
  */
-struct mhd_DeamonLargeBuffer
+struct mhd_DaemonLargeBuffer
 {
   /**
    * The amount of memory left allowed to be allocated for the large buffer
@@ -955,7 +955,7 @@ struct mhd_DaemonRequestProcessingSettings
   /**
    * Shared large buffer data
    */
-  struct mhd_DeamonLargeBuffer large_buf; // TODO: set from settings
+  struct mhd_DaemonLargeBuffer large_buf; // TODO: set from settings
 
   /**
    * Suppress "Date:" header in responses

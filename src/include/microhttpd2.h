@@ -2805,7 +2805,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  * @ingroup event
  */
 MHD_EXTERN_ enum MHD_StatusCode
-MHD_deamon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
+MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
                                uint_fast64_t *MHD_RESTRICT next_max_wait)
 MHD_FN_PAR_NONNULL_ (1);
 
@@ -9084,7 +9084,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
    * startup, complete initialisation is perfomed when any daemon is created
    * (or called other function which requires full initialisation).
    * The result is #MHD_YES if library is initialised state now (meaning
-   * that at least one deamon is created and not destroyed or some function
+   * that at least one daemon is created and not destroyed or some function
    * required full initialisation is running).
    * The result is placed in @a v_bool member.
    */
@@ -9359,7 +9359,7 @@ enum MHD_DaemonInfoDynamicType
   /**
    * The the maximum number of millisecond from the current moment until
    * the mandatory call of the daemon data processing function (like
-   * #MHD_deamon_process_reg_events(), #MHD_daemon_process_blocking()).
+   * #MHD_daemon_process_reg_events(), #MHD_daemon_process_blocking()).
    * If resulting value is zero then daemon data processing function should be
    * called as soon as possible as some data processing is already pending.
    * The data processing function can also be called earlier as well.
