@@ -470,24 +470,24 @@ MHD_lib_get_info_dynamic_sz (
   switch (info_type)
   {
   case MHD_LIB_INFO_DYNAMIC_INITED_FULLY_ONCE:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_inited_fully_once_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_bool =
+    output_buf->v_inited_fully_once_bool =
       mhd_lib_is_fully_initialised_once () ? MHD_YES : MHD_NO;
     return MHD_SC_OK;
   case MHD_LIB_INFO_DYNAMIC_INITED_FULLY_NOW:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_inited_fully_now_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_bool =
+    output_buf->v_inited_fully_now_bool =
       mhd_lib_is_fully_initialised_now () ? MHD_YES : MHD_NO;
     return MHD_SC_OK;
   case MHD_LIB_INFO_DYNAMIC_TYPE_TLS:
-    if (sizeof(output_buf->v_tls) <= output_buf_size)
+    if (sizeof(output_buf->v_tls_backends) <= output_buf_size)
     {
 #ifndef MHD_SUPPORT_HTTPS
-      output_buf->v_tls.tls_supported = MHD_NO;
-      output_buf->v_tls.backend_gnutls = MHD_NO;
-      output_buf->v_tls.backend_openssl = MHD_NO;
+      output_buf->v_tls_backends.tls_supported = MHD_NO;
+      output_buf->v_tls_backends.backend_gnutls = MHD_NO;
+      output_buf->v_tls_backends.backend_openssl = MHD_NO;
 #else
       bool gnutls_avail;
       bool openssl_avail;
@@ -498,11 +498,12 @@ MHD_lib_get_info_dynamic_sz (
       gnutls_avail = mhd_tls_gnu_is_inited_fine ();
       openssl_avail = mhd_tls_open_is_inited_fine ();
 
-      output_buf->v_tls.tls_supported =
-        (gnutls_avail || openssl_avail) ?
-        MHD_YES : MHD_NO;
-      output_buf->v_tls.backend_gnutls = gnutls_avail ? MHD_YES : MHD_NO;
-      output_buf->v_tls.backend_openssl = openssl_avail ? MHD_YES : MHD_NO;
+      output_buf->v_tls_backends.tls_supported =
+        (gnutls_avail || openssl_avail) ? MHD_YES : MHD_NO;
+      output_buf->v_tls_backends.backend_gnutls =
+        gnutls_avail ? MHD_YES : MHD_NO;
+      output_buf->v_tls_backends.backend_openssl =
+        openssl_avail ? MHD_YES : MHD_NO;
 
       mhd_lib_deinit_global_if_needed ();
 #endif

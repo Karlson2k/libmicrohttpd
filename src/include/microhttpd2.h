@@ -9148,24 +9148,24 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
 
   /**
    * Get whether MHD has been successfully fully initialised.
-   * MHD uses lazy initialisation: a minimal initialisation is perfomed at
-   * startup, complete initialisation is perfomed when any daemon is created
-   * (or called other function which requires full initialisation).
+   * MHD uses lazy initialisation: a minimal initialisation is performed at
+   * startup, complete initialisation is performed when any daemon is created
+   * (or when called some function which requires full initialisation).
    * The result is #MHD_NO when the library has been not yet initialised
    * completely since startup.
-   * The result is placed in @a v_bool member.
+   * The result is placed in @a v_inited_fully_once_bool member.
    */
   MHD_LIB_INFO_DYNAMIC_INITED_FULLY_ONCE = 0
   ,
   /**
-   * Get whether MHD has been successfully fully initialised.
-   * MHD uses lazy initialisation: a minimal initialisation is perfomed at
-   * startup, complete initialisation is perfomed when any daemon is created
-   * (or called other function which requires full initialisation).
+   * Get whether MHD is fully initialised.
+   * MHD uses lazy initialisation: a minimal initialisation is performed at
+   * startup, complete initialisation is perfromed when any daemon is created
+   * (or when called some function which requires full initialisation).
    * The result is #MHD_YES if library is initialised state now (meaning
    * that at least one daemon is created and not destroyed or some function
    * required full initialisation is running).
-   * The result is placed in @a v_bool member.
+   * The result is placed in @a v_inited_fully_now_bool member.
    */
   MHD_LIB_INFO_DYNAMIC_INITED_FULLY_NOW = 1
   ,
@@ -9178,7 +9178,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
    * enable backends to check for their availability.
    * If global library initialisation failed, the function returns
    * #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE error code.
-   * The result is placed in @a v_tls member.
+   * The result is placed in @a v_tls_backends member.
    */
   MHD_LIB_INFO_DYNAMIC_TYPE_TLS = 100
   ,
@@ -9200,14 +9200,19 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
 union MHD_LibInfoDynamicData
 {
   /**
-   * The boolean value
+   * The data for the #MHD_LIB_INFO_DYNAMIC_INITED_FULLY_ONCE query
    */
-  enum MHD_Bool v_bool;
+  enum MHD_Bool v_inited_fully_once_bool;
 
   /**
-   * The types of the TLS backends available
+   * The data for the #MHD_LIB_INFO_DYNAMIC_INITED_FULLY_NOW query
    */
-  struct MHD_LibInfoTLSType v_tls;
+  enum MHD_Bool v_inited_fully_now_bool;
+
+  /**
+   * The data for the #MHD_LIB_INFO_DYNAMIC_TYPE_TLS query
+   */
+  struct MHD_LibInfoTLSType v_tls_backends;
 
   /**
    * Unused member.
