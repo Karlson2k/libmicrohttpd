@@ -125,26 +125,27 @@ test_macro2_vs_func_str (void)
 {
   union MHD_LibInfoFixedData info_data;
 
-  if (! tst_EXPECT_OK (MHD_lib_get_info_fixed (MHD_LIB_INFO_FIXED_VERSION_STR, \
-                                               &info_data)))
+  if (! tst_EXPECT_OK (MHD_lib_get_info_fixed ( \
+                         MHD_LIB_INFO_FIXED_VERSION_STRING, \
+                         &info_data)))
     return 1;
 
   printf ("Checking VERSION macro vs "
           "MHD_lib_get_info_fixed (MHD_LIB_INFO_FIXED_VERSION_STR) "
           "function.\n");
-  if (NULL == info_data.v_string.cstr)
+  if (NULL == info_data.v_version_string.cstr)
   {
     fprintf (stderr, "info_data.v_string.cstr is NULL.\n");
     return 1;
   }
-  if (0 != strcmp (str_macro_ver, info_data.v_string.cstr))
+  if (0 != strcmp (str_macro_ver, info_data.v_version_string.cstr))
   {
     fprintf (stderr, "'%s' vs '%s' - FAILED.\n",
-             str_macro_ver, info_data.v_string.cstr);
+             str_macro_ver, info_data.v_version_string.cstr);
     return 1;
   }
   printf ("'%s' vs '%s' - success.\n",
-          str_macro_ver, info_data.v_string.cstr);
+          str_macro_ver, info_data.v_version_string.cstr);
   return 0;
 }
 
@@ -157,8 +158,9 @@ test_func_str_vs_macro_bin (void)
   int res;
   union MHD_LibInfoFixedData info_data;
 
-  if (! tst_EXPECT_OK (MHD_lib_get_info_fixed (MHD_LIB_INFO_FIXED_VERSION_STR, \
-                                               &info_data)))
+  if (! tst_EXPECT_OK (MHD_lib_get_info_fixed ( \
+                         MHD_LIB_INFO_FIXED_VERSION_STRING, \
+                         &info_data)))
     return 1;
 
   printf ("Checking MHD_lib_get_info_fixed(MHD_LIB_INFO_FIXED_VERSION_STR) " \
@@ -180,16 +182,16 @@ test_func_str_vs_macro_bin (void)
     exit (99);
   }
 
-  if (0 != strcmp (info_data.v_string.cstr, bin_print))
+  if (0 != strcmp (info_data.v_version_string.cstr, bin_print))
   {
     fprintf (stderr, "'%s' vs '0x%08lX' ('%s') - FAILED.\n",
-             info_data.v_string.cstr,
+             info_data.v_version_string.cstr,
              (unsigned long) bin_macro,
              bin_print);
     return 1;
   }
   printf ("'%s' vs '0x%08lX' ('%s') - success.\n",
-          info_data.v_string.cstr,
+          info_data.v_version_string.cstr,
           (unsigned long) bin_macro,
           bin_print);
   return 0;
@@ -274,27 +276,28 @@ test_func_str_format (void)
   size_t ver_len;
   union MHD_LibInfoFixedData info_data;
 
-  if (! tst_EXPECT_OK (MHD_lib_get_info_fixed (MHD_LIB_INFO_FIXED_VERSION_STR, \
-                                               &info_data)))
+  if (! tst_EXPECT_OK (MHD_lib_get_info_fixed ( \
+                         MHD_LIB_INFO_FIXED_VERSION_STRING, \
+                         &info_data)))
     return 1;
 
   printf ("Checking MHD_lib_get_info_fixed(MHD_LIB_INFO_FIXED_VERSION_STR) " \
           "function resulting value format.\n");
-  ver_len = strlen (info_data.v_string.cstr);
+  ver_len = strlen (info_data.v_version_string.cstr);
 
-  if (ver_len != info_data.v_string.len)
+  if (ver_len != info_data.v_version_string.len)
   {
     fprintf (stderr,
              "strlen(info_data.v_string.cstr) ('%lu') != "
              "info_data.v_string.len ('%lu') - FAILED.\n",
              (unsigned long) ver_len,
-             (unsigned long) info_data.v_string.len);
+             (unsigned long) info_data.v_version_string.len);
     return 1;
   }
   printf ("strlen(info_data.v_string.cstr) ('%lu') == "
           "info_data.v_string.len ('%lu') - success.\n",
           (unsigned long) ver_len,
-          (unsigned long) info_data.v_string.len);
+          (unsigned long) info_data.v_version_string.len);
   return 0;
 }
 

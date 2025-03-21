@@ -89,21 +89,20 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
   /* * Basic MHD information * */
 
   case MHD_LIB_INFO_FIXED_VERSION_NUM:
-    if (sizeof(output_buf->v_uint32) > output_buf_size)
+    if (sizeof(output_buf->v_version_num_uint32) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! MHD_VERSION
 #error MHD_VERSION is not defined
 #endif
-    output_buf->v_uint32 = (uint_fast32_t) MHD_VERSION;
+    output_buf->v_version_num_uint32 = (uint_fast32_t) MHD_VERSION;
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_VERSION_STR:
-    if (sizeof(output_buf->v_string) <= output_buf_size)
+  case MHD_LIB_INFO_FIXED_VERSION_STRING:
+    if (sizeof(output_buf->v_version_string) <= output_buf_size)
     {
 #ifdef VERSION
       static const struct MHD_String ver_str =
         mhd_MSTR_INIT (VERSION);
-      output_buf->v_string.len = ver_str.len;
-      output_buf->v_string.cstr = ver_str.cstr;
+      output_buf->v_version_string = ver_str;
       return MHD_SC_OK;
 #else  /* ! VERSION */
       static char str_buf[10] =
@@ -129,8 +128,8 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
                                str_buf + 6);
         str_buf[8] = 0;
       }
-      output_buf->v_string.len = 8;
-      output_buf->v_string.cstr = str_buf;
+      output_buf->v_version_str_string.len = 8;
+      output_buf->v_version_str_string.cstr = str_buf;
       return MHD_SC_OK;
 #endif /* ! VERSION */
     }
@@ -138,169 +137,188 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
 
   /* * Basic MHD features, buid-time configurable * */
 
-  case MHD_LIB_INFO_FIXED_HAS_LOG_MESSAGES:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_LOG_MESSAGES:
+    if (sizeof(output_buf->v_support_log_messages_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_log_messages_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_log_messages_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_AUTO_REPLIES_BODIES:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_AUTO_REPLIES_BODIES:
+    if (sizeof(output_buf->v_support_auto_replies_bodies_bool) >
+        output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_ENABLE_AUTO_MESSAGES_BODIES
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_auto_replies_bodies_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_auto_replies_bodies_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_IS_NON_DEBUG:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_is_non_debug_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef NDEBUG
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_is_non_debug_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_is_non_debug_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_THREADS:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_THREADS:
+    if (sizeof(output_buf->v_support_threads_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_THREADS
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_threads_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_threads_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_COOKIE_PARSER:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_COOKIE_PARSER:
+    if (sizeof(output_buf->v_support_cookie_parser_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_COOKIES
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_cookie_parser_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_cookie_parser_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_POST_PARSER:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_POST_PARSER:
+    if (sizeof(output_buf->v_support_post_parser_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_POST_PARSER
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_post_parser_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_post_parser_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_UPGRADE:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_UPGRADE:
+    if (sizeof(output_buf->v_support_upgrade_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_UPGRADE
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_upgrade_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_upgrade_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_AUTH_BASIC:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_AUTH_BASIC:
+    if (sizeof(output_buf->v_support_auth_basic_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_AUTH_BASIC
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_auth_basic_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_auth_basic_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_AUTH_DIGEST:
-  case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH_RFC2069:
-  case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH_USERHASH:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_AUTH_DIGEST:
+  case MHD_LIB_INFO_FIXED_SUPPORT_DIGEST_AUTH_RFC2069:
+  case MHD_LIB_INFO_FIXED_SUPPORT_DIGEST_AUTH_USERHASH:
+    /* Simplified code: values of 'v_support_auth_digest_bool',
+       'v_support_digest_auth_rfc2069_bool' and
+       'v_support_digest_auth_userhash_bool' are always the same.
+       To minimise the code size, use only the first member. The application
+       gets correct resulting values for all members. */
+    if (sizeof(output_buf->v_support_auth_digest_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_AUTH_DIGEST
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_auth_digest_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_auth_digest_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_TYPE_DIGEST_AUTH_MD5:
-    if (sizeof(output_buf->v_d_algo) > output_buf_size)
+    if (sizeof(output_buf->v_type_digest_auth_md5_algo_type) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! defined(MHD_SUPPORT_MD5)
-    output_buf->v_d_algo = MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_NOT_AVAILABLE;
+    output_buf->v_type_digest_auth_md5_algo_type =
+      MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_NOT_AVAILABLE;
 #elif ! defined(MHD_MD5_EXTR)
-    output_buf->v_d_algo = MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_BUILT_IN;
+    output_buf->v_type_digest_auth_md5_algo_type =
+      MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_BUILT_IN;
 #elif ! defined(mhd_MD5_HAS_EXT_ERROR)
-    output_buf->v_d_algo =
+    output_buf->v_type_digest_auth_md5_algo_type =
       MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_EXTERNAL_NEVER_FAIL;
 #else
-    output_buf->v_d_algo =
+    output_buf->v_type_digest_auth_md5_algo_type =
       MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_EXTERNAL_MAY_FAIL;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_TYPE_DIGEST_AUTH_SHA256:
-    if (sizeof(output_buf->v_d_algo) > output_buf_size)
+    if (sizeof(output_buf->v_type_digest_auth_sha256_algo_type) >
+        output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! defined(MHD_SUPPORT_SHA256)
-    output_buf->v_d_algo = MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_NOT_AVAILABLE;
+    output_buf->v_type_digest_auth_sha256_algo_type =
+      MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_NOT_AVAILABLE;
 #elif ! defined(MHD_SHA256_EXTR)
-    output_buf->v_d_algo = MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_BUILT_IN;
+    output_buf->v_type_digest_auth_sha256_algo_type =
+      MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_BUILT_IN;
 #elif ! defined(mhd_SHA256_HAS_EXT_ERROR)
-    output_buf->v_d_algo =
+    output_buf->v_type_digest_auth_sha256_algo_type =
       MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_EXTERNAL_NEVER_FAIL;
 #else
-    output_buf->v_d_algo =
+    output_buf->v_type_digest_auth_sha256_algo_type =
       MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_EXTERNAL_MAY_FAIL;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_TYPE_DIGEST_AUTH_SHA512_256:
-    if (sizeof(output_buf->v_d_algo) > output_buf_size)
+    if (sizeof(output_buf->v_type_digest_auth_sha512_256_algo_type) >
+        output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! defined(MHD_SUPPORT_SHA512_256)
-    output_buf->v_d_algo = MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_NOT_AVAILABLE;
+    output_buf->v_type_digest_auth_sha512_256_algo_type =
+      MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_NOT_AVAILABLE;
 #elif ! defined(MHD_SHA512_256_EXTR)
-    output_buf->v_d_algo = MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_BUILT_IN;
+    output_buf->v_type_digest_auth_sha512_256_algo_type =
+      MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_BUILT_IN;
 #elif ! defined(mhd_SHA512_256_HAS_EXT_ERROR)
-    output_buf->v_d_algo =
+    output_buf->v_type_digest_auth_sha512_256_algo_type =
       MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_EXTERNAL_NEVER_FAIL;
 #else
-    output_buf->v_d_algo =
+    output_buf->v_type_digest_auth_sha512_256_algo_type =
       MHD_LIB_INFO_FIXED_DIGEST_ALGO_TYPE_EXTERNAL_MAY_FAIL;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH_AUTH_INT:
-  case MHD_LIB_INFO_FIXED_HAS_DIGEST_AUTH_ALGO_SESSION:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_DIGEST_AUTH_AUTH_INT:
+  case MHD_LIB_INFO_FIXED_SUPPORT_DIGEST_AUTH_ALGO_SESSION:
+    /* Simplified code: values of 'v_support_digest_auth_auth_int_bool' and
+       'v_support_digest_auth_algo_session_bool' are always the same.
+       To minimise the code size, use only the first member. The application
+       gets correct resulting values for all members. */
+    if (sizeof(output_buf->v_support_digest_auth_auth_int_bool) >
+        output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_digest_auth_auth_int_bool = MHD_NO;
     return MHD_SC_OK;
 
   /* * Platform-dependent features, some are configurable at build-time * */
 
-  case MHD_LIB_INFO_FIXED_TYPE_SOCKETS_POLLING:
-    if (sizeof(output_buf->v_polling) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_TYPES_SOCKETS_POLLING:
+    if (sizeof(output_buf->v_types_sockets_polling) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_SELECT
-    output_buf->v_polling.func_select = MHD_YES;
+    output_buf->v_types_sockets_polling.func_select = MHD_YES;
 #else
-    output_buf->v_polling.func_select = MHD_NO;
+    output_buf->v_types_sockets_polling.func_select = MHD_NO;
 #endif
 #ifdef MHD_SUPPORT_POLL
-    output_buf->v_polling.func_poll = MHD_YES;
+    output_buf->v_types_sockets_polling.func_poll = MHD_YES;
 #else
-    output_buf->v_polling.func_poll = MHD_NO;
+    output_buf->v_types_sockets_polling.func_poll = MHD_NO;
 #endif
 #ifdef MHD_SUPPORT_EPOLL
-    output_buf->v_polling.tech_epoll = MHD_YES;
+    output_buf->v_types_sockets_polling.tech_epoll = MHD_YES;
 #else
-    output_buf->v_polling.tech_epoll = MHD_NO;
+    output_buf->v_types_sockets_polling.tech_epoll = MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_AGGREGATE_FD:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_AGGREGATE_FD:
+    if (sizeof(output_buf->v_support_aggregate_fd_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_SUPPORT_EPOLL
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_aggregate_fd_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_aggregate_fd_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_TYPE_IPV6:
@@ -314,113 +332,119 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
     output_buf->v_ipv6 = MHD_LIB_INFO_FIXED_IPV6_TYPE_IPV6_PURE;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_TCP_FASTOPEN:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_TCP_FASTOPEN:
+    if (sizeof(output_buf->v_support_tcp_fastopen_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef HAVE_DCLR_TCP_FASTOPEN
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_tcp_fastopen_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_support_tcp_fastopen_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_AUTODETECT_BIND_PORT:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_has_autodetect_bind_port_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef MHD_USE_GETSOCKNAME
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_has_autodetect_bind_port_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_has_autodetect_bind_port_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_SENDFILE:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_has_sendfile_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef mhd_USE_SENDFILE
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_has_sendfile_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_has_sendfile_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_AUTOSUPPRESS_SIGPIPE_INT:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_has_autosuppress_sigpipe_int_bool) >
+        output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! defined (mhd_SEND_SPIPE_SUPPRESS_NEEDED)
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_has_autosuppress_sigpipe_int_bool = MHD_YES;
 #elif defined (mhd_SEND_SPIPE_SUPPRESS_POSSIBLE) \
     || defined(mhd_HAVE_MHD_THREAD_BLOCK_SIGPIPE)
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_has_autosuppress_sigpipe_int_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_has_autosuppress_sigpipe_int_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_AUTOSUPPRESS_SIGPIPE_EXT:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_has_autosuppress_sigpipe_ext_bool) >
+        output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! defined (mhd_SEND_SPIPE_SUPPRESS_NEEDED)
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_has_autosuppress_sigpipe_ext_bool = MHD_YES;
 #elif defined (mhd_SEND_SPIPE_SUPPRESS_POSSIBLE)
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_has_autosuppress_sigpipe_ext_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_has_autosuppress_sigpipe_ext_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_HAS_THREAD_NAMES:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_has_thread_names_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #ifdef mhd_USE_THREAD_NAME
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_has_thread_names_bool = MHD_YES;
 #else
-    output_buf->v_bool = MHD_NO;
+    output_buf->v_has_thread_names_bool = MHD_NO;
 #endif
     return MHD_SC_OK;
   case MHD_LIB_INFO_FIXED_TYPE_ITC:
-    if (sizeof(output_buf->v_itc) > output_buf_size)
+    if (sizeof(output_buf->v_type_itc) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! defined(MHD_SUPPORT_THREADS)
-    output_buf->v_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_NONE;
+    output_buf->v_type_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_NONE;
 #elif defined(MHD_ITC_SOCKETPAIR_)
-    output_buf->v_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_SOCKETPAIR;
+    output_buf->v_type_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_SOCKETPAIR;
 #elif defined(MHD_ITC_PIPE_)
-    output_buf->v_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_PIPE;
+    output_buf->v_type_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_PIPE;
 #elif defined(MHD_ITC_EVENTFD_)
-    output_buf->v_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_EVENTFD;
+    output_buf->v_type_itc = MHD_LIB_INFO_FIXED_ITC_TYPE_EVENTFD;
 #else
 #error The type of ITC is not defined
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_HAS_LARGE_FILE:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+  case MHD_LIB_INFO_FIXED_SUPPORT_LARGE_FILE:
+    if (sizeof(output_buf->v_support_large_file_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
 #if ! defined(HAVE_PREAD) && defined(lseek64)
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_large_file_bool = MHD_YES;
 #elif defined(HAVE_PREAD64)
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_large_file_bool = MHD_YES;
 #elif defined(mhd_W32_NATIVE)
-    output_buf->v_bool = MHD_YES;
+    output_buf->v_support_large_file_bool = MHD_YES;
 #else
-    output_buf->v_bool =
+    output_buf->v_support_large_file_bool =
       (0x7FFFFFFFFFFFFFFF == ((off_t) 0x7FFFFFFFFFFFFFFF)) ? MHD_YES : MHD_NO;
 #endif
     return MHD_SC_OK;
-  case MHD_LIB_INFO_FIXED_TYPE_TLS:
-  case MHD_LIB_INFO_FIXED_HAS_TLS_KEY_PASSWORD: /* Both backends have support */
-    if (sizeof(output_buf->v_tls) <= output_buf_size)
+  case MHD_LIB_INFO_FIXED_TLS_BACKENDS:
+  case MHD_LIB_INFO_FIXED_TLS_KEY_PASSWORD_BACKENDS: /* Both backends have support */
+    /* Simplified code: values of 'v_tls_backends' and
+       'v_tls_key_password_backends' are always the same.
+       To minimise the code size, use only the first member. The application
+       gets correct resulting values for all members. */
+    if (sizeof(output_buf->v_tls_backends) <= output_buf_size)
     {
 #ifndef MHD_SUPPORT_HTTPS
       output_buf->v_tls.tls_supported = MHD_NO;
       output_buf->v_tls.backend_gnutls = MHD_NO;
       output_buf->v_tls.backend_openssl = MHD_NO;
 #else
-      output_buf->v_tls.tls_supported = MHD_YES;
+      output_buf->v_tls_backends.tls_supported = MHD_YES;
 #  ifdef MHD_SUPPORT_GNUTLS
-      output_buf->v_tls.backend_gnutls = MHD_YES;
+      output_buf->v_tls_backends.backend_gnutls = MHD_YES;
 #  else  /* ! MHD_SUPPORT_GNUTLS */
       output_buf->v_tls.backend_gnutls = MHD_NO;
 #  endif /* ! MHD_SUPPORT_GNUTLS */
 #  ifdef MHD_SUPPORT_OPENSSL
-      output_buf->v_tls.backend_openssl = MHD_YES;
+      output_buf->v_tls_backends.backend_openssl = MHD_YES;
 #  else  /* ! MHD_SUPPORT_OPENSSL */
-      output_buf->v_tls.backend_openssl = MHD_NO;
+      output_buf->v_tls_backends.backend_openssl = MHD_NO;
 #  endif /* ! MHD_SUPPORT_OPENSSL */
 #endif
       return MHD_SC_OK;
