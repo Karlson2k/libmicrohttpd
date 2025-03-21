@@ -8089,6 +8089,8 @@ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2)
 MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_CSTR_ (4);
 
 
+/* Application may define MHD_NO_STATIC_INLINE macro before including
+   libmicrohttpd headers to disable static inline functions in the headers. */
 #ifndef MHD_NO_STATIC_INLINE
 
 /**
@@ -8367,6 +8369,8 @@ MHD_response_add_auth_basic_challenge (
   enum MHD_Bool prefer_utf8)
 MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2);
 
+/* Application may define MHD_NO_STATIC_INLINE macro before including
+   libmicrohttpd headers to disable static inline functions in the headers. */
 #ifndef MHD_NO_STATIC_INLINE
 
 /**
@@ -9008,6 +9012,8 @@ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 #define MHD_lib_get_info_fixed(info,output_buf) \
         MHD_lib_get_info_fixed_sz ((info),(output_buf),sizeof(*(output_buf)))
 
+/* Application may define MHD_NO_STATIC_INLINE macro before including
+   libmicrohttpd headers to disable static inline functions in the headers. */
 #ifndef MHD_NO_STATIC_INLINE
 
 /*
