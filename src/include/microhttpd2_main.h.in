@@ -4635,7 +4635,7 @@ MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
  * @ingroup specialized
  */
 #define MHD_lib_get_info_dynamic(info,output_buf) \
-        MHD_lib_get_info_fixed_sz ((info),(output_buf),sizeof(*(output_buf)))
+        MHD_lib_get_info_dynamic_sz ((info),(output_buf),sizeof(*(output_buf)))
 
 
 /**
