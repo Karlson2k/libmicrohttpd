@@ -4728,7 +4728,7 @@ MHD_FN_PAR_NONNULL_ALL_;
  *         error code otherwise
  */
 #define MHD_daemon_set_option(daemon, option_ptr) \
-        MHD_daemon_set_options (daemon, options_ptr, 1)
+        MHD_daemon_set_options (daemon, option_ptr, 1)
 
 
 /* *INDENT-OFF* */
@@ -6098,10 +6098,10 @@ MHD_response_from_callback (enum MHD_HTTP_StatusCode sc,
  *               needs to be valid while the response is used
  * @param free_cb the callback to free any allocated data, called
  *                when response is being destroyed, can be NULL
- *                to skip the free/cleanup callback
+ *                to skip the free/cleanup callback;
  * @param free_cb_cls the parameter for @a free_cb
  * @return NULL on error (i.e. invalid arguments, out of memory)
- * FIXME: Call free callback on error?
+ *   on error, @a free_cb is NOT called
  * @ingroup response
  */
 MHD_EXTERN_ struct MHD_Response *
@@ -6975,7 +6975,7 @@ MHD_upgraded_recv (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    void *MHD_RESTRICT recv_buf,
                    size_t *MHD_RESTRICT received_size,
                    uint_fast64_t max_wait_millisec)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_(3,2)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4);
 
 
@@ -7030,7 +7030,7 @@ MHD_upgraded_send (struct MHD_UpgradedHandle *MHD_RESTRICT urh,
                    size_t *MHD_RESTRICT sent_size,
                    uint_fast64_t max_wait_millisec,
                    enum MHD_Bool more_data_to_come)
-MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_(3,2)
+MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_IN_SIZE_ (3,2)
 MHD_FN_PAR_OUT_ (4);
 
 
@@ -8365,7 +8365,7 @@ MHD_response_add_auth_basic_challenge (
   struct MHD_Response *MHD_RESTRICT response,
   const char *MHD_RESTRICT realm,
   enum MHD_Bool prefer_utf8)
-MHD_FN_PAR_NONNULL_(2) MHD_FN_PAR_CSTR_ (2);
+MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_CSTR_ (2);
 
 #ifndef MHD_NO_STATIC_INLINE
 
