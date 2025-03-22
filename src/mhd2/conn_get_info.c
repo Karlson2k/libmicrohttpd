@@ -107,19 +107,20 @@ MHD_connection_get_info_dynamic_sz (
     output_buf->v_http_ver = connection->rq.http_ver;
     return MHD_SC_OK;
   case MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_TIMEOUT:
-    if (sizeof(output_buf->v_uint) <= output_buf_size)
+    if (sizeof(output_buf->v_connection_timeout_uint) <= output_buf_size)
     {
       const uint_fast64_t tmout_ms = connection->connection_timeout_ms;
       const unsigned int tmout = (unsigned int) (tmout_ms / 1000);
       mhd_assert ((1000 * ((uint_fast64_t) tmout)) == tmout_ms);
-      output_buf->v_uint = tmout;
+      output_buf->v_connection_timeout_uint = tmout;
       return MHD_SC_OK;
     }
     return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
   case MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_SUSPENDED:
-    if (sizeof(output_buf->v_bool) > output_buf_size)
+    if (sizeof(output_buf->v_connection_suspended_bool) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_bool = connection->suspended ? MHD_YES : MHD_NO;
+    output_buf->v_connection_suspended_bool =
+      connection->suspended ? MHD_YES : MHD_NO;
     return MHD_SC_OK;
   case MHD_CONNECTION_INFO_DYNAMIC_TLS_VER:
 #ifdef MHD_SUPPORT_HTTPS

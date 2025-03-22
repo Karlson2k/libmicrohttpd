@@ -9751,14 +9751,14 @@ enum MHD_ConnectionInfoDynamicType
    * automatically disconnected.
    * Note: the value set is NOT the number of seconds left before automatic
    * disconnection.
-   * The result is placed in @a v_uint member.
+   * The result is placed in @a v_connection_timeout_uint member.
    * @ingroup request
    */
   MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_TIMEOUT = 10
   ,
   /**
    * Check whether the connection is suspended.
-   * The result is placed in @a v_bool member.
+   * The result is placed in @a v_connection_suspended_bool member.
    * @ingroup request
    */
   MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_SUSPENDED = 11
@@ -9781,6 +9781,7 @@ enum MHD_ConnectionInfoDynamicType
    * Get the TLS backend session handle.
    * If plain TCP connection is used then the function returns error code
    * #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE.
+   * The resulting union has only one valid member.
    * The result is placed in @a v_tls_session member.
    * @ingroup request
    */
@@ -9875,22 +9876,22 @@ union MHD_ConnInfoDynamicTlsSess
 union MHD_ConnectionInfoDynamicData
 {
   /**
-   * The type for HTTP version
+   * The data for the #MHD_CONNECTION_INFO_DYNAMIC_HTTP_VER query
    */
   enum MHD_HTTP_ProtocolVersion v_http_ver;
 
   /**
-   * The unsigned integer type
+   * The data for the #MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_TIMEOUT query
    */
-  unsigned int v_uint;
+  unsigned int v_connection_timeout_uint;
 
   /**
-   * The boolean type
+   * The data for the #MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_SUSPENDED query
    */
-  enum MHD_Bool v_bool;
+  enum MHD_Bool v_connection_suspended_bool;
 
   /**
-   * The TLS version
+   * The data for the #MHD_CONNECTION_INFO_DYNAMIC_CONNECTION_SUSPENDED query
    */
   enum MHD_TlsVersion v_tls_ver;
 
@@ -9905,8 +9906,8 @@ union MHD_ConnectionInfoDynamicData
 /**
  * Obtain dynamic information about the given connection.
  * This information may be changed during the lifetime of the connection.
- * The wrapper macro #MHD_connection_get_info_dynamic() could be more
- * convenient.
+ *
+ * The wrapper macro #MHD_connection_get_info_dynamic() may be more convenient.
  *
  * @param connection the connection to get information about
  * @param info_type the type of information requested
