@@ -57,27 +57,27 @@ MHD_connection_get_info_fixed_sz (
         return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
     }
     mhd_assert (0 != connection->sk.addr.size);
-    if (sizeof(output_buf->v_sa_info) > output_buf_size)
+    if (sizeof(output_buf->v_client_address_sa_info) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_sa_info.sa_size = connection->sk.addr.size;
-    output_buf->v_sa_info.sa =
+    output_buf->v_client_address_sa_info.sa_size = connection->sk.addr.size;
+    output_buf->v_client_address_sa_info.sa =
       (const struct sockaddr*) connection->sk.addr.data;
     return MHD_SC_OK;
-  case MHD_CONNECTION_INFO_FIXED_CONNECTION_FD:
-    if (sizeof(output_buf->v_fd) > output_buf_size)
+  case MHD_CONNECTION_INFO_FIXED_CONNECTION_SOCKET:
+    if (sizeof(output_buf->v_connection_socket) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     mhd_assert (MHD_INVALID_SOCKET != connection->sk.fd);
-    output_buf->v_fd = connection->sk.fd;
+    output_buf->v_connection_socket = connection->sk.fd;
     return MHD_SC_OK;
   case MHD_CONNECTION_INFO_FIXED_DAEMON:
     if (sizeof(output_buf->v_daemon) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     output_buf->v_daemon = mhd_daemon_get_master_daemon (connection->daemon);
     return MHD_SC_OK;
-  case MHD_CONNECTION_INFO_FIXED_SOCKET_CONTEXT:
-    if (sizeof(output_buf->v_ppvoid) > output_buf_size)
+  case MHD_CONNECTION_INFO_FIXED_APP_CONTEXT:
+    if (sizeof(output_buf->v_app_context_ppvoid) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_ppvoid = &(connection->socket_context);
+    output_buf->v_app_context_ppvoid = &(connection->socket_context);
     return MHD_SC_OK;
 
   case MHD_CONNECTION_INFO_FIXED_SENTINEL:

@@ -9575,7 +9575,7 @@ enum MHD_ConnectionInfoFixedType
    * #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if connection type is non-IP.
    * The @a sa pointer is never NULL if the function succeed (#MHD_SC_OK
    * returned).
-   * The result is placed in @a v_sa_info member.
+   * The result is placed in @a v_client_address_sa_info member.
    * @ingroup request
    */
   MHD_CONNECTION_INFO_FIXED_CLIENT_ADDRESS = 1
@@ -9586,10 +9586,10 @@ enum MHD_ConnectionInfoFixedType
    * functions should be used. Any modifications (changing socket attributes,
    * calling send() or recv(), closing it etc.) will lead to undefined
    * behaviour.
-   * The result is placed in @a v_fd member.
+   * The result is placed in @a v_connection_socket member.
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_FIXED_CONNECTION_FD = 2
+  MHD_CONNECTION_INFO_FIXED_CONNECTION_SOCKET = 2
   ,
   /**
    * Get the `struct MHD_Daemon *` responsible for managing this connection.
@@ -9605,10 +9605,11 @@ enum MHD_ConnectionInfoFixedType
    * parameter of #MHD_daemon_add_connection().
    * By using provided pointer application may get or set the pointer to
    * any data specific for the particular connection.
-   * The result is placed in @a v_ppvoid member.
+   * Note: resulting data is NOT the context pointer itself.
+   * The result is placed in @a v_app_context_ppvoid member.
    * @ingroup request
    */
-  MHD_CONNECTION_INFO_FIXED_SOCKET_CONTEXT = 30
+  MHD_CONNECTION_INFO_FIXED_APP_CONTEXT = 30
   ,
 
   /* * Sentinel * */
@@ -9620,6 +9621,9 @@ enum MHD_ConnectionInfoFixedType
   MHD_CONNECTION_INFO_FIXED_SENTINEL = 65535
 };
 
+/**
+ * Socket address information data
+ */
 struct MHD_ConnInfoFixedSockAddr
 {
   /**
@@ -9640,31 +9644,31 @@ union MHD_ConnectionInfoFixedData
 {
 
   /**
-   * Socket Address type
+   * The data for the #MHD_CONNECTION_INFO_FIXED_CLIENT_ADDRESS query
    */
-  struct MHD_ConnInfoFixedSockAddr v_sa_info;
+  struct MHD_ConnInfoFixedSockAddr v_client_address_sa_info;
 
   /**
-   * Socket type
+   * The data for the #MHD_CONNECTION_INFO_FIXED_CONNECTION_SOCKET query
    */
-  MHD_Socket v_fd;
+  MHD_Socket v_connection_socket;
 
   /**
-   * Daemon handler type
+   * The data for the #MHD_CONNECTION_INFO_FIXED_DAEMON query
    */
   struct MHD_Daemon *v_daemon;
 
   /**
-   * The pointer to pointer to the data
+   * The data for the #MHD_CONNECTION_INFO_FIXED_APP_CONTEXT query
    */
-  void **v_ppvoid;
+  void **v_app_context_ppvoid;
 };
 
 
 /**
  * Obtain fixed information about the given connection.
  * This information is not changed for the lifetime of the connection.
- * The wrapper macro #MHD_connection_get_info_fixed() could be more convenient.
+ * The wrapper macro #MHD_connection_get_info_fixed() may be more convenient.
  *
  * @param connection the connection to get information about
  * @param info_type the type of information requested
