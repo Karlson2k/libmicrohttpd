@@ -348,12 +348,6 @@ struct mhd_ReqAuthDigestData
    * NULL if not yet parsed or not found.
    */
   struct MHD_AuthDigestInfo *info;
-  /**
-   * The information about client's provided username.
-   * May point to the same address as @a info.
-   * NULL if not yet parsed or not found.
-   */
-  struct MHD_AuthDigestUsernameInfo *uname;
 };
 #endif /* MHD_SUPPORT_AUTH_DIGEST */
 

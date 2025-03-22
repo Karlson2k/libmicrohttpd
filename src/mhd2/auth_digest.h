@@ -57,19 +57,6 @@ mhd_auth_digest_get_new_nonce (struct MHD_Connection *restrict c,
 MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
 
 /**
- * Find in request and parse Digest Authentication username information
- * @param req the request to use
- * @param[out] v_auth_digest_username the pointer to set to the found data
- * @return #MHD_SC_OK on success,
- *         error code otherwise
- */
-MHD_INTERNAL enum MHD_StatusCode
-mhd_request_get_auth_digest_username (
-  struct MHD_Request *restrict req,
-  const struct MHD_AuthDigestUsernameInfo **restrict v_auth_digest_uname)
-MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_ MHD_FN_PAR_OUT_ (2);
-
-/**
  * Find in request and parse Digest Authentication information
  * @param req the request to use
  * @param[out] v_auth_basic_creds the pointer to set to the found data

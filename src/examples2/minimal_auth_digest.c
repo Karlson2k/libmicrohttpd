@@ -65,7 +65,7 @@ req_cb (void *cls,
 
   res =
     MHD_request_get_info_dynamic (request,
-                                  MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME,
+                                  MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_INFO,
                                   &req_data);
   if (MHD_SC_AUTH_ABSENT == res)
     return MHD_action_digest_auth_challenge_a (

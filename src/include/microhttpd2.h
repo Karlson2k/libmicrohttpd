@@ -7428,7 +7428,7 @@ MHD_FN_PAR_CSTR_ (3) MHD_FN_PAR_OUT_SIZE_ (5,4);
 enum MHD_FIXED_ENUM_MHD_SET_ MHD_DigestAuthUsernameType
 {
   /**
-   * No username parameter in in Digest Authorization header.
+   * No username parameter is in Digest Authorization header.
    * Not used currently. Value #MHD_SC_REQ_AUTH_DATA_BROKEN is returned
    * by #MHD_request_get_info_dynamic_sz() if the request has no username.
    */
@@ -7694,72 +7694,6 @@ struct MHD_AuthDigestInfo
    */
   uint_fast32_t nc;
 };
-
-
-/**
- * Information from Digest Authorization client's header.
- *
- * @see #MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME
- */
-struct MHD_AuthDigestUsernameInfo
-{
-  /**
-   * The algorithm as defined by client.
-   * Set automatically to MD5 if not specified by client.
-   */
-  enum MHD_DigestAuthAlgo algo;
-
-  /**
-   * The type of username used by client.
-   * The 'invalid' and 'missing' types are not used in this structure,
-   * instead #MHD_SC_REQ_AUTH_DATA_BROKEN is returned when
-   * #MHD_request_get_info_dynamic_sz() called with
-   * #MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME and the request has
-   * a broken username data.
-   */
-  enum MHD_DigestAuthUsernameType uname_type;
-
-  /**
-   * The username string.
-   * Used only if username type is standard or extended, always NULL otherwise.
-   * If extended notation is used, this string is pct-decoded string
-   * with charset and language tag removed (i.e. it is original username
-   * extracted from the extended notation).
-   * When userhash is used by the client, this member is NULL and
-   * @a userhash_hex and @a userhash_bin are set.
-   * The buffer pointed by the @a username becomes invalid when a response
-   * for the requested is provided (or request is aborted).
-   */
-  struct MHD_StringNullable username;
-
-  /**
-   * The userhash string.
-   * Valid only if username type is userhash.
-   * This is unqoted string without decoding of the hexadecimal
-   * digits (as provided by the client).
-   * The buffer pointed by the @a userhash_hex becomes invalid when a response
-   * for the requested is provided (or request is aborted).
-   * @sa #MHD_digest_auth_calc_userhash_hex()
-   */
-  struct MHD_StringNullable userhash_hex;
-
-  /**
-   * The userhash decoded to binary form.
-   * Used only if username type is userhash, always NULL otherwise.
-   * When not NULL, this points to binary sequence @a userhash_hex_len /2 bytes
-   * long.
-   * The valid size should be #MHD_digest_get_hash_size() bytes.
-   * The buffer pointed by the @a userhash_bin becomes invalid when a response
-   * for the requested is provided (or request is aborted).
-   * @warning This is a binary data, no zero termination.
-   * @warning To avoid buffer overruns, always check the size of the data before
-   *          use, because @a userhash_bin can point even to zero-sized
-   *          data.
-   * @sa #MHD_digest_auth_calc_userhash()
-   */
-  const uint8_t *userhash_bin;
-};
-
 
 /**
  * The result of digest authentication of the client.
@@ -10320,33 +10254,37 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
 {
   /**
    * Get the HTTP method used for the request (as a MHD_String).
-   * The result is placed in @a v_str member.
    * The resulting string pointer in valid only until a response is provided.
+   * The result is placed in @a v_http_method_string member.
    * @sa #MHD_REQUEST_INFO_FIXED_HTTP_METHOD
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_HTTP_METHOD_STR = 1
+  MHD_REQUEST_INFO_DYNAMIC_HTTP_METHOD_STRING = 1
   ,
   /**
    * Get the URI used for the request (as a MHD_String), excluding
    * the parameter part (anything after '?').
-   * The result is placed in @a v_str member.
    * The resulting string pointer in valid only until a response is provided.
+   * The result is placed in @a v_uri_string member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_URI = 2
   ,
   /**
-   * Get the number of GET parameters (the decoded part of the original
-   * URI string after '?')
-   * The result is placed in @a v_sizet member.
+   * Get the number of URI parameters (the decoded part of the original
+   * URI string after '?'). Sometimes it is called "GET parameters".
+   * The result is placed in @a v_number_uri_params_sizet member.
    * @ingroup request
    */
-  MHD_REQUEST_INFO_DYNAMIC_NUMBER_GET_PARAMS = 3
+  MHD_REQUEST_INFO_DYNAMIC_NUMBER_URI_PARAMS = 3
   ,
   /**
    * Get the number of cookies in the request.
-   * The result is placed in @a v_sizet member.
+   * The result is placed in @a v_number_cookies_sizet member.
+   * If cookies parsing is disabled in MHD build then the function returns
+   * error code #MHD_SC_FEATURE_DISABLED.
+   * If cookies parsing is disabled this daemon then the function returns
+   * error code #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_NUMBER_COOKIES = 4
@@ -10354,14 +10292,14 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   /**
    * Return length of the client's HTTP request header.
    * This is a total raw size of the header (after TLS decipher if any)
-   * The result is placed in @a v_sizet member.
+   * The result is placed in @a v_header_size_sizet member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE = 5
   ,
   /**
    * Get the number of decoded POST entries in the request.
-   * The result is placed in @a v_sizet member.
+   * The result is placed in @a v_number_post_params_sizet member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_NUMBER_POST_PARAMS = 6
@@ -10370,7 +10308,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * Get whether the upload content is present in the request.
    * The result is #MHD_YES if any upload content is present, even
    * if the upload content size is zero.
-   * The result is placed in @a v_bool member.
+   * The result is placed in @a v_upload_present_bool member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_PRESENT = 10
@@ -10378,7 +10316,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
   /**
    * Get whether the chunked upload content is present in the request.
    * The result is #MHD_YES if chunked upload content is present.
-   * The result is placed in @a v_bool member.
+   * The result is placed in @a v_upload_chunked_bool member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_CHUNKED = 11
@@ -10387,7 +10325,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * Get the total content upload size.
    * Resulted in zero if no content upload or upload content size is zero,
    * #MHD_SIZE_UNKNOWN if size is not known (chunked upload).
-   * The result is placed in @a v_uint64 member.
+   * The result is placed in @a v_upload_size_total_uint64 member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TOTAL = 12
@@ -10396,7 +10334,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * Get the total size of the content upload already received from the client.
    * This is the total size received, could be not yet fully processed by the
    * application.
-   * The result is placed in @a v_uint64 member.
+   * The result is placed in @a v_upload_size_recieved_uint64 member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_RECIEVED = 13
@@ -10405,7 +10343,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * Get the total size of the content upload left to be received from
    * the client.
    * Resulted in #MHD_SIZE_UNKNOWN if total size is not known (chunked upload).
-   * The result is placed in @a v_uint64 member.
+   * The result is placed in @a v_upload_size_to_recieve_uint64 member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_RECIEVE = 14
@@ -10415,7 +10353,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * called and completed (if any)).
    * If the value is requested from #MHD_UploadCallback, then result does NOT
    * include the current data being processed by the callback.
-   * The result is placed in @a v_uint64 member.
+   * The result is placed in @a v_upload_size_processed_uint64 member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_PROCESSED = 15
@@ -10427,22 +10365,10 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoDynamicType
    * If the value is requested from #MHD_UploadCallback, then result includes
    * the current data being processed by the callback.
    * Resulted in #MHD_SIZE_UNKNOWN if total size is not known (chunked upload).
-   * The result is placed in @a v_uint64 member.
+   * The result is placed in @a v_upload_size_to_process_uint64 member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_PROCESS = 16
-  ,
-  /**
-   * Returns pointer to information about username in client's digest auth
-   * request.
-   * The resulting pointer is NULL if no digest auth header is set by
-   * the client, the format of the digest auth header is broken, no
-   * username is provided or the format of the username parameter is broken.
-   * Pointers in the returned structure (if any) are valid until response
-   * is provided for the request.
-   * The result is placed in @a v_auth_digest_uname member.
-   */
-  MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_USERNAME = 41
   ,
   /**
    * Returns pointer to information about digest auth in client request.
@@ -10483,36 +10409,77 @@ union MHD_RequestInfoDynamicData
 {
 
   /**
-   * The MHD String type
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_HTTP_METHOD_STRING query
    */
-  struct MHD_String v_str;
-  /**
-   * The size_t type
-   */
-  size_t v_sizet;
-  /**
-   * The boolean type
-   */
-  enum MHD_Bool v_bool;
-  /**
-   * The unsigned 64 bits integer
-   */
-  uint_fast64_t v_uint64;
+  struct MHD_String v_http_method_string;
 
   /**
-   * The information about client provided username for digest auth
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_URI query
    */
-  const struct MHD_AuthDigestUsernameInfo *v_auth_digest_uname;
+  struct MHD_String v_uri_string;
 
   /**
-   * The information about client's digest auth
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_NUMBER_URI_PARAMS query
+   */
+  size_t v_number_uri_params_sizet;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_NUMBER_COOKIES query
+   */
+  size_t v_number_cookies_sizet;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_HEADER_SIZE query
+   */
+  size_t v_header_size_sizet;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_NUMBER_POST_PARAMS query
+   */
+  size_t v_number_post_params_sizet;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_UPLOAD_PRESENT query
+   */
+  enum MHD_Bool v_upload_present_bool;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_UPLOAD_CHUNKED query
+   */
+  enum MHD_Bool v_upload_chunked_bool;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TOTAL query
+   */
+  uint_fast64_t v_upload_size_total_uint64;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_RECIEVED query
+   */
+  uint_fast64_t v_upload_size_recieved_uint64;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_RECIEVE query
+   */
+  uint_fast64_t v_upload_size_to_recieve_uint64;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_PROCESSED query
+   */
+  uint_fast64_t v_upload_size_processed_uint64;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_UPLOAD_SIZE_TO_PROCESS query
+   */
+  uint_fast64_t v_upload_size_to_process_uint64;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_AUTH_DIGEST_INFO query
    */
   const struct MHD_AuthDigestInfo *v_auth_digest_info;
 
   /**
-   * The username and password provided by the client's basic auth header.
-   * If #MHD_request_get_info_dynamic_sz() returns #MHD_SC_OK then this pointer
-   * is NOT NULL and at least the username data is provided.
+   * The data for the #MHD_REQUEST_INFO_DYNAMIC_AUTH_BASIC_CREDS query
    */
   const struct MHD_AuthBasicCreds *v_auth_basic_creds;
 };
@@ -10524,7 +10491,8 @@ union MHD_RequestInfoDynamicData
  * Most of the data provided is available only when the request line or complete
  * request headers are processed and not available if responding has been
  * started.
- * The wrapper macro #MHD_request_get_info_dynamic() could be more convenient.
+ *
+ * The wrapper macro #MHD_request_get_info_dynamic() may be more convenient.
  *
  * Any pointers in the returned data are valid until any MHD_Action or
  * MHD_UploadAction is provided. If the data is needed beyond this point,
@@ -10544,6 +10512,9 @@ union MHD_RequestInfoDynamicData
  *                          is being sent
  *         #MHD_SC_TOO_EARLY if requested data is not yet ready (for example,
  *                           headers are not yet received),
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information is
+ *                                              not available for this request
+ *                                              due to used configuration/mode,
  *         #MHD_SC_FEATURE_DISABLED if requested functionality is not supported
  *                                  by this MHD build,
  *         #MHD_SC_INFO_GET_BUFF_TOO_SMALL if @a output_buf_size is too small,
@@ -10588,6 +10559,9 @@ MHD_FN_PAR_NONNULL_ (3) MHD_FN_PAR_OUT_ (3);
  *                          is being sent
  *         #MHD_SC_TOO_EARLY if requested data is not yet ready (for example,
  *                           headers are not yet received),
+ *         #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the requested information is
+ *                                              not available for this request
+ *                                              due to used configuration/mode,
  *         #MHD_SC_FEATURE_DISABLED if requested functionality is not supported
  *                                  by this MHD build,
  *         #MHD_SC_AUTH_ABSENT if request does not have particular Auth data,

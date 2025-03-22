@@ -1011,7 +1011,7 @@ get_rq_extended_uname_copy_z (const char *restrict uname_ext,
 static size_t
 get_rq_uname (const struct mhd_AuthDigesReqParams *restrict params,
               enum MHD_DigestAuthUsernameType uname_type,
-              struct MHD_AuthDigestUsernameInfo *restrict uname_info,
+              struct MHD_AuthDigestInfo *restrict uname_info,
               uint8_t *restrict buf,
               size_t buf_size)
 {
@@ -1169,95 +1169,6 @@ get_rq_nc (const struct mhd_AuthDigesReqParams *params,
 
 static MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
 enum MHD_StatusCode
-find_and_parse_auth_digest_uname (struct MHD_Request *restrict req)
-{
-  enum MHD_StatusCode res;
-  struct MHD_AuthDigestUsernameInfo *uname_info;
-  enum MHD_DigestAuthUsernameType uname_type;
-  size_t unif_buf_size;
-  uint8_t *unif_buf_ptr;
-  size_t unif_buf_used;
-
-  mhd_assert (NULL == req->auth.digest.info);
-  mhd_assert (NULL == req->auth.digest.uname);
-
-  res = get_rq_auth_digest_params (req);
-  if (MHD_SC_OK != res)
-    return res;
-
-  mhd_assert (NULL != req->auth.digest.rqp);
-
-  uname_type = get_rq_uname_type (req->auth.digest.rqp);
-  if ( (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING == uname_type) ||
-       (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID == uname_type) )
-    return MHD_SC_REQ_AUTH_DATA_BROKEN;
-
-  unif_buf_size = get_rq_unames_size (req->auth.digest.rqp, uname_type);
-
-  uname_info =
-    (struct MHD_AuthDigestUsernameInfo *)
-    mhd_stream_alloc_memory (mhd_CNTNR_PTR (req, struct MHD_Connection, rq),
-                             (sizeof(struct MHD_AuthDigestUsernameInfo))
-                             + unif_buf_size);
-  if (NULL == uname_info)
-    return MHD_SC_CONNECTION_POOL_NO_MEM_AUTH_DATA;
-  memset (uname_info,
-          0,
-          (sizeof(struct MHD_AuthDigestUsernameInfo)) + unif_buf_size);
-#ifndef HAVE_NULL_PTR_ALL_ZEROS
-  uname_info->username.cstr = NULL;
-  uname_info->userhash_hex.cstr = NULL;
-  uname_info->userhash_bin = NULL;
-#endif
-
-  uname_info->algo = req->auth.digest.rqp->algo;
-  unif_buf_ptr = (uint8_t *) (uname_info + 1);
-  unif_buf_used = get_rq_uname (req->auth.digest.rqp,
-                                uname_type, uname_info,
-                                unif_buf_ptr,
-                                unif_buf_size);
-  mhd_assert (unif_buf_size >= unif_buf_used);
-  (void) unif_buf_used; /* Mute compiler warning on non-debug builds */
-  mhd_assert (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_info->uname_type);
-
-  req->auth.digest.uname = uname_info;
-  if (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID == uname_info->uname_type)
-    return MHD_SC_REQ_AUTH_DATA_BROKEN;
-  mhd_assert (uname_type == uname_info->uname_type);
-
-  return MHD_SC_OK;
-}
-
-
-MHD_INTERNAL MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
-MHD_FN_PAR_OUT_ (2) enum MHD_StatusCode
-mhd_request_get_auth_digest_username (
-  struct MHD_Request *restrict req,
-  const struct MHD_AuthDigestUsernameInfo **restrict v_auth_digest_uname)
-{
-  mhd_assert (mhd_HTTP_STAGE_HEADERS_PROCESSED <= \
-              mhd_CNTNR_CPTR (req, struct MHD_Connection, rq)->stage);
-  mhd_assert (mhd_HTTP_STAGE_REQ_RECV_FINISHED >= \
-              mhd_CNTNR_CPTR (req, struct MHD_Connection, rq)->stage);
-
-  if (MHD_SC_OK != req->auth.digest.parse_result)
-    return req->auth.digest.parse_result;
-
-  if (NULL == req->auth.digest.uname)
-    req->auth.digest.parse_result = find_and_parse_auth_digest_uname (req);
-
-  if (MHD_SC_OK != req->auth.digest.parse_result)
-    return req->auth.digest.parse_result; /* Failure exit point */
-
-  mhd_assert (NULL != req->auth.digest.uname);
-  *v_auth_digest_uname = req->auth.digest.uname;
-
-  return MHD_SC_OK; /* Success exit point */
-}
-
-
-static MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ALL_
-enum MHD_StatusCode
 find_and_parse_auth_digest_info (struct MHD_Request *restrict req)
 {
   enum MHD_StatusCode res;
@@ -1312,8 +1223,7 @@ find_and_parse_auth_digest_info (struct MHD_Request *restrict req)
   if ( (MHD_DIGEST_AUTH_UNAME_TYPE_MISSING != uname_type) &&
        (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID != uname_type) )
     unif_buf_used +=
-      get_rq_uname (req->auth.digest.rqp, uname_type,
-                    (struct MHD_AuthDigestUsernameInfo *) info,
+      get_rq_uname (req->auth.digest.rqp, uname_type, info,
                     unif_buf_ptr + unif_buf_used,
                     unif_buf_size - unif_buf_used);
   else
@@ -1363,11 +1273,8 @@ find_and_parse_auth_digest_info (struct MHD_Request *restrict req)
   }
 
   req->auth.digest.info = info;
-  if (NULL == req->auth.digest.uname)
-    req->auth.digest.uname = (struct MHD_AuthDigestUsernameInfo *) info;
 
   mhd_assert (uname_type == info->uname_type);
-  mhd_assert (uname_type == req->auth.digest.uname->uname_type);
 
   if ((MHD_DIGEST_AUTH_UNAME_TYPE_MISSING == uname_type) ||
       (MHD_DIGEST_AUTH_UNAME_TYPE_INVALID == uname_type) ||
@@ -1399,7 +1306,6 @@ mhd_request_get_auth_digest_info (
     return req->auth.digest.parse_result; /* Failure exit point */
 
   mhd_assert (NULL != req->auth.digest.info);
-  mhd_assert (NULL != req->auth.digest.uname);
   *v_auth_digest_info = req->auth.digest.info;
 
   return MHD_SC_OK; /* Success exit point */
