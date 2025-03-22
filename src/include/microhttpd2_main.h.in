@@ -5392,20 +5392,21 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_StreamInfoFixedType
 union MHD_StreamInfoFixedData
 {
   /**
-   * Connection handler type
-   */
-  struct MHD_Connection *v_connection;
-  /**
-   * Daemon handler type
+   * The data for the #MHD_STREAM_INFO_FIXED_DAEMON query
    */
   struct MHD_Daemon *v_daemon;
+  /**
+   * The data for the #MHD_STREAM_INFO_FIXED_CONNECTION query
+   */
+  struct MHD_Connection *v_connection;
 };
 
 
 /**
  * Obtain fixed information about the given stream.
  * This information is not changed for the lifetime of the stream.
- * The wrapper macro #MHD_stream_get_info_fixed() could be more convenient.
+ *
+ * The wrapper macro #MHD_stream_get_info_fixed() may be more convenient.
  *
  * @param stream the stream to get information about
  * @param info_type the type of information requested
@@ -5481,7 +5482,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_StreamInfoDynamicType
 union MHD_StreamInfoDynamicData
 {
   /**
-   * The MHD_Request handler type
+   * The data for the #MHD_STREAM_INFO_DYNAMIC_REQUEST query
    */
   struct MHD_Request *v_request;
 };
@@ -5489,7 +5490,8 @@ union MHD_StreamInfoDynamicData
 /**
  * Obtain dynamic information about the given stream.
  * This information may be changed during the lifetime of the stream.
- * The wrapper macro #MHD_stream_get_info_dynamic() could be more convenient.
+ *
+ * The wrapper macro #MHD_stream_get_info_dynamic() may be more convenient.
  *
  * @param stream the stream to get information about
  * @param info_type the type of information requested
