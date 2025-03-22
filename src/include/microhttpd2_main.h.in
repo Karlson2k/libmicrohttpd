@@ -4654,7 +4654,7 @@ enum MHD_DaemonInfoFixedType
    * The function returns #MHD_SC_INFO_GET_TYPE_UNOBTAINABLE if the port number
    * detection failed or not supported by the platform.
    * If the function succeed, the returned port number is never zero.
-   * The result is placed in @a v_port member.
+   * The result is placed in @a v_bind_port_uint16 member.
    */
   MHD_DAEMON_INFO_FIXED_BIND_PORT = 1
   ,
@@ -4665,7 +4665,7 @@ enum MHD_DaemonInfoFixedType
    * calling accept(), closing it etc.) will lead to undefined behaviour.
    * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
    * does not have listening socket.
-   * The result is placed in @a v_socket member.
+   * The result is placed in @a v_listen_socket member.
    */
   MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET = 2
   ,
@@ -4675,12 +4675,12 @@ enum MHD_DaemonInfoFixedType
    * This FD can be watched as aggregate indicator for all MHD events.
    * The provided socket must be used as 'read-only': only select() or similar
    * functions should be used. Any modifications (changing socket attributes,
-   * calling accept() closing it etc.) will lead to undefined behaviour.
+   * calling accept(), closing it etc.) will lead to undefined behaviour.
    * The function returns #MHD_SC_INFO_GET_TYPE_NOT_SUPP_BY_BUILD if the library
    * does not support mode with agregate FD.
    * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon
    * is not configured to use this mode.
-   * The result is placed in @a v_fd member.
+   * The result is placed in @a v_aggreagate_fd member.
    */
   MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD = 3
   ,
@@ -4691,7 +4691,7 @@ enum MHD_DaemonInfoFixedType
    * If MHD built without TLS support then #MHD_TLS_BACKEND_NONE is always set.
    * The result is placed in @a v_tls_backend member.
    */
-  MHD_DAEMON_INFO_FIXED_TLS_TYPE = 100
+  MHD_DAEMON_INFO_FIXED_TLS_BACKEND = 100
   ,
 
   /* * Sentinel * */
@@ -4710,24 +4710,23 @@ enum MHD_DaemonInfoFixedType
  */
 union MHD_DaemonInfoFixedData
 {
-
   /**
-   * The socket type of data.
+   * The data for the #MHD_DAEMON_INFO_FIXED_BIND_PORT query
    */
-  MHD_Socket v_socket;
+  uint_least16_t v_bind_port_uint16;
 
   /**
-   * File descriptor, except sockets
+   * The data for the #MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET query
    */
-  int v_fd;
+  MHD_Socket v_listen_socket;
 
   /**
-   * Port number
+   * The data for the #MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD query
    */
-  uint_least16_t v_port;
+  int v_aggreagate_fd;
 
   /**
-   * The TLS backend
+   * The data for the #MHD_DAEMON_INFO_FIXED_TLS_BACKEND query
    */
   enum MHD_TlsBackend v_tls_backend;
 

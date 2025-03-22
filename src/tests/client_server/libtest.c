@@ -552,11 +552,11 @@ MHDT_test (MHDT_ServerSetup ss_cb,
     snprintf (base_http_url,
               sizeof (base_http_url),
               "http://localhost:%u/",
-              (unsigned int) info.v_port);
+              (unsigned int) info.v_bind_port_uint16);
     snprintf (base_https_url,
               sizeof (base_https_url),
               "https://localhost:%u/",
-              (unsigned int) info.v_port);
+              (unsigned int) info.v_bind_port_uint16);
     pc_http.base_url = base_http_url;
     pc_https.base_url = base_https_url;
   }

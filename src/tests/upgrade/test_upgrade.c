@@ -1667,9 +1667,9 @@ test_upgrade (void)
                                  &dinfo))
     mhdErrorExitDesc ("MHD_daemon_get_info_fixed() failed");
 
-  if (0 == dinfo.v_port)
+  if (0 == dinfo.v_bind_port_uint16)
     mhdErrorExitDesc ("MHD_daemon_get_info_fixed() returned wrong data");
-  global_port = dinfo.v_port; /* Re-use the same port for the next checks */
+  global_port = dinfo.v_bind_port_uint16; /* Re-use the same port for the next checks */
   if (! test_tls || (TLS_LIB_GNUTLS == use_tls_tool))
   {
     sock = test_tls ? wr_create_tls_sckt () : wr_create_plain_sckt ();

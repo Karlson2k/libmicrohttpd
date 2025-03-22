@@ -70,30 +70,30 @@ MHD_daemon_get_info_fixed_sz (
         return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
       return MHD_SC_INFO_GET_TYPE_UNOBTAINABLE;
     }
-    if (sizeof(output_buf->v_port) > output_buf_size)
+    if (sizeof(output_buf->v_bind_port_uint16) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_port = daemon->net.listen.port;
+    output_buf->v_bind_port_uint16 = daemon->net.listen.port;
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET:
     if (MHD_INVALID_SOCKET == daemon->net.listen.fd)
       return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
-    if (sizeof(MHD_Socket) > output_buf_size)
+    if (sizeof(output_buf->v_listen_socket) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_socket = daemon->net.listen.fd;
+    output_buf->v_listen_socket = daemon->net.listen.fd;
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD:
 #ifdef MHD_SUPPORT_EPOLL
     if (! mhd_D_IS_USING_EPOLL (daemon))
       return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
-    if (sizeof(int) > output_buf_size)
+    if (sizeof(output_buf->v_aggreagate_fd) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_fd = daemon->events.data.epoll.e_fd;
+    output_buf->v_aggreagate_fd = daemon->events.data.epoll.e_fd;
     return MHD_SC_OK;
 #else
     return MHD_SC_INFO_GET_TYPE_NOT_SUPP_BY_BUILD;
 #endif
     break;
-  case MHD_DAEMON_INFO_FIXED_TLS_TYPE:
+  case MHD_DAEMON_INFO_FIXED_TLS_BACKEND:
     if (sizeof(output_buf->v_tls_backend) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
     if (! mhd_D_HAS_TLS (daemon))
