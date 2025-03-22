@@ -158,12 +158,12 @@ MHD_daemon_get_info_dynamic_sz (
   case MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT:
     if (mhd_WM_INT_HAS_THREADS (daemon->wmode_int))
       return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
-    if (sizeof(output_buf->v_uint64) > output_buf_size)
+    if (sizeof(output_buf->v_max_time_to_wait_uint64) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_uint64 = mhd_daemon_get_wait_max (daemon);
+    output_buf->v_max_time_to_wait_uint64 = mhd_daemon_get_wait_max (daemon);
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_DYNAMIC_HAS_CONNECTIONS:
-    if (sizeof(output_buf->v_bool) <= output_buf_size)
+    if (sizeof(output_buf->v_has_connections_bool) <= output_buf_size)
     {
       enum MHD_Bool res;
       /*
@@ -188,7 +188,7 @@ MHD_daemon_get_info_dynamic_sz (
           }
         }
       }
-      output_buf->v_bool = res;
+      output_buf->v_has_connections_bool = res;
       return MHD_SC_OK;
     }
     return MHD_SC_INFO_GET_BUFF_TOO_SMALL;

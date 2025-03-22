@@ -4825,15 +4825,15 @@ enum MHD_DaemonInfoDynamicType
    * Available only for daemons stated in #MHD_WM_EXTERNAL_PERIODIC,
    * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL, #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE
    * or #MHD_WM_EXTERNAL_SINGLE_FD_WATCH modes.
-   * The function return #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if daemon has
+   * The function returns #MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE if the daemon has
    * internal handling of events (internal threads).
-   * The result is placed in @a v_uint64 member.
+   * The result is placed in @a v_max_time_to_wait_uint64 member.
    */
   MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT = 1
   ,
   /**
    * Check whether the daemon has any connected network clients.
-   * The result is placed in @a v_bool member.
+   * The result is placed in @a v_has_connections_bool member.
    */
   MHD_DAEMON_INFO_DYNAMIC_HAS_CONNECTIONS = 20
   ,
@@ -4853,14 +4853,14 @@ enum MHD_DaemonInfoDynamicType
 union MHD_DaemonInfoDynamicData
 {
   /**
-   * The boolean value
+   * The data for the #MHD_DAEMON_INFO_DYNAMIC_MAX_TIME_TO_WAIT query
    */
-  enum MHD_Bool v_bool;
+  uint_fast64_t v_max_time_to_wait_uint64;
 
   /**
-   * Unsigned 64 bits integer value.
+   * The data for the #MHD_DAEMON_INFO_DYNAMIC_HAS_CONNECTIONS query
    */
-  uint_fast64_t v_uint64;
+  enum MHD_Bool v_has_connections_bool;
 
   /**
    * Unused member.
