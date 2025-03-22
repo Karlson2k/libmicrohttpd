@@ -98,9 +98,9 @@ MHD_request_get_info_fixed_sz (
                        rq)->h1_stream);
     return MHD_SC_OK;
   case MHD_REQUEST_INFO_FIXED_APP_CONTEXT:
-    if (sizeof(output_buf->v_ppvoid) > output_buf_size)
+    if (sizeof(output_buf->v_app_context_ppvoid) > output_buf_size)
       return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_ppvoid = &(request->app_context);
+    output_buf->v_app_context_ppvoid = &(request->app_context);
     return MHD_SC_OK;
 
   case MHD_REQUEST_INFO_FIXED_SENTINEL:

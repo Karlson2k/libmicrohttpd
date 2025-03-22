@@ -5584,7 +5584,8 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_RequestInfoFixedType
    * #MHD_EarlyUriLogCallback and #MHD_RequestTerminationCallback.
    * By using provided pointer application may get or set the pointer to
    * any data specific for the particular request.
-   * The result is placed in @a v_ppvoid member.
+   * Note: resulting data is NOT the context pointer itself.
+   * The result is placed in @a v_app_context_ppvoid member.
    * @ingroup request
    */
   MHD_REQUEST_INFO_FIXED_APP_CONTEXT = 30
@@ -5607,40 +5608,41 @@ union MHD_RequestInfoFixedData
 {
 
   /**
-   * The MHD stream handler type.
-   */
-  struct MHD_Stream *v_stream;
-
-  /**
-   * The MHD connection handler type.
-   */
-  struct MHD_Connection *v_connection;
-
-  /**
-   * The MHD daemon handler type.
-   */
-  struct MHD_Daemon *v_daemon;
-
-  /**
-   * The HTTP version type.
+   * The data for the #MHD_REQUEST_INFO_FIXED_HTTP_VER query
    */
   enum MHD_HTTP_ProtocolVersion v_http_ver;
 
   /**
-   * The HTTP method type.
+   * The data for the #MHD_REQUEST_INFO_FIXED_HTTP_METHOD query
    */
   enum MHD_HTTP_Method v_http_method;
 
   /**
-   * The pointer to pointer to the data.
+   * The data for the #MHD_REQUEST_INFO_FIXED_DAEMON query
    */
-  void **v_ppvoid;
+  struct MHD_Daemon *v_daemon;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_FIXED_CONNECTION query
+   */
+  struct MHD_Connection *v_connection;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_FIXED_STREAM query
+   */
+  struct MHD_Stream *v_stream;
+
+  /**
+   * The data for the #MHD_REQUEST_INFO_FIXED_APP_CONTEXT query
+   */
+  void **v_app_context_ppvoid;
 };
 
 /**
  * Obtain fixed information about the given request.
  * This information is not changed for the lifetime of the request.
- * The wrapper macro #MHD_request_get_info_fixed() could be more convenient.
+ *
+ * The wrapper macro #MHD_request_get_info_fixed() may be more convenient.
  *
  * @param request the request to get information about
  * @param info_type the type of information requested
