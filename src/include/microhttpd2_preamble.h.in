@@ -149,13 +149,13 @@ MHD_C_DECLRATIONS_START_HERE_
 
 #include "microhttpd2_portability.h"
 
-/* If generic headers don't work on your platform, include headers which define
-   'va_list', 'size_t', 'uint_least16_t', 'uint_fast32_t', 'uint_fast64_t',
-   'struct sockaddr', and then "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before
-   including "microhttpd2.h".
-   When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined the following "standard"
-   includes won't be used (which might be a good idea, especially on platforms
-   where they do not exist).
+/* If generic headers do not work on your platform, include headers that
+   define 'va_list', 'size_t', 'uint_least16_t', 'uint_fast32_t',
+   'uint_fast64_t', and 'struct sockaddr', and then
+   add "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before including "microhttpd2.h".
+   When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined, the following "standard"
+   includes will not be used (which might be a good idea, especially on
+   platforms where they do not exist).
    */
 #ifndef MHD_HAVE_SYS_HEADERS_INCLUDED
 #  include <stdarg.h>
@@ -289,7 +289,7 @@ typedef SOCKET MHD_Socket;
 
 /**
  * Constant used to indicate unlimited wait time.
- * Any possible larger values are interpreted as the this value.
+ * Any possible larger values are interpreted as this value.
  */
 #ifdef UINT64_MAX
 #  define MHD_WAIT_INDEFINITELY UINT64_MAX

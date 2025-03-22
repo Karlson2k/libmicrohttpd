@@ -149,13 +149,13 @@ MHD_C_DECLRATIONS_START_HERE_
 
 #include "microhttpd2_portability.h"
 
-/* If generic headers don't work on your platform, include headers which define
-   'va_list', 'size_t', 'uint_least16_t', 'uint_fast32_t', 'uint_fast64_t',
-   'struct sockaddr', and then "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before
-   including "microhttpd2.h".
-   When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined the following "standard"
-   includes won't be used (which might be a good idea, especially on platforms
-   where they do not exist).
+/* If generic headers do not work on your platform, include headers that
+   define 'va_list', 'size_t', 'uint_least16_t', 'uint_fast32_t',
+   'uint_fast64_t', and 'struct sockaddr', and then
+   add "#define MHD_HAVE_SYS_HEADERS_INCLUDED" before including "microhttpd2.h".
+   When 'MHD_HAVE_SYS_HEADERS_INCLUDED' is defined, the following "standard"
+   includes will not be used (which might be a good idea, especially on
+   platforms where they do not exist).
    */
 #ifndef MHD_HAVE_SYS_HEADERS_INCLUDED
 #  include <stdarg.h>
@@ -289,7 +289,7 @@ typedef SOCKET MHD_Socket;
 
 /**
  * Constant used to indicate unlimited wait time.
- * Any possible larger values are interpreted as the this value.
+ * Any possible larger values are interpreted as this value.
  */
 #ifdef UINT64_MAX
 #  define MHD_WAIT_INDEFINITELY UINT64_MAX
@@ -8527,8 +8527,7 @@ struct MHD_AuthBasicCreds
 
 
 /**
- * Types of information about MHD,
- * used by #MHD_lib_get_info_fixed_sz().
+ * Types of information about MHD, used by #MHD_lib_get_info_fixed_sz().
  * This information is not changed at run-time.
  */
 enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoFixed
@@ -9067,7 +9066,7 @@ union MHD_LibInfoFixedData
  * the requested type of information is valid, the function always succeeds
  * and returns #MHD_SC_OK.
  *
- * The wrapper macro #MHD_lib_get_info_fixed() could be more convenient.
+ * The wrapper macro #MHD_lib_get_info_fixed() may be more convenient.
  *
  * @param info_type the type of requested information
  * @param[out] output_buf the pointer to union to be set to the requested
@@ -9138,8 +9137,7 @@ MHD_STATIC_INLINE_END_
 #endif /* ! MHD_NO_STATIC_INLINE */
 
 /**
- * Types of information about MHD,
- * used by #MHD_lib_get_info_dynamic_sz().
+ * Types of information about MHD, used by #MHD_lib_get_info_dynamic_sz().
  * This information may vary over time.
  */
 enum MHD_FIXED_ENUM_APP_SET_ MHD_LibInfoDynamic
@@ -9261,10 +9259,10 @@ MHD_FN_MUST_CHECK_RESULT_ MHD_FN_PAR_NONNULL_ (2) MHD_FN_PAR_OUT_ (2);
 
 
 /**
- * Values of this enum are used to specify what
- * information about a daemon is desired.
- * This types of information are not changed at after start of the daemon until
- * the daemon is destroyed.
+ * Values of this enum are used to specify what information about a daemon is
+ * requested.
+ * These types of information do not change after the start of the daemon
+ * until the daemon is destroyed.
  */
 enum MHD_DaemonInfoFixedType
 {
@@ -9368,7 +9366,7 @@ union MHD_DaemonInfoFixedData
  * Obtain fixed information about the given daemon.
  * This information is not changed at after start of the daemon until
  * the daemon is destroyed.
- * The wrapper macro #MHD_daemon_get_info_fixed() could be more convenient.
+ * The wrapper macro #MHD_daemon_get_info_fixed() may be more convenient.
  *
  * @param daemon the daemon to get information about
  * @param info_type the type of information requested
