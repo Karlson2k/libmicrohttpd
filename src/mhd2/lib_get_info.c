@@ -34,6 +34,8 @@
 #include "mhd_str_types.h"
 #include "mhd_str_macros.h"
 
+#include <string.h>
+
 #include "sys_sockets_headers.h"
 #include "sys_ip_headers.h"
 
@@ -83,6 +85,9 @@ MHD_lib_get_info_fixed_sz (enum MHD_LibInfoFixed info_type,
                            union MHD_LibInfoFixedData *MHD_RESTRICT output_buf,
                            size_t output_buf_size)
 {
+  if (0 != output_buf_size)
+    memset (output_buf, 0, output_buf_size); /* For forward-compatibility */
+
   switch (info_type)
   {
 
@@ -467,6 +472,9 @@ MHD_lib_get_info_dynamic_sz (
   union MHD_LibInfoDynamicData *MHD_RESTRICT output_buf,
   size_t output_buf_size)
 {
+  if (0 != output_buf_size)
+    memset (output_buf, 0, output_buf_size); /* For forward-compatibility */
+
   switch (info_type)
   {
   case MHD_LIB_INFO_DYNAMIC_INITED_FULLY_ONCE:
