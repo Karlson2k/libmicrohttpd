@@ -44,6 +44,9 @@ MHD_daemon_set_options (
     case MHD_D_O_POLL_SYSCALL:
       settings->poll_syscall = option->val.poll_syscall;
       continue;
+    case MHD_D_O_REREGISTER_ALL:
+      settings->reregister_all = option->val.reregister_all;
+      continue;
     case MHD_D_O_LOG_CALLBACK:
       /* Note: set directly to the daemon */
       daemon->log_params = option->val.log_callback;

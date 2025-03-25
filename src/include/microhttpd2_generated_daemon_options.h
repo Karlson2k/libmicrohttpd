@@ -24,6 +24,22 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_DaemonOption
   ,
 
   /**
+   * Instruct MHD to register all sockets every processing round.
+   *
+By default (this options is not enabled) every processing round (every time
+   * when #MHD_daemon_event_update() is called) MHD calls
+   * #MHD_SocketRegistrationUpdateCallback only for the new sockets, for
+   * the removed sockets and for the updated sockets.
+   * Some sockets are registered when #MHD_daemon_start() is called.
+   *
+If this options is enabled, then #MHD_SocketRegistrationUpdateCallback is
+   * called for every socket each processing round. No sockets are registered when
+   * the daemon is being started.
+   */
+  MHD_D_O_REREGISTER_ALL = 45
+  ,
+
+  /**
    * Set a callback to use for logging
    */
   MHD_D_O_LOG_CALLBACK = 60
@@ -604,6 +620,11 @@ union MHD_DaemonOptionValue
   enum MHD_SockPollSyscall poll_syscall;
 
   /**
+   * Value for #MHD_D_O_REREGISTER_ALL.
+   */
+  enum MHD_Bool reregister_all;
+
+  /**
    * Value for #MHD_D_O_LOG_CALLBACK.
    * the callback to use for logging,
    * NULL to disable logging.
@@ -866,6 +887,28 @@ struct MHD_DaemonOptionAndValue
         { \
           .opt = MHD_D_O_POLL_SYSCALL,  \
           .val.poll_syscall = (els) \
+        } \
+        MHD_RESTORE_WARN_COMPOUND_LITERALS_
+/**
+ * Instruct MHD to register all sockets every processing round.
+ *
+By default (this options is not enabled) every processing round (every time
+ * when #MHD_daemon_event_update() is called) MHD calls
+ * #MHD_SocketRegistrationUpdateCallback only for the new sockets, for
+ * the removed sockets and for the updated sockets.
+ * Some sockets are registered when #MHD_daemon_start() is called.
+ *
+If this options is enabled, then #MHD_SocketRegistrationUpdateCallback is
+ * called for every socket each processing round. No sockets are registered when
+ * the daemon is being started.
+ * @param value the value of the parameter * @return structure with the requested setting
+ */
+#  define MHD_D_OPTION_REREGISTER_ALL(value) \
+        MHD_NOWARN_COMPOUND_LITERALS_ \
+          (const struct MHD_DaemonOptionAndValue) \
+        { \
+          .opt = MHD_D_O_REREGISTER_ALL,  \
+          .val.reregister_all = (value) \
         } \
         MHD_RESTORE_WARN_COMPOUND_LITERALS_
 /**
@@ -1524,6 +1567,34 @@ MHD_D_OPTION_POLL_SYSCALL (
 
   opt_val.opt = MHD_D_O_POLL_SYSCALL;
   opt_val.val.poll_syscall = els;
+
+  return opt_val;
+}
+
+
+/**
+ * Instruct MHD to register all sockets every processing round.
+ *
+By default (this options is not enabled) every processing round (every time
+ * when #MHD_daemon_event_update() is called) MHD calls
+ * #MHD_SocketRegistrationUpdateCallback only for the new sockets, for
+ * the removed sockets and for the updated sockets.
+ * Some sockets are registered when #MHD_daemon_start() is called.
+ *
+If this options is enabled, then #MHD_SocketRegistrationUpdateCallback is
+ * called for every socket each processing round. No sockets are registered when
+ * the daemon is being started.
+ * @param value the value of the parameter * @return structure with the requested setting
+ */
+static MHD_INLINE struct MHD_DaemonOptionAndValue
+MHD_D_OPTION_REREGISTER_ALL (
+  enum MHD_Bool value
+  )
+{
+  struct MHD_DaemonOptionAndValue opt_val;
+
+  opt_val.opt = MHD_D_O_REREGISTER_ALL;
+  opt_val.val.reregister_all = (value); \
 
   return opt_val;
 }

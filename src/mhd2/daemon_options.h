@@ -29,6 +29,12 @@ struct DaemonOptions
 
 
   /**
+   * Value for #MHD_D_O_REREGISTER_ALL.
+   */
+  enum MHD_Bool reregister_all;
+
+
+  /**
    * Value for #MHD_D_O_LOG_CALLBACK.
    * the callback to use for logging,
    * NULL to disable logging.

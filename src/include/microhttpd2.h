@@ -4011,6 +4011,25 @@ MHD_D_OPTION_POLL_SYSCALL (
   );
 
 /**
+ * Instruct MHD to register all sockets every processing round.
+ *
+By default (this options is not enabled) every processing round (every time
+ * when #MHD_daemon_event_update() is called) MHD calls
+ * #MHD_SocketRegistrationUpdateCallback only for the new sockets, for
+ * the removed sockets and for the updated sockets.
+ * Some sockets are registered when #MHD_daemon_start() is called.
+ *
+If this options is enabled, then #MHD_SocketRegistrationUpdateCallback is
+ * called for every socket each processing round. No sockets are registered when
+ * the daemon is being started.
+ * @param value the value of the parameter * @return structure with the requested setting
+ */
+struct MHD_DaemonOptionAndValue
+MHD_D_OPTION_REREGISTER_ALL (
+  enum MHD_Bool value
+  );
+
+/**
  * Set a callback to use for logging
  * @param log_cb the callback to use for logging,
  *   NULL to disable logging.
