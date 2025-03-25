@@ -2574,10 +2574,10 @@ MHD_FN_PAR_NONNULL_ALL_;
 
 /**
  * The network status of the socket.
- * When set by MHD (by #MHD_SocketRegistrationUpdateCallback and
+ * When set by MHD (by #MHD_SocketRegistrationUpdateCallback or
  * similar) it indicates a request to watch for specific socket state:
- * readiness for receiving the data, readiness for sending the data and/or
- * exception state of the socket.
+ * watch for readiness for receiving the data, watch for readiness for sending
+ * the data and/or watch for exception state of the socket.
  * When set by application (and provided for #MHD_daemon_event_update() and
  * similar) it must indicate the actual status of the socket.
  *
@@ -2656,65 +2656,65 @@ enum MHD_FIXED_ENUM_ MHD_FdState
 };
 
 /**
- * Checks whether specific @a state is enabled in @a var
+ * Checks whether specific @a state is enabled/set in the @a var
  */
-#define MHD_FD_STATE_IS_SET(var,state)          \
-        (MHD_FD_STATE_NONE !=                         \
+#define MHD_FD_STATE_IS_SET(var,state) \
+        (MHD_FD_STATE_NONE !=          \
          (((enum MHD_FdState) (var)) & ((enum MHD_FdState) (state))))
 
 /**
- * Checks whether RECV is enabled in @a var
+ * Checks whether RECV is enabled/set in the @a var
  */
 #define MHD_FD_STATE_IS_SET_RECV(var) \
         MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_RECV)
 /**
- * Checks whether SEND is enabled in @a var
+ * Checks whether SEND is enabled/set in the @a var
  */
 #define MHD_FD_STATE_IS_SET_SEND(var) \
         MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_SEND)
 /**
- * Checks whether EXCEPT is enabled in @a var
+ * Checks whether EXCEPT is enabled/set in the @a var
  */
 #define MHD_FD_STATE_IS_SET_EXCEPT(var) \
         MHD_FD_STATE_IS_SET ((var),MHD_FD_STATE_EXCEPT)
 
 
 /**
- * Enable specific @a state in @a var
+ * Set/enable specific @a state in the @a var
  */
 #define MHD_FD_STATE_SET(var,state) \
         (var) = (enum MHD_FdState) ((var) | (state))
 /**
- * Enable RECV state in @a var
+ * Set/enable RECV state in the @a var
  */
 #define MHD_FD_STATE_SET_RECV(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_RECV)
 /**
- * Enable SEND state in @a var
+ * Set/enable SEND state in the @a var
  */
 #define MHD_FD_STATE_SET_SEND(var) MHD_FD_STATE_SET ((var),MHD_FD_STATE_SEND)
 /**
- * Enable EXCEPT state in @a var
+ * Set/enable EXCEPT state in the @a var
  */
 #define MHD_FD_STATE_SET_EXCEPT(var) \
         MHD_FD_STATE_SET ((var),MHD_FD_STATE_EXCEPT)
 
 /**
- * Clear/disable specific @a state in @a var
+ * Clear/disable specific @a state in the @a var
  */
 #define MHD_FD_STATE_CLEAR(var,state) \
         (var) = (enum MHD_FdState) ((var) & (((enum MHD_FdState))(~state)))
 /**
- * Clear/disable RECV state in @a var
+ * Clear/disable RECV state in the @a var
  */
 #define MHD_FD_STATE_CLEAR_RECV(var) \
         MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_RECV)
 /**
- * Clear/disable SEND state in @a var
+ * Clear/disable SEND state in the @a var
  */
 #define MHD_FD_STATE_CLEAR_SEND(var) \
         MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_SEND)
 /**
- * Clear/disable EXCEPT state in @a var
+ * Clear/disable EXCEPT state in the @a var
  */
 #define MHD_FD_STATE_CLEAR_EXCEPT(var) \
         MHD_FD_STATE_CLEAR ((var),MHD_FD_STATE_EXCEPT)
@@ -2750,8 +2750,12 @@ struct MHD_EventUpdateContext;
  *                     NULL if @a fd socket was not registered before
  * @param ecb_cntx the context handle to be used
  *                 with #MHD_daemon_event_update()
- * @return NULL if error (to connection will be aborted),
- *         or the new socket context
+ * @return must be NULL for the removed (de-registred) sockets,
+ *         for new and updated sockets: NULL in case of error (the connection
+ *         will be aborted or daemon failed to start if FD does not belong to
+ *         connection)
+ *         or the new socket context (opaque for MHD, must be non-NULL)
+ * @sa #MHD_D_OPTION_REREGISTER_ALL
  * @ingroup event
  */
 typedef MHD_APP_SOCKET_CNTX_TYPE *
@@ -2768,8 +2772,9 @@ typedef MHD_APP_SOCKET_CNTX_TYPE *
  * Update the sockets state.
  * Must be called for every socket that got state updated.
  * For #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL() mode
- * should be called for each socket.
- * Available only for daemons stated in
+ * this function must be called for each socket between any two calls of
+ * #MHD_daemon_process_reg_events() function.
+ * Available only for daemons started in
  * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
  * #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
  * @param daemon the daemon handle
@@ -2802,6 +2807,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  *                           polling function, can be NULL
  * @return #MHD_SC_OK on success,
  *         error code otherwise
+ * @sa #MHD_D_OPTION_REREGISTER_ALL
  * @ingroup event
  */
 MHD_EXTERN_ enum MHD_StatusCode
@@ -2833,6 +2839,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
    * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL() to enable
    * this mode.
+   * @sa #MHD_D_OPTION_REREGISTER_ALL
    */
   MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL = 8
   ,
@@ -2842,6 +2849,7 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
    * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
    * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE() to enable
    * this mode.
+   * @sa #MHD_D_OPTION_REREGISTER_ALL
    */
   MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE = 9
   ,
