@@ -1322,7 +1322,7 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   {
   case mhd_POLL_TYPE_EXT:
     mhd_assert ((MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL == s->work_mode.mode) || \
-                (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE != s->work_mode.mode));
+                (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE == s->work_mode.mode));
     mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     mhd_assert (MHD_WM_EXTERNAL_SINGLE_FD_WATCH != s->work_mode.mode);
     d->events.poll_type = mhd_POLL_TYPE_EXT;
@@ -1335,6 +1335,9 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   case mhd_POLL_TYPE_SELECT:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     mhd_assert (MHD_WM_EXTERNAL_SINGLE_FD_WATCH != s->work_mode.mode);
+    mhd_assert (MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL != s->work_mode.mode);
+    mhd_assert (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE != s->work_mode.mode);
+    mhd_assert (MHD_NO == s->reregister_all);
     d->events.poll_type = mhd_POLL_TYPE_SELECT;
     d->events.data.select.rfds = NULL; /* Memory allocated during event and threads init */
     d->events.data.select.wfds = NULL; /* Memory allocated during event and threads init */
@@ -1345,6 +1348,9 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
   case mhd_POLL_TYPE_POLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     mhd_assert (MHD_WM_EXTERNAL_SINGLE_FD_WATCH != s->work_mode.mode);
+    mhd_assert (MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL != s->work_mode.mode);
+    mhd_assert (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE != s->work_mode.mode);
+    mhd_assert (MHD_NO == s->reregister_all);
     d->events.poll_type = mhd_POLL_TYPE_POLL;
     d->events.data.poll.fds = NULL; /* Memory allocated during event and threads init */
     d->events.data.poll.rel = NULL; /* Memory allocated during event and threads init */
@@ -1353,6 +1359,9 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
 #ifdef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
     mhd_assert (! mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
+    mhd_assert (MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL != s->work_mode.mode);
+    mhd_assert (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE != s->work_mode.mode);
+    mhd_assert (MHD_NO == s->reregister_all);
     /* Pre-initialised by init_epoll() */
     mhd_assert (mhd_POLL_TYPE_EPOLL == d->events.poll_type);
     mhd_assert (0 <= d->events.data.epoll.e_fd);
