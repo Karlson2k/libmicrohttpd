@@ -215,9 +215,9 @@ typedef unsigned char *mhd_SockRelMarker;
 #endif
 
 
-#define mhd_SOCKET_REL_MARKER_EMPTY    ((mhd_SockRelMarker) 0)
+#define mhd_SOCKET_REL_MARKER_EMPTY    ((mhd_SockRelMarker) (0))
 
-#define mhd_SOCKET_REL_MARKER_ITC      ((mhd_SockRelMarker) - 1)
+#define mhd_SOCKET_REL_MARKER_ITC      ((mhd_SockRelMarker) (-1))
 
 #define mhd_SOCKET_REL_MARKER_LISTEN   (mhd_SOCKET_REL_MARKER_ITC - 1)
 /**
