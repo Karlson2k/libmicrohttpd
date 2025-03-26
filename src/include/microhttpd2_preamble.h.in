@@ -973,6 +973,12 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE = 50065
   ,
   /**
+   * Failed to register daemon's FDs (ITC or listening) in the application
+   * (external event) monitoring
+   */
+  MHD_SC_EXT_EVENT_REG_DAEMON_FDS_FAILURE = 50066
+  ,
+  /**
    * The select() syscall is not available on this platform or in this MHD
    * build.
    */
@@ -1427,6 +1433,11 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * and threads are used.
    */
   MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60011
+  ,
+  /**
+   * The option provided can be used only with "external events" modes.
+   */
+  MHD_SC_EXTERNAL_EVENT_ONLY = 60012
   ,
   /**
    * MHD is closing a connection because the application

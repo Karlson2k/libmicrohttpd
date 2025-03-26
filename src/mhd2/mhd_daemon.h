@@ -316,10 +316,10 @@ struct mhd_DaemonEventsEPollData
 #endif
 
 /**
- * Daemon's data for external events for sockets monitoring.
+ * Daemon's data for external events callback.
  * Internal version of struct MHD_WorkModeExternalEventLoopCBParam.
  */
-struct mhd_DaemonEventsExternal
+struct mhd_DaemonEventsExternalCallback
 {
   /**
    * Socket registration callback
@@ -329,6 +329,48 @@ struct mhd_DaemonEventsExternal
    * Closure for the @a cb
    */
   void *cls;
+};
+
+
+/**
+ * Application context for external events for daemon's FDs
+ */
+struct mhd_DaemonEventsExternalScktAppCntx
+{
+#ifdef MHD_SUPPORT_THREADS
+  /**
+   * Application context for ITC FD
+   */
+  void *itc;
+#endif /* MHD_SUPPORT_THREADS */
+
+  /**
+   * Application context for listen socket
+   */
+  void *listen;
+};
+
+/**
+ * Daemon's data for external events for sockets monitoring.
+ */
+struct mhd_DaemonEventsExternal
+{
+  /**
+   * Daemon's data for external events callback.
+   * Internal version of struct MHD_WorkModeExternalEventLoopCBParam.
+   */
+  struct mhd_DaemonEventsExternalCallback cb_data;
+
+  /**
+   * Application context for external events for daemon's FDs
+   */
+  struct mhd_DaemonEventsExternalScktAppCntx app_cntx;
+
+  /**
+   * If set to 'true' then all FDs must be registered each round.
+   * If set to 'false' then only changed FDs must be registered.
+   */
+  bool reg_all;
 };
 
 /**
@@ -362,7 +404,6 @@ union mhd_DaemonEventMonitoringTypeSpecificData
 
   /**
    * Daemon's data for external events for sockets monitoring.
-   * Internal version of struct MHD_WorkModeExternalEventLoopCBParam.
    */
   struct mhd_DaemonEventsExternal ext;
 };
