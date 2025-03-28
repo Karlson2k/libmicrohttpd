@@ -542,10 +542,10 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
   if (FD_ISSET (mhd_itc_r_fd (d->threading.itc), rfds))
   {
     --num_events;
-    /* Clear ITC here, as before any other data processing.
-     * Any external events may activate ITC again if any data to process is
-     * added externally. Cleaning ITC early ensures guaranteed that new data
-     * will not be missed. */
+    /* Clear ITC here, before other data processing.
+     * Any external events will activate ITC again if additional data to
+     * process is added externally. Cleaning ITC early ensures that new data
+     * (with additional ITC activation) will not be missed. */
     mhd_itc_clear (d->threading.itc);
   }
 
@@ -582,7 +582,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
 
 #ifdef MHD_FAVOR_SMALL_CODE
   (void) num_events;
-  num_events = 1; /* Use static value to optimise out the next look */
+  num_events = 1; /* Use static value to minimise the binary size of the next loop */
 #endif /* ! MHD_FAVOR_SMALL_CODE */
 
   for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns), all_conn);
@@ -807,10 +807,10 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
   if (0 != (d->events.data.poll.fds[i_s].revents & (MHD_POLL_IN | POLLIN)))
   {
     --num_events;
-    /* Clear ITC here, as before any other data processing.
-     * Any external events may activate ITC again if any data to process is
-     * added externally. Cleaning ITC early ensures guaranteed that new data
-     * will not be missed. */
+    /* Clear ITC here, before other data processing.
+     * Any external events will activate ITC again if additional data to
+     * process is added externally. Cleaning ITC early ensures that new data
+     * (with additional ITC activation) will not be missed. */
     mhd_itc_clear (d->threading.itc);
   }
   ++i_s;
@@ -987,10 +987,10 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
       }
       if (0 != (e->events & EPOLLIN))
       {
-        /* Clear ITC here, as before any other data processing.
-         * Any external events may activate ITC again if any data to process is
-         * added externally. Cleaning ITC early ensures guaranteed that new data
-         * will not be missed. */
+        /* Clear ITC here, before other data processing.
+         * Any external events will activate ITC again if additional data to
+         * process is added externally. Cleaning ITC early ensures that new data
+         * (with additional ITC activation) will not be missed. */
         mhd_itc_clear (d->threading.itc);
       }
     }
