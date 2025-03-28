@@ -1055,7 +1055,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_ITC_CHECK_FAILED = 500102
   ,
   /**
-   * System reported error conditions on the ITC FD..
+   * System reported error conditions on the ITC FD.
    */
   MHD_SC_ITC_STATUS_ERROR = 500104
   ,
