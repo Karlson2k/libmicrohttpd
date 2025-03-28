@@ -829,7 +829,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     if (0 != (revents & (POLLERR | POLLNVAL | POLLHUP)))
     {
       --num_events;
-      mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+      mhd_LOG_MSG (d, MHD_SC_LISTEN_STATUS_ERROR, \
                    "System reported that the listening socket has an error " \
                    "status. The daemon will not listen any more.");
       /* Close the listening socket unless the master daemon should close it */
@@ -998,7 +998,7 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
     {
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
-        mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
+        mhd_LOG_MSG (d, MHD_SC_LISTEN_STATUS_ERROR, \
                      "System reported that the listening socket has an error " \
                      "status. The daemon will not listen any more.");
 
