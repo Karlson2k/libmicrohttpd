@@ -975,8 +975,10 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
   for (i = 0; num_events > i; ++i)
   {
     struct epoll_event *const e = events + i;
+#ifdef MHD_SUPPORT_THREADS
     if (((uint64_t) mhd_SOCKET_REL_MARKER_ITC) == e->data.u64) /* uint64_t is in the system header */
     {
+      mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
         mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
@@ -994,7 +996,9 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
         mhd_itc_clear (d->threading.itc);
       }
     }
-    else if (((uint64_t) mhd_SOCKET_REL_MARKER_LISTEN) == e->data.u64) /* uint64_t is in the system header */
+    else
+#endif /* MHD_SUPPORT_THREADS */
+    if (((uint64_t) mhd_SOCKET_REL_MARKER_LISTEN) == e->data.u64) /* uint64_t is in the system header */
     {
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
