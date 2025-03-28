@@ -613,7 +613,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
 #endif /* MHD_FAVOR_SMALL_CODE */
   }
 
-  #ifndef MHD_FAVOR_SMALL_CODE
+#ifndef MHD_FAVOR_SMALL_CODE
   mhd_assert (0 == num_events);
 #endif /* MHD_FAVOR_SMALL_CODE */
   return true;
