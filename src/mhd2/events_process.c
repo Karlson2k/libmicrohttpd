@@ -839,8 +839,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
       /* Stop monitoring socket to avoid spinning with busy-waiting */
       d->net.listen.fd = MHD_INVALID_SOCKET;
     }
-    else if (0 !=
-             (d->events.data.poll.fds[i_s].revents & (MHD_POLL_IN | POLLIN)))
+    else if (0 != (revents & (MHD_POLL_IN | POLLIN)))
     {
       --num_events;
       d->events.act_req.accept = true;
