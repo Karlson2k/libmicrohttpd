@@ -415,9 +415,11 @@ union mhd_DaemonEventMonitoringTypeSpecificData
 struct mhd_DaemonEventActionRequired
 {
   /**
-   * If 'true' then connection is waiting to be accepted
+   * If 'true' connection resuming is required.
+   * TODO: implement resuming
+   * TODO: add initialisation
    */
-  bool accept;
+  bool resume;
 };
 
 
@@ -442,6 +444,11 @@ struct mhd_DaemonEventMonitoringData
    * the daemon's thread.
    */
   struct mhd_DaemonEventActionRequired act_req;
+
+  /**
+   * When set to 'true' the listen socket has new incoming connection(s).
+   */
+  bool accept_pending;
 
   /**
    * Indicate that daemon already has some data to be processed on the next
@@ -493,6 +500,12 @@ struct mhd_ListenSocket
    */
   MHD_Socket fd;
   /**
+   * Set to 'true' when unrecoverable error is detected on the listen socket.
+   * If set to 'true', but @a fd is not #MHD_INVALID_SOCKET then "broken" state
+   * has not yet processed by MHD.
+   */
+  bool is_broken;
+  /**
    * The type of the listening socket @a fd
    */
   enum mhd_SocketType type;
@@ -526,6 +539,12 @@ struct mhd_DaemonNetworkSettings
 
 /**
  * The daemon network/sockets data
+ *
+ * This structure holds mostly static information—typically initialised once
+ * when the daemon starts, and possibly updated once later (e.g., if the
+ * listening socket fails or is closed).
+ *
+ * It does NOT contain any operational states.
  */
 struct mhd_DaemonNetwork
 {
@@ -1060,6 +1079,12 @@ struct MHD_Daemon
 
   /**
    * The daemon network/sockets data
+   *
+   * This structure holds mostly static information—typically initialised once
+   * when the daemon starts, and possibly updated once later (e.g., if the
+   * listening socket fails or is closed).
+   *
+   * It does NOT contain any operational states.
    */
   struct mhd_DaemonNetwork net;
 

@@ -60,7 +60,8 @@ MHD_daemon_get_info_fixed_sz (
   switch (info_type)
   {
   case MHD_DAEMON_INFO_FIXED_BIND_PORT:
-    if (MHD_INVALID_SOCKET == daemon->net.listen.fd)
+    if ((MHD_INVALID_SOCKET == daemon->net.listen.fd)
+        && ! daemon->net.listen.is_broken)
       return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
     if (mhd_SOCKET_TYPE_UNKNOWN > daemon->net.listen.type)
       return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
@@ -75,11 +76,17 @@ MHD_daemon_get_info_fixed_sz (
     output_buf->v_bind_port_uint16 = daemon->net.listen.port;
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_LISTEN_SOCKET:
-    if (MHD_INVALID_SOCKET == daemon->net.listen.fd)
-      return MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
-    if (sizeof(output_buf->v_listen_socket) > output_buf_size)
-      return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
-    output_buf->v_listen_socket = daemon->net.listen.fd;
+    if (1)
+    {
+      MHD_Socket listen_fd = daemon->net.listen.fd;
+      if (MHD_INVALID_SOCKET == listen_fd)
+        return daemon->net.listen.is_broken ?
+               MHD_SC_INFO_GET_TYPE_UNOBTAINABLE :
+               MHD_SC_INFO_GET_TYPE_NOT_APPLICABLE;
+      if (sizeof(output_buf->v_listen_socket) > output_buf_size)
+        return MHD_SC_INFO_GET_BUFF_TOO_SMALL;
+      output_buf->v_listen_socket = listen_fd;
+    }
     return MHD_SC_OK;
   case MHD_DAEMON_INFO_FIXED_AGGREAGATE_FD:
 #ifdef MHD_SUPPORT_EPOLL

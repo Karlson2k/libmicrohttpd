@@ -645,6 +645,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
   {
     /* No listen socket */
     d->net.listen.fd = MHD_INVALID_SOCKET;
+    d->net.listen.is_broken = false;
     d->net.listen.type = mhd_SOCKET_TYPE_UNKNOWN;
     d->net.listen.non_block = false;
     d->net.listen.port = 0;
@@ -988,6 +989,7 @@ create_bind_listen_stream_socket (struct MHD_Daemon *restrict d,
 
     /* Set to the daemon only when the listening socket is fully ready */
     d->net.listen.fd = sk;
+    d->net.listen.is_broken = false;
     switch (sk_type)
     {
     case mhd_SKT_UNKNOWN:
@@ -1336,7 +1338,6 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
     mhd_assert ((MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL == s->work_mode.mode) || \
                 (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE == s->work_mode.mode));
     mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
-    mhd_assert (MHD_WM_EXTERNAL_SINGLE_FD_WATCH != s->work_mode.mode);
     d->events.poll_type = mhd_POLL_TYPE_EXT;
     d->events.data.ext.cb_data.cb =
       s->work_mode.params.v_external_event_loop_cb.reg_cb;
@@ -1446,7 +1447,7 @@ daemon_init_net (struct MHD_Daemon *restrict d,
     {
       if ((MHD_INVALID_SOCKET != d->net.listen.fd)
           && ! d->net.listen.non_block
-          && ((mhd_WM_INT_EXTERNAL_EVENTS_EDGE == d->wmode_int) ||
+          && (mhd_D_IS_USING_EDGE_TRIG (d) ||
               (mhd_WM_INT_INTERNAL_EVENTS_THREAD_POOL == d->wmode_int)))
       {
         mhd_LOG_MSG (d, MHD_SC_LISTEN_SOCKET_NONBLOCKING_FAILURE, \
@@ -2058,6 +2059,8 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
 #endif
 
+  d->events.accept_pending = false;
+
   switch (d->events.poll_type)
   {
   case mhd_POLL_TYPE_EXT:
@@ -2168,7 +2171,7 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
     {
       struct epoll_event reg_event;
 #ifdef MHD_SUPPORT_THREADS
-      reg_event.events = EPOLLIN;
+      reg_event.events = EPOLLIN | EPOLLET;
       reg_event.data.u64 = (uint64_t) mhd_SOCKET_REL_MARKER_ITC; /* uint64_t is used in the epoll header */
       if (0 != epoll_ctl (d->events.data.epoll.e_fd, EPOLL_CTL_ADD,
                           mhd_itc_r_fd (d->threading.itc), &reg_event))

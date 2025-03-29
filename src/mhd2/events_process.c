@@ -71,10 +71,7 @@ mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
 
   mhd_assert (! mhd_D_HAS_WORKERS (d));
 
-  if (d->events.act_req.accept && d->conns.block_new)
-    d->events.act_req.accept = false;
-
-  if (d->events.act_req.accept)
+  if (d->events.accept_pending && ! d->conns.block_new)
     return 0;
   if (zero_wait)
     return 0;
@@ -146,6 +143,7 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
 {
   unsigned int num_to_accept;
   mhd_assert (MHD_INVALID_SOCKET != d->net.listen.fd);
+  mhd_assert (! d->net.listen.is_broken);
   mhd_assert (! d->conns.block_new);
   mhd_assert (d->conns.count < d->conns.cfg.count_limit);
   mhd_assert (! mhd_D_HAS_WORKERS (d));
@@ -256,9 +254,10 @@ daemon_accept_new_conns (struct MHD_Daemon *restrict d)
     if (mhd_DAEMON_ACCEPT_NO_MORE_PENDING == res)
       return true;
     if (mhd_DAEMON_ACCEPT_FAILED == res)
-      break;
+      return false; /* This is probably "no system resources" error.
+                       To do try to accept more connections now. */
   }
-  return false;
+  return false; /* More connections may need to be accepted */
 }
 
 
@@ -470,8 +469,11 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
                &ret,
                d);
 #endif
-  if (MHD_INVALID_SOCKET != d->net.listen.fd)
+  if ((MHD_INVALID_SOCKET != d->net.listen.fd)
+      && ! d->conns.block_new)
   {
+    mhd_assert (! d->net.listen.is_broken);
+
     fd_set_wrap (d->net.listen.fd,
                  rfds,
                  &ret,
@@ -544,7 +546,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
     --num_events;
     /* Clear ITC here, before other data processing.
      * Any external events will activate ITC again if additional data to
-     * process is added externally. Cleaning ITC early ensures that new data
+     * process is added externally. Clearing ITC early ensures that new data
      * (with additional ITC activation) will not be missed. */
     mhd_itc_clear (d->threading.itc);
   }
@@ -557,6 +559,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
 
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
   {
+    mhd_assert (! d->net.listen.is_broken);
     if (FD_ISSET (d->net.listen.fd, efds))
     {
       --num_events;
@@ -567,13 +570,16 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
       if (! mhd_D_HAS_MASTER (d))
         mhd_socket_close (d->net.listen.fd);
 
+      d->events.accept_pending = false;
+      d->net.listen.is_broken = true;
       /* Stop monitoring socket to avoid spinning with busy-waiting */
       d->net.listen.fd = MHD_INVALID_SOCKET;
     }
-    else if (FD_ISSET (d->net.listen.fd, rfds))
+    else
     {
-      --num_events;
-      d->events.act_req.accept = true;
+      d->events.accept_pending = FD_ISSET (d->net.listen.fd, rfds);
+      if (d->events.accept_pending)
+        --num_events;
     }
   }
 
@@ -733,9 +739,11 @@ poll_update_fds (struct MHD_Daemon *restrict d,
 #endif
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
   {
+    mhd_assert (! d->net.listen.is_broken);
     mhd_assert (d->events.data.poll.fds[i_s].fd == d->net.listen.fd);
     mhd_assert (mhd_SOCKET_REL_MARKER_LISTEN == \
                 d->events.data.poll.rel[i_s].fd_id);
+    d->events.data.poll.fds[i_s].events = d->conns.block_new ? 0 : POLLIN;
     ++i_s;
   }
   if (listen_only)
@@ -809,7 +817,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     --num_events;
     /* Clear ITC here, before other data processing.
      * Any external events will activate ITC again if additional data to
-     * process is added externally. Cleaning ITC early ensures that new data
+     * process is added externally. Clearing ITC early ensures that new data
      * (with additional ITC activation) will not be missed. */
     mhd_itc_clear (d->threading.itc);
   }
@@ -823,6 +831,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
   {
     const short revents = d->events.data.poll.fds[i_s].revents;
 
+    mhd_assert (! d->net.listen.is_broken);
     mhd_assert (d->events.data.poll.fds[i_s].fd == d->net.listen.fd);
     mhd_assert (mhd_SOCKET_REL_MARKER_LISTEN == \
                 d->events.data.poll.rel[i_s].fd_id);
@@ -836,13 +845,26 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
       if (! mhd_D_HAS_MASTER (d))
         mhd_socket_close (d->net.listen.fd);
 
+      d->events.accept_pending = false;
+      d->net.listen.is_broken = true;
       /* Stop monitoring socket to avoid spinning with busy-waiting */
       d->net.listen.fd = MHD_INVALID_SOCKET;
     }
-    else if (0 != (revents & (MHD_POLL_IN | POLLIN)))
+    else
     {
-      --num_events;
-      d->events.act_req.accept = true;
+      const bool has_new_conns = (0 != (revents & (MHD_POLL_IN | POLLIN)));
+      if (has_new_conns)
+      {
+        --num_events;
+        d->events.accept_pending = true;
+      }
+      else
+      {
+        /* Check whether the listen socket was monitored for incoming
+           connections */
+        if (0 != (d->events.data.poll.fds[i_s].events & POLLIN))
+          d->events.accept_pending = false;
+      }
     }
     ++i_s;
   }
@@ -990,7 +1012,7 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
       {
         /* Clear ITC here, before other data processing.
          * Any external events will activate ITC again if additional data to
-         * process is added externally. Cleaning ITC early ensures that new data
+         * process is added externally. Clearing ITC early ensures that new data
          * (with additional ITC activation) will not be missed. */
         mhd_itc_clear (d->threading.itc);
       }
@@ -999,23 +1021,32 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
 #endif /* MHD_SUPPORT_THREADS */
     if (((uint64_t) mhd_SOCKET_REL_MARKER_LISTEN) == e->data.u64) /* uint64_t is in the system header */
     {
+      mhd_assert (MHD_INVALID_SOCKET != d->net.listen.fd);
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
         mhd_LOG_MSG (d, MHD_SC_LISTEN_STATUS_ERROR, \
                      "System reported that the listening socket has an error " \
                      "status. The daemon will not listen any more.");
 
-        // TODO: remove listen from epoll monitoring
-
         /* Close the listening socket unless the master daemon should close it */
         if (! mhd_D_HAS_MASTER (d))
           mhd_socket_close (d->net.listen.fd);
+        else
+        {
+          /* Ignore possible error as the socket could be already removed
+             from the epoll monitoring by closing the socket */
+          (void) epoll_ctl (d->events.data.epoll.e_fd,
+                            EPOLL_CTL_DEL,
+                            d->net.listen.fd,
+                            NULL);
+        }
 
-        /* Stop monitoring socket to avoid spinning with busy-waiting */
+        d->events.accept_pending = false;
+        d->net.listen.is_broken = true;
         d->net.listen.fd = MHD_INVALID_SOCKET;
       }
-      if (0 != (e->events & EPOLLIN))
-        d->events.act_req.accept = true;
+      else
+        d->events.accept_pending = (0 != (e->events & EPOLLIN));
     }
     else
     {
@@ -1131,13 +1162,10 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
     MHD_PANIC ("Daemon data integrity broken");
     break;
   }
-  if (d->events.act_req.accept)
-  {
-    if (daemon_accept_new_conns (d))
-      d->events.act_req.accept = false;
-    else if (! d->net.listen.non_block)
-      d->events.act_req.accept = false;
-  }
+
+  if (d->events.accept_pending)
+    d->events.accept_pending = ! daemon_accept_new_conns (d);
+
   daemon_process_all_active_conns (d);
   daemon_cleanup_upgraded_conns (d);
   return ! d->threading.stop_requested;

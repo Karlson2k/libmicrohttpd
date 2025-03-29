@@ -793,6 +793,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 
   fd = daemon->net.listen.fd;
   mhd_assert (MHD_INVALID_SOCKET != fd);
+  mhd_assert (! daemon->net.listen.is_broken);
 
   addrlen = (socklen_t) sizeof (addrstorage);
   memset (&addrstorage,
