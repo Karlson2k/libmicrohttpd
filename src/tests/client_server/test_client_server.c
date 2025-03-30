@@ -139,6 +139,12 @@ main (int argc, char *argv[])
       .server_runner = &MHDT_server_run_blocking,
     },
     {
+      .label = "auto-selected external event loop mode, no threads",
+      .server_setup = &MHDT_server_setup_external,
+      .server_setup_cls = NULL,
+      .server_runner = &MHDT_server_run_external,
+    },
+    {
       .label = "END"
     }
   };

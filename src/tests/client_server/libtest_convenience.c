@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <curl/curl.h>
+#include <sys/epoll.h>
 
 
 const char *
@@ -289,4 +290,201 @@ MHDT_server_run_blocking (void *cls,
     fprintf (stderr,
              "Failed to drain termination signal\n");
   }
+}
+
+
+static int my_epoll_fd = -1;
+
+
+/**
+ * The callback for registration/de-registration of the sockets to watch.
+ *
+ * This callback must not call #MHD_daemon_destroy(), #MHD_daemon_quiesce(),
+ * #MHD_daemon_add_connection().
+ *
+ * @param cls the closure
+ * @param fd the socket to watch
+ * @param watch_for the states of the @a fd to watch, if set to
+ *                  #MHD_FD_STATE_NONE the socket must be de-registred
+ * @param app_cntx_old the old application defined context for the socket,
+ *                     NULL if @a fd socket was not registered before
+ * @param ecb_cntx the context handle to be used
+ *                 with #MHD_daemon_event_update()
+ * @return NULL if error (to connection will be aborted),
+ *         or the new socket context
+ * @ingroup event
+ */
+static void *
+update_fd (
+  void *cls,
+  MHD_Socket fd,
+  enum MHD_FdState watch_for,
+  MHD_APP_SOCKET_CNTX_TYPE *app_cntx_old,
+  struct MHD_EventUpdateContext *ecb_cntx)
+{
+  struct epoll_event ev;
+
+  if (watch_for == MHD_FD_STATE_NONE)
+  {
+    epoll_ctl (my_epoll_fd,
+               EPOLL_CTL_DEL,
+               fd,
+               &ev /* for Linux 2.6.9-compatibility */);
+    return NULL;
+  }
+  ev.data.ptr = ecb_cntx;
+  ev.events = 0;
+  if (0 != (watch_for & MHD_FD_STATE_RECV))
+    ev.events |= EPOLLIN;
+  if (0 != (watch_for & MHD_FD_STATE_SEND))
+    ev.events |= EPOLLOUT;
+  if (0 != (watch_for & MHD_FD_STATE_EXCEPT))
+    ev.events |= EPOLLRDHUP | EPOLLHUP | EPOLLERR;
+  if (0 !=
+      epoll_ctl (my_epoll_fd,
+                 NULL == app_cntx_old
+                 ? EPOLL_CTL_ADD
+                 : EPOLL_CTL_MOD,
+                 fd,
+                 &ev))
+  {
+    fprintf (stderr,
+             "epoll_ctl failed: %s\n",
+             strerror (errno));
+    return NULL;
+  }
+  return ecb_cntx;
+}
+
+
+const char *
+MHDT_server_setup_external (const void *cls,
+                            struct MHD_Daemon *d)
+{
+  (void) cls;
+  if (MHD_SC_OK !=
+      MHD_DAEMON_SET_OPTIONS (
+        d,
+        MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL (&update_fd,
+                                                      NULL)))
+    return "Failed to configure external mode!";
+  if (MHD_SC_OK !=
+      MHD_DAEMON_SET_OPTIONS (
+        d,
+        MHD_D_OPTION_BIND_PORT (MHD_AF_AUTO,
+                                0)))
+    return "Failed to bind to port 0!";
+  my_epoll_fd = epoll_create1 (0);
+
+  return NULL;
+}
+
+
+void
+MHDT_server_run_external (void *cls,
+                          int finsig,
+                          struct MHD_Daemon *d)
+{
+  fd_set r;
+
+  (void) cls; /* Unused */
+  if (-1 == my_epoll_fd)
+    abort ();
+  while (1)
+  {
+    uint_fast64_t next_wait;
+    struct timeval timeout;
+
+    if (MHD_SC_OK !=
+        MHD_daemon_process_reg_events (d,
+                                       &next_wait))
+    {
+      fprintf (stderr,
+               "MHD_daemon_process_reg_events() failed\n");
+      break;
+    }
+    timeout.tv_usec = next_wait;
+
+    FD_ZERO (&r);
+    FD_SET (finsig,
+            &r);
+    FD_SET (my_epoll_fd,
+            &r);
+    if ( (-1 ==
+          select ((my_epoll_fd > finsig ? my_epoll_fd : finsig) + 1,
+                  &r,
+                  NULL,
+                  NULL,
+                  &timeout)) &&
+         (EAGAIN != errno) )
+    {
+      fprintf (stderr,
+               "Failure in select(): %s\n",
+               strerror (errno));
+      break;
+    }
+    if (FD_ISSET (finsig,
+                  &r))
+      break;
+    if (FD_ISSET (my_epoll_fd,
+                  &r))
+    {
+      int maxevents = 40;
+      struct epoll_event events[maxevents];
+      int n;
+      int i;
+
+      n = epoll_wait (my_epoll_fd,
+                      events,
+                      maxevents,
+                      0);
+      if (-1 == n)
+      {
+        fprintf (stderr,
+                 "epoll_wait() failed: %s\n",
+                 strerror (errno));
+        break;
+      }
+      for (i = 0; i < n; i++)
+      {
+        enum MHD_FdState state = MHD_FD_STATE_NONE;
+
+        if (0 != (events[i].events & EPOLLIN))
+          state |= MHD_FD_STATE_RECV;
+        if (0 != (events[i].events & EPOLLOUT))
+          state |= MHD_FD_STATE_SEND;
+        if (0 != (events[i].events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) )
+          state |= MHD_FD_STATE_EXCEPT;
+        MHD_daemon_event_update (d,
+                                 events[i].data.ptr,
+                                 state);
+      }
+
+      if (MHD_SC_OK !=
+          MHD_daemon_process_blocking (d,
+                                       1000))
+      {
+        fprintf (stderr,
+                 "Failure running MHD_daemon_process_blocking()\n");
+        break;
+      }
+    }
+  }
+
+  {
+    char c;
+
+    if ( (FD_ISSET (finsig,
+                    &r)) &&
+         (1 != read (finsig,
+                     &c,
+                     1)) )
+    {
+      fprintf (stderr,
+               "Failed to drain termination signal\n");
+    }
+  }
+
+  close (my_epoll_fd);
+  my_epoll_fd = -1;
 }

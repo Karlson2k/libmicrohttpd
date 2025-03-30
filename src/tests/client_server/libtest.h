@@ -742,6 +742,19 @@ MHDT_server_setup_minimal (const void *cls,
 
 
 /**
+ * Initialize MHD daemon for an external event loop.
+ * Must be used together with #MHDT_server_run_external().
+ *
+ * @param cls closure (use NULL)
+ * @param[in,out] d daemon to initialize
+ * @return error message, NULL on success
+ */
+const char *
+MHDT_server_setup_external (const void *cls,
+                            struct MHD_Daemon *d);
+
+
+/**
  * Initialize MHD daemon with TLS support, binding to any free port.
  *
  * @param cls closure
@@ -820,6 +833,20 @@ MHDT_server_run_minimal (void *cls,
  */
 void
 MHDT_server_run_blocking (void *cls,
+                          int finsig,
+                          struct MHD_Daemon *d);
+
+
+/**
+ * Function that runs an MHD daemon with an external event loop until
+ * a read() against @a finsig succeeds.
+ *
+ * @param cls closure
+ * @param finsig fd to read from to detect termination request
+ * @param[in,out] d daemon to run
+ */
+void
+MHDT_server_run_external (void *cls,
                           int finsig,
                           struct MHD_Daemon *d);
 
