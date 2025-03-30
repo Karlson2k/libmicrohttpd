@@ -549,7 +549,7 @@ struct MHD_Connection
   struct MHD_UpgradedHandle upgr;
 
   /**
-   * Double-linke list of HTTP-Upgraded connections waiting for clean-up
+   * Double-linked list of HTTP-Upgraded connections waiting for clean-up
    */
   mhd_DLNKDL_LINKS (MHD_Connection,upgr_cleanup);
 #endif /* MHD_SUPPORT_UPGRADE */
