@@ -103,7 +103,7 @@ mhd_conn_mark_unready (struct MHD_Connection *restrict c,
  */
 MHD_static_inline_ MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_mark_ready_update3 (struct MHD_Connection *restrict c,
-                             unsigned int force_ready,
+                             bool force_ready,
                              struct MHD_Daemon *restrict d)
 {
   if (force_ready ||
