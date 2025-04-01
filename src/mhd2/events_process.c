@@ -1405,10 +1405,10 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
 }
 
 
-MHD_EXTERN_
+static
 MHD_FN_PAR_NONNULL_ (1) enum MHD_StatusCode
-MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
-                               uint_fast64_t *MHD_RESTRICT next_max_wait)
+process_reg_events_int (struct MHD_Daemon *MHD_RESTRICT daemon,
+                        uint_fast64_t *MHD_RESTRICT next_max_wait)
 {
   enum MHD_StatusCode res;
 
@@ -1460,6 +1460,41 @@ MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
     *next_max_wait = mhd_daemon_get_wait_max (daemon);
 
   return MHD_SC_OK;
+}
+
+
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1) enum MHD_StatusCode
+MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
+                               uint_fast64_t *MHD_RESTRICT next_max_wait)
+{
+  enum MHD_StatusCode res;
+#ifdef mhd_DEBUG_EXTR_EVENTS
+  fprintf (stderr,
+           "### (Started)  MHD_daemon_process_reg_events(daemon, [%s])...\n",
+           (NULL != next_max_wait) ? "non-NULL" : "NULL");
+#endif
+  res = process_reg_events_int (daemon,
+                                next_max_wait);
+#ifdef mhd_DEBUG_EXTR_EVENTS
+  if (NULL == next_max_wait)
+    fprintf (stderr,
+             "### (Finished) MHD_daemon_process_reg_events(daemon, [NULL]) ->"
+             "%u\n",
+             (unsigned int) res);
+  else if (MHD_WAIT_INDEFINITELY == *next_max_wait)
+    fprintf (stderr,
+             "### (Finished) MHD_daemon_process_reg_events(daemon, "
+             "[MHD_WAIT_INDEFINITELY]) ->%u\n",
+             (unsigned int) res);
+  else
+    fprintf (stderr,
+             "### (Finished) MHD_daemon_process_reg_events(daemon, ->%llu) "
+             "->%u\n",
+             (unsigned long long) *next_max_wait,
+             (unsigned int) res);
+#endif
+  return res;
 }
 
 
