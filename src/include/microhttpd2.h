@@ -2822,14 +2822,20 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
 
 
 /**
- * Perform sockets registration, process registered network events.
+ * Perform all daemon activities based on FDs events provided earlier by
+ * application via #MHD_daemon_event_update().
  *
- * This function first processes all registered (by MHD_daemon_event_update())
- * network events (if any) and then calls #MHD_SocketRegistrationUpdateCallback
+ * This function accepts new connections (if any), performs HTTP communications
+ * on all active connections, closes connections as needed and performs FDs
+ * registration updates by calling #MHD_SocketRegistrationUpdateCallback
  * callback for every socket that needs to be added/updated/removed.
  *
  * Available only for daemons started in #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
  * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
+ *
+ * When used in #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL mode, application must
+ * provide all updates by calling #MHD_daemon_event_update() for every
+ * registered FD between any two calls of this function.
  *
  * @param daemon the daemon handle
  * @param[out] next_max_wait the optional pointer to receive the next maximum
@@ -2865,8 +2871,11 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
   ,
   /**
    * Work mode with an external event loop with level triggers.
-   * Application uses #MHD_SocketRegistrationUpdateCallback, level triggered
-   * sockets polling (like select() or poll()) and #MHD_daemon_event_update().
+   * MHD provides registration of all FDs to be monitored by using
+   * #MHD_SocketRegistrationUpdateCallback, application performs level triggered
+   * FDs polling (like select() or poll()), calls function
+   * #MHD_daemon_event_update() for every registered FD and then calls main
+   * function MHD_daemon_process_reg_events() to process the data.
    * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL() to enable
    * this mode.
    * @sa #MHD_D_OPTION_REREGISTER_ALL
@@ -2875,8 +2884,11 @@ enum MHD_FIXED_ENUM_APP_SET_ MHD_WorkMode
   ,
   /**
    * Work mode with an external event loop with edge triggers.
-   * Application uses #MHD_SocketRegistrationUpdateCallback, edge triggered
-   * sockets polling (like epoll with EPOLLET) and #MHD_daemon_event_update().
+   * MHD provides registration of all FDs to be monitored by using
+   * #MHD_SocketRegistrationUpdateCallback, application performs edge triggered
+   * sockets polling (like epoll with EPOLLET), calls function
+   * #MHD_daemon_event_update() for FDs with updated states and then calls main
+   * function MHD_daemon_process_reg_events() to process the data.
    * Use helper macro #MHD_D_OPTION_WM_EXTERNAL_EVENT_LOOP_CB_EDGE() to enable
    * this mode.
    * @sa #MHD_D_OPTION_REREGISTER_ALL
