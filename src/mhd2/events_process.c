@@ -339,9 +339,13 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
  * @param d the daemon to process
  */
 static MHD_FN_PAR_NONNULL_ALL_ void
-daemon_cleanup_upgraded_conns (struct MHD_Daemon *restrict d)
+daemon_cleanup_upgraded_conns (struct MHD_Daemon *d)
 {
+  volatile struct MHD_Daemon *voltl_d = d;
   mhd_assert (! mhd_D_HAS_WORKERS (d));
+
+  if (NULL == mhd_DLINKEDL_GET_FIRST (&(voltl_d->conns.upgr), upgr_cleanup))
+    return;
 
   while (true)
   {
