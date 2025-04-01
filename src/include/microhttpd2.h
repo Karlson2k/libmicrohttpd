@@ -1435,7 +1435,8 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_SYSCALL_QUIESCE_REQUIRES_ITC = 60011
   ,
   /**
-   * The option provided can be used only with "external events" modes.
+   * The option provided or function called can be used only with "external
+   * events" modes.
    */
   MHD_SC_EXTERNAL_EVENT_ONLY = 60012
   ,
@@ -2809,7 +2810,7 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_NONNULL_ (2);
  * network events (if any) and then calls #MHD_SocketRegistrationUpdateCallback
  * callback for every socket that needs to be added/updated/removed.
  *
- * Available only for daemons stated in #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
+ * Available only for daemons started in #MHD_WM_EXTERNAL_EVENT_LOOP_CB_LEVEL or
  * #MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE modes.
  *
  * @param daemon the daemon handle
@@ -3917,7 +3918,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
   ,
   /**
    * The request was aborted due to the application failed to provide a valid
-   * resonse.
+   * response.
    * @ingroup request
    */
   MHD_REQUEST_ENDED_BY_APP_ERROR = 41
