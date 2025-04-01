@@ -66,4 +66,13 @@ MHD_INTERNAL uint_fast64_t
 mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
 MHD_FN_PAR_NONNULL_ALL_;
 
+/**
+ * Close all daemon connections.
+ * Must not be called when any other connections processing function is running
+ * @param d the daemon to use
+ */
+MHD_INTERNAL void
+mhd_daemon_close_all_conns (struct MHD_Daemon *d)
+MHD_FN_PAR_NONNULL_ALL_;
+
 #endif /* ! MHD_EVENTS_PROCESS_H */

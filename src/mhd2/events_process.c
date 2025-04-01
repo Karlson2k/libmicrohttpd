@@ -57,6 +57,7 @@
 #include "daemon_funcs.h"
 #include "conn_data_process.h"
 #include "stream_funcs.h"
+#include "extr_events_funcs.h"
 
 #ifdef MHD_SUPPORT_UPGRADE
 #  include "upgrade_proc.h"
@@ -373,8 +374,8 @@ daemon_cleanup_upgraded_conns (struct MHD_Daemon *d)
 #define daemon_cleanup_upgraded_conns(d) ((void) d)
 #endif /* ! MHD_SUPPORT_UPGRADE */
 
-static void
-close_all_daemon_conns (struct MHD_Daemon *d)
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_daemon_close_all_conns (struct MHD_Daemon *d)
 {
   struct MHD_Connection *c;
   bool has_upgraded_unclosed;
@@ -412,6 +413,198 @@ close_all_daemon_conns (struct MHD_Daemon *d)
                  "The daemon is being destroyed, but at least one " \
                  "HTTP-Upgraded connection is unclosed. Any use (including " \
                  "closing) of such connections is undefined behaviour.");
+}
+
+
+/**
+ * Process all external events updated of existing connections, information
+ * about new connections pending to be accept()'ed, presence of the events on
+ * the daemon's ITC.
+ * @return 'true' if processed successfully,
+ *         'false' is unrecoverable error occurs and the daemon must be
+ *         closed
+ */
+static MHD_FN_PAR_NONNULL_ (1) bool
+ext_events_process_net_updates (struct MHD_Daemon *restrict d)
+{
+  struct MHD_Connection *restrict c;
+
+  mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
+  mhd_assert (mhd_POLL_TYPE_EXT == d->events.poll_type);
+
+#ifdef MHD_SUPPORT_THREADS
+  if (d->events.data.extr.itc_data.is_active)
+  {
+    d->events.data.extr.itc_data.is_active = false;
+    /* Clear ITC here, before other data processing.
+     * Any external events will activate ITC again if additional data to
+     * process is added externally. Clearing ITC early ensures that new data
+     * (with additional ITC activation) will not be missed. */
+    mhd_itc_clear (d->threading.itc);
+  }
+#endif /* MHD_SUPPORT_THREADS */
+
+  for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn);
+       NULL != c;
+       c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
+  {
+    bool has_err_state;
+    if (is_conn_excluded_from_http_comm (c))
+      continue;
+
+    has_err_state =
+      (0 != (((unsigned int) c->sk.ready) & mhd_SOCKET_NET_STATE_ERROR_READY));
+
+    mhd_conn_mark_ready_update3 (c,
+                                 has_err_state,
+                                 d);
+  }
+
+  return true;
+}
+
+
+/**
+ * Update all registrations of FDs for external monitoring.
+ * @return #MHD_SC_OK on success,
+ *         error code otherwise
+ */
+static MHD_FN_PAR_NONNULL_ (1) enum MHD_StatusCode
+ext_events_update_registrations (struct MHD_Daemon *restrict d)
+{
+  const bool rereg_all = d->events.data.extr.reg_all;
+  const bool edge_trigg = (mhd_WM_INT_EXTERNAL_EVENTS_EDGE == d->wmode_int);
+  bool daemon_fds_succeed;
+  struct MHD_Connection *c;
+  struct MHD_Connection *c_next;
+
+  mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
+  mhd_assert (mhd_POLL_TYPE_EXT == d->events.poll_type);
+
+  /* (Re-)register daemon's FDs */
+
+#ifdef MHD_SUPPORT_THREADS
+  if (rereg_all ||
+      (NULL == d->events.data.extr.itc_data.app_cntx))
+  {
+    /* (Re-)register ITC FD */
+    d->events.data.extr.itc_data.app_cntx =
+      d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                      mhd_itc_r_fd (d->threading.itc),
+                                      MHD_FD_STATE_RECV_EXCEPT,
+                                      d->events.data.extr.itc_data.app_cntx,
+                                      (struct MHD_EventUpdateContext *)
+                                      mhd_SOCKET_REL_MARKER_ITC);
+    if (NULL != d->events.data.extr.itc_data.app_cntx)
+      mhd_log_extr_event_dereg_failed (d);
+  }
+  daemon_fds_succeed = (NULL != d->events.data.extr.itc_data.app_cntx);
+#else  /* ! MHD_SUPPORT_THREADS */
+  daemon_fds_succeed = true;
+#endif /* ! MHD_SUPPORT_THREADS */
+
+  if (daemon_fds_succeed)
+  {
+    if ((MHD_INVALID_SOCKET == d->net.listen.fd) &&
+        (NULL != d->events.data.extr.listen_data.app_cntx))
+    {
+      /* De-register the listen FD */
+      d->events.data.extr.listen_data.app_cntx =
+        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                        d->net.listen.fd,
+                                        MHD_FD_STATE_NONE,
+                                        d->events.data.extr.listen_data.app_cntx
+                                        ,
+                                        (struct MHD_EventUpdateContext *)
+                                        mhd_SOCKET_REL_MARKER_LISTEN);
+      if (NULL != d->events.data.extr.listen_data.app_cntx)
+        mhd_log_extr_event_dereg_failed (d);
+    }
+    else if ((MHD_INVALID_SOCKET != d->net.listen.fd) &&
+             (rereg_all || (NULL == d->events.data.extr.listen_data.app_cntx)))
+    {
+      /* (Re-)register listen FD */
+      d->events.data.extr.listen_data.app_cntx =
+        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                        d->net.listen.fd,
+                                        MHD_FD_STATE_RECV_EXCEPT,
+                                        d->events.data.extr.listen_data.app_cntx
+                                        ,
+                                        (struct MHD_EventUpdateContext *)
+                                        mhd_SOCKET_REL_MARKER_LISTEN);
+
+      daemon_fds_succeed = (NULL != d->events.data.extr.listen_data.app_cntx);
+    }
+  }
+
+  if (! daemon_fds_succeed)
+  {
+    mhd_LOG_MSG (d, MHD_SC_EXT_EVENT_REG_DAEMON_FDS_FAILURE, \
+                 "Failed to register daemon FDs in the application "
+                 "(external events) monitoring.");
+    return MHD_SC_EXT_EVENT_REG_DAEMON_FDS_FAILURE;
+  }
+
+  for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn);
+       NULL != c;
+       c = c_next)
+  {
+    enum MHD_FdState watch_for;
+
+    /* Get the next connection now, as the current connection could be removed
+       from the daemon. */
+    c_next = mhd_DLINKEDL_GET_NEXT (c,all_conn);
+
+    if (is_conn_excluded_from_http_comm (c))
+    {
+      if (NULL != c->extr_event.app_cntx)
+      {
+        c->extr_event.app_cntx =
+          d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                          c->sk.fd,
+                                          MHD_FD_STATE_NONE,
+                                          c->extr_event.app_cntx,
+                                          (struct MHD_EventUpdateContext *) c);
+        if (NULL != c->extr_event.app_cntx)
+          mhd_log_extr_event_dereg_failed (d);
+      }
+      continue;
+    }
+
+    watch_for =
+      edge_trigg ?
+      MHD_FD_STATE_RECV_SEND_EXCEPT :
+      (enum MHD_FdState) (MHD_FD_STATE_EXCEPT
+                          | (((unsigned int) c->event_loop_info)
+                             & (MHD_EVENT_LOOP_INFO_RECV
+                                | MHD_EVENT_LOOP_INFO_SEND)));
+
+    mhd_assert ((! edge_trigg) || \
+                (MHD_FD_STATE_RECV_SEND_EXCEPT == c->extr_event.reg_for) || \
+                (NULL == c->extr_event.app_cntx));
+
+    if ((NULL == c->extr_event.app_cntx) ||
+        rereg_all ||
+        (! edge_trigg && (watch_for != c->extr_event.reg_for)))
+    {
+      c->extr_event.app_cntx =
+        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                        c->sk.fd,
+                                        watch_for,
+                                        c->extr_event.app_cntx,
+                                        (struct MHD_EventUpdateContext *) c);
+      if (NULL == c->extr_event.app_cntx)
+      {
+        mhd_conn_start_closing_ext_event_failed (c);
+        mhd_conn_pre_clean (c);
+        mhd_conn_remove_from_daemon (c);
+        mhd_conn_close_final (c);
+      }
+      c->extr_event.reg_for = watch_for;
+    }
+  }
+
+  return MHD_SC_OK;
 }
 
 
@@ -1147,7 +1340,9 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
   switch (d->events.poll_type)
   {
   case mhd_POLL_TYPE_EXT:
-    return false; // TODO: implement
+    mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
+    if (! ext_events_process_net_updates (d))
+      return false;
     break;
 #ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
@@ -1192,6 +1387,64 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
 }
 
 
+MHD_EXTERN_
+MHD_FN_PAR_NONNULL_ (1) enum MHD_StatusCode
+MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
+                               uint_fast64_t *MHD_RESTRICT next_max_wait)
+{
+  enum MHD_StatusCode res;
+
+  if (mhd_DAEMON_STATE_STARTED > daemon->state)
+    return MHD_SC_TOO_EARLY;
+  if (! mhd_WM_INT_HAS_EXT_EVENTS (daemon->wmode_int))
+    return MHD_SC_EXTERNAL_EVENT_ONLY;
+  if (mhd_DAEMON_STATE_STARTED < daemon->state)
+    return MHD_SC_TOO_LATE;
+
+#ifdef MHD_SUPPORT_THREADS
+  if (daemon->events.data.extr.itc_data.is_broken)
+    return MHD_SC_DAEMON_SYS_DATA_BROKEN;
+#endif /* MHD_SUPPORT_THREADS */
+
+  if (daemon->net.listen.is_broken)
+    return MHD_SC_DAEMON_SYS_DATA_BROKEN;
+
+#ifdef MHD_SUPPORT_THREADS
+  if (daemon->threading.resume_requested)
+    mhd_daemon_resume_conns (daemon);
+#endif /* MHD_SUPPORT_THREADS */
+
+  /* Ignore returned value */
+  (void) process_all_events_and_data (daemon);
+
+  if (NULL != next_max_wait)
+    *next_max_wait = MHD_WAIT_INDEFINITELY;
+
+  res = ext_events_update_registrations (daemon);
+  if (MHD_SC_OK != res)
+    return res;
+
+#ifdef MHD_SUPPORT_THREADS
+  if (daemon->events.data.extr.itc_data.is_broken)
+  {
+    log_itc_broken (daemon);
+    return MHD_SC_DAEMON_SYS_DATA_BROKEN;
+  }
+#endif /* MHD_SUPPORT_THREADS */
+
+  if (daemon->net.listen.is_broken)
+  {
+    log_listen_broken (daemon);
+    return MHD_SC_DAEMON_SYS_DATA_BROKEN;
+  }
+
+  if (NULL != next_max_wait)
+    *next_max_wait = mhd_daemon_get_wait_max ();
+
+  return MHD_SC_OK;
+}
+
+
 /**
  * The entry point for the daemon worker thread
  * @param cls the closure
@@ -1230,7 +1483,7 @@ mhd_worker_all_events (void *cls)
                  "The daemon thread is stopping, but termination has not " \
                  "been requested for the daemon.");
   }
-  close_all_daemon_conns (d);
+  mhd_daemon_close_all_conns (d);
 
   return (mhd_THRD_RTRN_TYPE) 0;
 }

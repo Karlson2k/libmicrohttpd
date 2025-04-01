@@ -229,6 +229,11 @@ enum mhd_ConnCloseReason
   mhd_CONN_CLOSE_INT_ERROR
   ,
   /**
+   * Failed to register the connection for the external event monitoring
+   */
+  mhd_CONN_CLOSE_EXTR_EVENT_REG_FAILED
+  ,
+  /**
    * No system resources available to handle connection
    */
   mhd_CONN_CLOSE_NO_SYS_RESOURCES
@@ -320,6 +325,29 @@ MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3);
  */
 #define mhd_conn_start_closing_app_abort(c) \
         mhd_conn_start_closing ((c), mhd_CONN_CLOSE_APP_ABORTED, NULL)
+
+
+#ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "socket error"
+ * @param c the connection for pre-closing
+ */
+#define mhd_conn_start_closing_ext_event_failed(c) \
+        mhd_conn_start_closing ((c), \
+                                mhd_CONN_CLOSE_EXTR_EVENT_REG_FAILED, \
+                                "The application failed to register FD for " \
+                                "the external events monitoring.")
+#else  /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
+/**
+ * Perform initial clean-up and mark for closing.
+ * Set the reason to "socket error"
+ * @param c the connection for pre-closing
+ */
+#define mhd_conn_start_closing_ext_event_failed(c) \
+        mhd_conn_start_closing ((c), \
+                                mhd_CONN_CLOSE_EXTR_EVENT_REG_FAILED, NULL)
+#endif /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 
 /**
  * Perform initial clean-up and mark for closing.

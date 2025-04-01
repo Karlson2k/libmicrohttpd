@@ -79,10 +79,11 @@
 #  include "mhd_tls_funcs.h"
 #endif
 
+#include "events_process.h"
+
 #ifdef MHD_SUPPORT_THREADS
 #  include "mhd_itc.h"
 #  include "mhd_threads.h"
-#  include "events_process.h"
 #  include "daemon_funcs.h"
 #endif
 
@@ -1339,11 +1340,15 @@ daemon_choose_and_preinit_events (struct MHD_Daemon *restrict d,
                 (MHD_WM_EXTERNAL_EVENT_LOOP_CB_EDGE == s->work_mode.mode));
     mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     d->events.poll_type = mhd_POLL_TYPE_EXT;
-    d->events.data.ext.cb_data.cb =
+    d->events.data.extr.cb_data.cb =
       s->work_mode.params.v_external_event_loop_cb.reg_cb;
-    d->events.data.ext.cb_data.cls =
+    d->events.data.extr.cb_data.cls =
       s->work_mode.params.v_external_event_loop_cb.reg_cb_cls;
-    d->events.data.ext.reg_all = (MHD_NO != s->reregister_all);
+    d->events.data.extr.reg_all = (MHD_NO != s->reregister_all);
+#ifdef MHD_SUPPORT_THREADS
+    d->events.data.extr.itc_data.app_cntx = NULL;
+#endif /* MHD_SUPPORT_THREADS */
+    d->events.data.extr.listen_data.app_cntx = NULL;
     break;
 #ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
@@ -1795,7 +1800,8 @@ allocate_events (struct MHD_Daemon *restrict d)
   switch (d->events.poll_type)
   {
   case mhd_POLL_TYPE_EXT:
-    mhd_assert (NULL != d->events.data.ext.cb_data.cb);
+    mhd_assert (NULL != d->events.data.extr.cb_data.cb);
+    /* Nothing to do: allocation is not needed */
 #ifndef NDEBUG
     d->dbg.events_allocated = true;
 #endif
@@ -2064,21 +2070,25 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
   switch (d->events.poll_type)
   {
   case mhd_POLL_TYPE_EXT:
-    mhd_assert (NULL != d->events.data.ext.cb_data.cb);
-    if (! d->events.data.ext.reg_all)
+    mhd_assert (NULL != d->events.data.extr.cb_data.cb);
+#ifdef MHD_SUPPORT_THREADS
+    d->events.data.extr.itc_data.is_active = false;
+    d->events.data.extr.itc_data.is_broken = false;
+#endif /* MHD_SUPPORT_THREADS */
+    if (! d->events.data.extr.reg_all)
     {
       bool itc_reg_succeed;
 
       /* Register daemon's FDs now */
 #ifdef MHD_SUPPORT_THREADS
-      d->events.data.ext.app_cntx.itc =
-        d->events.data.ext.cb_data.cb (d->events.data.ext.cb_data.cls,
-                                       mhd_itc_r_fd (d->threading.itc),
-                                       MHD_FD_STATE_RECV,
-                                       NULL,
-                                       (struct MHD_EventUpdateContext *)
-                                       mhd_SOCKET_REL_MARKER_ITC);
-      itc_reg_succeed = (NULL != d->events.data.ext.app_cntx.itc);
+      d->events.data.extr.itc_data.app_cntx =
+        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                        mhd_itc_r_fd (d->threading.itc),
+                                        MHD_FD_STATE_RECV_EXCEPT,
+                                        NULL,
+                                        (struct MHD_EventUpdateContext *)
+                                        mhd_SOCKET_REL_MARKER_ITC);
+      itc_reg_succeed = (NULL != d->events.data.extr.itc_data.app_cntx);
 #else  /* ! MHD_SUPPORT_THREADS */
       itc_reg_succeed = true;
 #endif /* ! MHD_SUPPORT_THREADS */
@@ -2086,31 +2096,31 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
       {
         if (MHD_INVALID_SOCKET == d->net.listen.fd)
         {
-          d->events.data.ext.app_cntx.listen = NULL;
+          d->events.data.extr.listen_data.app_cntx = NULL;
           return MHD_SC_OK; /* Success exit point */
         }
 
         /* Need to register the listen FD */
-        d->events.data.ext.app_cntx.listen =
-          d->events.data.ext.cb_data.cb (d->events.data.ext.cb_data.cls,
-                                         d->net.listen.fd,
-                                         MHD_FD_STATE_RECV,
-                                         NULL,
-                                         (struct MHD_EventUpdateContext *)
-                                         mhd_SOCKET_REL_MARKER_LISTEN);
-        if (NULL != d->events.data.ext.app_cntx.listen)
+        d->events.data.extr.listen_data.app_cntx =
+          d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                          d->net.listen.fd,
+                                          MHD_FD_STATE_RECV_EXCEPT,
+                                          NULL,
+                                          (struct MHD_EventUpdateContext *)
+                                          mhd_SOCKET_REL_MARKER_LISTEN);
+        if (NULL != d->events.data.extr.listen_data.app_cntx)
           return MHD_SC_OK; /* Success exit point */
 
         /* Below is a clean-up path for 'case mhd_POLL_TYPE_EXT:' */
 #ifdef MHD_SUPPORT_THREADS
         /* De-register ITC FD */
-        (void) d->events.data.ext.cb_data.cb (d->events.data.ext.cb_data.cls,
-                                              mhd_itc_r_fd (d->threading.itc),
-                                              MHD_FD_STATE_NONE,
-                                              d->events.data.ext.app_cntx.itc,
-                                              (struct MHD_EventUpdateContext *)
-                                              mhd_SOCKET_REL_MARKER_ITC);
-        d->events.data.ext.app_cntx.itc = NULL;
+        (void) d->events.data.extr.cb_data.cb (
+          d->events.data.extr.cb_data.cls,
+          mhd_itc_r_fd (d->threading.itc),
+          MHD_FD_STATE_NONE,
+          d->events.data.extr.itc_data.app_cntx,
+          (struct MHD_EventUpdateContext *) mhd_SOCKET_REL_MARKER_ITC);
+        d->events.data.extr.itc_data.app_cntx = NULL;
 #endif /* MHD_SUPPORT_THREADS */
       }
 
@@ -2123,9 +2133,9 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
     {
       /* Daemons FDs are repeatedly registered every processing cycle */
 #ifdef MHD_SUPPORT_THREADS
-      d->events.data.ext.app_cntx.itc = NULL;
+      d->events.data.extr.itc_data.app_cntx = NULL;
 #endif /* MHD_SUPPORT_THREADS */
-      d->events.data.ext.app_cntx.listen = NULL;
+      d->events.data.extr.listen_data.app_cntx = NULL;
       return MHD_SC_OK;
     }
     break;
@@ -2229,21 +2239,21 @@ deinit_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
   switch (d->events.poll_type)
   {
   case mhd_POLL_TYPE_EXT:
-    if (NULL != d->events.data.ext.app_cntx.listen)
-      (void) d->events.data.ext.cb_data.cb (d->events.data.ext.cb_data.cls,
-                                            d->net.listen.fd,
-                                            MHD_FD_STATE_NONE,
-                                            d->events.data.ext.app_cntx.listen,
-                                            (struct MHD_EventUpdateContext *)
-                                            mhd_SOCKET_REL_MARKER_LISTEN);
+    if (NULL != d->events.data.extr.listen_data.app_cntx)
+      (void) d->events.data.extr.cb_data.cb (
+        d->events.data.extr.cb_data.cls,
+        d->net.listen.fd,
+        MHD_FD_STATE_NONE,
+        d->events.data.extr.listen_data.app_cntx,
+        (struct MHD_EventUpdateContext *) mhd_SOCKET_REL_MARKER_LISTEN);
 #ifdef MHD_SUPPORT_THREADS
-    if (NULL != d->events.data.ext.app_cntx.itc)
-      (void) d->events.data.ext.cb_data.cb (d->events.data.ext.cb_data.cls,
-                                            mhd_itc_r_fd (d->threading.itc),
-                                            MHD_FD_STATE_NONE,
-                                            d->events.data.ext.app_cntx.itc,
-                                            (struct MHD_EventUpdateContext *)
-                                            mhd_SOCKET_REL_MARKER_ITC);
+    if (NULL != d->events.data.extr.itc_data.app_cntx)
+      (void) d->events.data.extr.cb_data.cb (
+        d->events.data.extr.cb_data.cls,
+        mhd_itc_r_fd (d->threading.itc),
+        MHD_FD_STATE_NONE,
+        d->events.data.extr.itc_data.app_cntx,
+        (struct MHD_EventUpdateContext *) mhd_SOCKET_REL_MARKER_ITC);
 #endif /* MHD_SUPPORT_THREADS */
     return;
 #ifdef MHD_SUPPORT_SELECT
@@ -2624,7 +2634,7 @@ set_d_threading_type (struct MHD_Daemon *restrict d)
   case mhd_WM_INT_EXTERNAL_EVENTS_LEVEL:
     mhd_assert (! mhd_WM_INT_HAS_THREADS (d->wmode_int));
     mhd_assert (mhd_POLL_TYPE_EXT == d->events.poll_type);
-    mhd_assert (NULL != d->events.data.ext.cb_data.cb);
+    mhd_assert (NULL != d->events.data.extr.cb_data.cb);
 #ifdef MHD_SUPPORT_THREADS
     d->threading.d_type = mhd_DAEMON_TYPE_SINGLE;
 #endif /* MHD_SUPPORT_THREADS */
@@ -3183,9 +3193,7 @@ daemon_start_threads (struct MHD_Daemon *restrict d)
 
 /**
  * Stop the daemon internal threads, if the daemon configured to use them.
- * @param d the daemon object, the threads (if any) must be started
- * @return #MHD_SC_OK on success,
- *         the error code otherwise
+ * @param d the daemon object to stop threads
  */
 static MHD_FN_PAR_NONNULL_ (1) void
 daemon_stop_threads (struct MHD_Daemon *restrict d)
@@ -3216,6 +3224,24 @@ daemon_stop_threads (struct MHD_Daemon *restrict d)
     return MHD_SC_INTERNAL_ERROR;
 #endif /* ! MHD_SUPPORT_THREADS */
   }
+}
+
+
+/**
+ * Close all daemon connections for modes without internal threads
+ * @param d the daemon object
+ */
+static MHD_FN_PAR_NONNULL_ (1) void
+daemon_close_connections (struct MHD_Daemon *restrict d)
+{
+  if (mhd_WM_INT_HAS_THREADS (d->wmode_int))
+  {
+    /* In these modes connections must be closed in the daemon thread */
+    mhd_assert (NULL == mhd_DLINKEDL_GET_LAST (&(d->conns),all_conn));
+    return;
+  }
+
+  mhd_daemon_close_all_conns (d);
 }
 
 
@@ -3332,6 +3358,8 @@ MHD_daemon_destroy (struct MHD_Daemon *daemon)
     mhd_assert (daemon->dbg.threading_inited);
 
     daemon_stop_threads (daemon);
+
+    daemon_close_connections (daemon);
 
     daemon_deinit_threading_and_conn (daemon);
 

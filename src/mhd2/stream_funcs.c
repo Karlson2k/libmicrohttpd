@@ -53,6 +53,7 @@
 #include "daemon_funcs.h"
 #include "conn_mark_ready.h"
 #include "stream_process_reply.h"
+#include "extr_events_funcs.h"
 
 #ifdef MHD_SUPPORT_HTTPS
 #  include "mhd_tls_funcs.h"
@@ -750,6 +751,11 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
     close_hard = true;
     end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
     break;
+  case mhd_CONN_CLOSE_EXTR_EVENT_REG_FAILED:
+    close_hard = true;
+    end_code = MHD_REQUEST_ENDED_BY_EXT_EVENT_ERROR;
+    sc = MHD_SC_EXTR_EVENT_REG_FAILED;
+    break;
   case mhd_CONN_CLOSE_NO_SYS_RESOURCES:
     close_hard = true;
     end_code = MHD_REQUEST_ENDED_NO_RESOURCES;
@@ -941,8 +947,23 @@ mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
   if (NULL != c->rq.cntn.lbuf.data)
     mhd_daemon_free_lbuf (c->daemon, &(c->rq.cntn.lbuf));
 
+  if (mhd_WM_INT_HAS_EXT_EVENTS (c->daemon->wmode_int))
+  {
+    struct MHD_Daemon *const d = c->daemon;
+    if (NULL != c->extr_event.app_cntx)
+    {
+      c->extr_event.app_cntx =
+        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
+                                        c->sk.fd,
+                                        MHD_FD_STATE_NONE,
+                                        c->extr_event.app_cntx,
+                                        (struct MHD_EventUpdateContext *) c);
+      if (NULL != c->extr_event.app_cntx)
+        mhd_log_extr_event_dereg_failed (d);
+    }
+  }
 #ifdef MHD_SUPPORT_EPOLL
-  if (mhd_POLL_TYPE_EPOLL == c->daemon->events.poll_type)
+  else if (mhd_POLL_TYPE_EPOLL == c->daemon->events.poll_type)
   {
     struct epoll_event event;
 

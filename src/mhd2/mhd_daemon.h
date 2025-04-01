@@ -332,22 +332,41 @@ struct mhd_DaemonEventsExternalCallback
 };
 
 
-/**
- * Application context for external events for daemon's FDs
- */
-struct mhd_DaemonEventsExternalScktAppCntx
-{
 #ifdef MHD_SUPPORT_THREADS
+/**
+ * External events data for ITC FD
+ */
+struct mhd_DaemonEventsExternalDaemonItcData
+{
   /**
    * Application context for ITC FD
    */
-  void *itc;
-#endif /* MHD_SUPPORT_THREADS */
+  void *app_cntx;
 
   /**
-   * Application context for listen socket
+   * Set to 'true' when active state was detected on ITC by
+   * external polling
    */
-  void *listen;
+  bool is_active;
+
+  /**
+   * Set to 'true' when error state was detected on ITC by
+   * external polling.
+   * The daemon may become non-functional.
+   */
+  bool is_broken;
+};
+#endif /* MHD_SUPPORT_THREADS */
+
+/**
+ * External events data for the listen socket
+ */
+struct mhd_DaemonEventsExternalDaemonListenData
+{
+  /**
+   * Application context for ITC FD
+   */
+  void *app_cntx;
 };
 
 /**
@@ -361,10 +380,17 @@ struct mhd_DaemonEventsExternal
    */
   struct mhd_DaemonEventsExternalCallback cb_data;
 
+#ifdef MHD_SUPPORT_THREADS
   /**
-   * Application context for external events for daemon's FDs
+   * External events data for ITC FD
    */
-  struct mhd_DaemonEventsExternalScktAppCntx app_cntx;
+  struct mhd_DaemonEventsExternalDaemonItcData itc_data;
+#endif /* MHD_SUPPORT_THREADS */
+
+  /**
+   * External events data for the listen socket
+   */
+  struct mhd_DaemonEventsExternalDaemonListenData listen_data;
 
   /**
    * If set to 'true' then all FDs must be registered each round.
@@ -405,7 +431,7 @@ union mhd_DaemonEventMonitoringTypeSpecificData
   /**
    * Daemon's data for external events for sockets monitoring.
    */
-  struct mhd_DaemonEventsExternal ext;
+  struct mhd_DaemonEventsExternal extr;
 };
 
 

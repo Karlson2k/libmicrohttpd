@@ -1297,6 +1297,14 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED = 50351
   ,
   /**
+   * Daemon system data is broken (like listen socket was unexpectedly closed).
+   * The daemon needs to be closed.
+   * A new daemon can be started as a replacement after closing the current
+   * daemon.
+   */
+  MHD_SC_DAEMON_SYS_DATA_BROKEN = 50370
+  ,
+  /**
    * Failed to acquire response mutex lock
    */
   MHD_SC_RESPONSE_MUTEX_LOCK_FAILED = 50500
@@ -1666,6 +1674,16 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The Digest Auth is not supported due to configuration
    */
   MHD_SC_AUTH_DIGEST_UNSUPPORTED = 60242
+  ,
+  /**
+   * The application failed to register FD for the external events monitoring
+   */
+  MHD_SC_EXTR_EVENT_REG_FAILED = 60243
+  ,
+  /**
+   * The application failed to de-register FD for the external events monitoring
+   */
+  MHD_SC_EXTR_EVENT_DEREG_FAILED = 60244
 };
 
 /**
@@ -3922,6 +3940,13 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_RequestEndedCode
    * @ingroup request
    */
   MHD_REQUEST_ENDED_BY_APP_ERROR = 41
+  ,
+  /**
+   * The request was aborted due to the application failed to register external
+   * event monitoring for the connection.
+   * @ingroup request
+   */
+  MHD_REQUEST_ENDED_BY_EXT_EVENT_ERROR = 42
   ,
   /**
    * Error handling the connection due to resources exhausted.

@@ -456,6 +456,24 @@ enum MHD_FIXED_ENUM_ mhd_HttpStage
 
 };
 
+
+/**
+ * The connection's external event data
+ */
+struct mhd_ConnExtrEvents
+{
+  /**
+   * Connection's application context for the external events monitoring
+   */
+  void *app_cntx;
+
+  /**
+   * The last targets for which the connection FD has been registration for
+   */
+  enum MHD_FdState reg_for;
+};
+
+
 struct mhd_ConnDebugData
 {
   bool closing_started;
@@ -505,6 +523,11 @@ struct MHD_Connection
    * The connection socket data
    */
   struct mhd_ConnSocket sk;
+
+  /**
+   * The connection's external event data
+   */
+  struct mhd_ConnExtrEvents extr_event;
 
 #ifdef MHD_SUPPORT_HTTPS
   /**

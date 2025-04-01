@@ -77,6 +77,7 @@ libmicrohttpd2_la_SOURCES = \
   daemon_get_info.c \
   daemon_add_conn.c         daemon_add_conn.h \
   daemon_funcs.c            daemon_funcs.h \
+  daemon_event_update.c     extr_events_funcs.c       extr_events_funcs.h \
   conn_data_process.c       conn_data_process.h \
   conn_data_recv.c          conn_data_recv.h \
   conn_data_send.c          conn_data_send.h \
