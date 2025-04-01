@@ -1684,6 +1684,17 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
    * The application failed to de-register FD for the external events monitoring
    */
   MHD_SC_EXTR_EVENT_DEREG_FAILED = 60244
+  ,
+  /**
+   * The application called #MHD_daemon_event_update() with broken data
+   */
+  MHD_SC_EXTR_EVENT_BROKEN_DATA = 60250
+  ,
+  /**
+   * The application called #MHD_daemon_event_update() with status that
+   * has not been requested
+   */
+  MHD_SC_EXTR_EVENT_UNEXPECTED_STATUS = 60251
 };
 
 /**

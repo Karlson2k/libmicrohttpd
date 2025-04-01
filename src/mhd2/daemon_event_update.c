@@ -56,6 +56,7 @@ MHD_daemon_event_update (
     return;
 
   broken_app_data = false;
+  unneeded_event = false;
 
   switch ((mhd_SockRelMarker) ecb_cntx)
   {
@@ -115,12 +116,16 @@ MHD_daemon_event_update (
 
   if (broken_app_data)
   {
-    // TODO: log error
-    (void) 0;
+    mhd_LOG_MSG (daemon, \
+                 MHD_SC_EXTR_EVENT_BROKEN_DATA, \
+                 "MHD_daemon_event_update() is called with broken content " \
+                 "data");
   }
   else if (unneeded_event)
   {
-    // TODO: log error
-    (void) 0;
+    mhd_LOG_MSG (daemon, \
+                 MHD_SC_EXTR_EVENT_BROKEN_DATA, \
+                 "MHD_daemon_event_update() is called with status that has " \
+                 "not been requested");
   }
 }
