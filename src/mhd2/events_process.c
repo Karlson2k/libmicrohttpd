@@ -515,8 +515,6 @@ ext_events_update_registrations (struct MHD_Daemon *restrict d)
                                       d->events.data.extr.itc_data.app_cntx,
                                       (struct MHD_EventUpdateContext *)
                                       mhd_SOCKET_REL_MARKER_ITC);
-    if (NULL != d->events.data.extr.itc_data.app_cntx)
-      mhd_log_extr_event_dereg_failed (d);
   }
   daemon_fds_succeed = (NULL != d->events.data.extr.itc_data.app_cntx);
 #else  /* ! MHD_SUPPORT_THREADS */
@@ -530,13 +528,13 @@ ext_events_update_registrations (struct MHD_Daemon *restrict d)
     {
       /* De-register the listen FD */
       d->events.data.extr.listen_data.app_cntx =
-        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
-                                        d->net.listen.fd,
-                                        MHD_FD_STATE_NONE,
-                                        d->events.data.extr.listen_data.app_cntx
-                                        ,
-                                        (struct MHD_EventUpdateContext *)
-                                        mhd_SOCKET_REL_MARKER_LISTEN);
+        d->events.data.extr.cb_data.cb (
+          d->events.data.extr.cb_data.cls,
+          d->net.listen.fd,
+          MHD_FD_STATE_NONE,
+          d->events.data.extr.listen_data.app_cntx,
+          (struct MHD_EventUpdateContext *)
+          mhd_SOCKET_REL_MARKER_LISTEN);
       if (NULL != d->events.data.extr.listen_data.app_cntx)
         mhd_log_extr_event_dereg_failed (d);
     }
@@ -545,13 +543,12 @@ ext_events_update_registrations (struct MHD_Daemon *restrict d)
     {
       /* (Re-)register listen FD */
       d->events.data.extr.listen_data.app_cntx =
-        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
-                                        d->net.listen.fd,
-                                        MHD_FD_STATE_RECV_EXCEPT,
-                                        d->events.data.extr.listen_data.app_cntx
-                                        ,
-                                        (struct MHD_EventUpdateContext *)
-                                        mhd_SOCKET_REL_MARKER_LISTEN);
+        d->events.data.extr.cb_data.cb (
+          d->events.data.extr.cb_data.cls,
+          d->net.listen.fd,
+          MHD_FD_STATE_RECV_EXCEPT,
+          d->events.data.extr.listen_data.app_cntx,
+          (struct MHD_EventUpdateContext *) mhd_SOCKET_REL_MARKER_LISTEN);
 
       daemon_fds_succeed = (NULL != d->events.data.extr.listen_data.app_cntx);
     }
@@ -579,6 +576,7 @@ ext_events_update_registrations (struct MHD_Daemon *restrict d)
     {
       if (NULL != c->extr_event.app_cntx)
       {
+        /* De-register the connection socket FD */
         c->extr_event.app_cntx =
           d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
                                           c->sk.fd,
@@ -607,6 +605,7 @@ ext_events_update_registrations (struct MHD_Daemon *restrict d)
         rereg_all ||
         (! edge_trigg && (watch_for != c->extr_event.reg_for)))
     {
+      /* (Re-)register the connection socket FD */
       c->extr_event.app_cntx =
         d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
                                         c->sk.fd,
