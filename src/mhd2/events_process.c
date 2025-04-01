@@ -326,9 +326,7 @@ is_conn_excluded_from_http_comm (struct MHD_Connection *restrict c)
   }
 #endif /* MHD_SUPPORT_UPGRADE */
 
-  // TODO: Support suspended connection
-
-  return false;
+  return c->suspended;
 }
 
 
