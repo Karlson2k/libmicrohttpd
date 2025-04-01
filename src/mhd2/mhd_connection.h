@@ -591,12 +591,12 @@ struct MHD_Connection
   /**
    * True if connection is suspended
    */
-  bool suspended;
+  volatile bool suspended;
 
   /**
    * True if connection is resuming
    */
-  bool resuming;
+  volatile bool resuming;
 
   /**
    * Request-specific data

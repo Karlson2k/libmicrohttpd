@@ -68,16 +68,6 @@ mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d)
 #endif /* MHD_SUPPORT_THREADS */
 
 
-MHD_NORETURN_ // TODO: implement
-MHD_INTERNAL
-MHD_FN_PAR_NONNULL_ALL_ void
-mhd_daemon_resume_conns (struct MHD_Daemon *restrict d)
-{
-  (void) d;
-  mhd_assert (0 && "Not implemented yet");
-}
-
-
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_
 MHD_FN_MUST_CHECK_RESULT_ bool
 mhd_daemon_claim_lbuf (struct MHD_Daemon *d,

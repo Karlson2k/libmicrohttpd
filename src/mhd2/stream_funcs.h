@@ -142,6 +142,24 @@ MHD_INTERNAL void
 mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
 MHD_FN_PAR_NONNULL_ALL_;
 
+
+/**
+ * Update last activity mark on the resumed connection
+ * @param c the connection to update
+ */
+MHD_INTERNAL void
+mhd_stream_resumed_activity_mark (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
+
+/**
+ * Remove connection from time-out lists
+ * @param c the connection to process
+ */
+MHD_INTERNAL void
+mhd_conn_remove_from_timeout_lists (struct MHD_Connection *restrict c)
+MHD_FN_PAR_NONNULL_ALL_;
+
 /**
  * Check whether connection's timeout is expired.
  * @param c the connection to update

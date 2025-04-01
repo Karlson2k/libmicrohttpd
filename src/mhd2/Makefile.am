@@ -85,6 +85,7 @@ libmicrohttpd2_la_SOURCES = \
   conn_get_info.c \
   request_funcs.c           request_funcs.h \
   request_get_value.c       request_get_value.h \
+  request_resume.c \
   respond_with_error.c      respond_with_error.h \
   request_get_info.c \
   response_from.c           response_from.h \

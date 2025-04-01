@@ -109,6 +109,28 @@ mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
 }
 
 
+/**
+ * Check whether any resuming connections are pending and resume them
+ * @param d the daemon to use
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+daemon_resume_conns (struct MHD_Daemon *restrict d)
+{
+  struct MHD_Connection *c;
+  for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn);
+       NULL != c;
+       c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
+  {
+    if (! c->resuming)
+      continue;
+
+    mhd_assert (c->suspended);
+    c->suspended = false;
+    mhd_conn_mark_ready (c, d); /* Force processing connection in this round */
+  }
+}
+
+
 mhd_DATA_TRUNCATION_RUNTIME_CHECK_DISABLE
 
 static MHD_FN_PAR_NONNULL_ALL_ int
@@ -1411,7 +1433,7 @@ MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
 
 #ifdef MHD_SUPPORT_THREADS
   if (daemon->threading.resume_requested)
-    mhd_daemon_resume_conns (daemon);
+    daemon_resume_conns (daemon);
 #endif /* MHD_SUPPORT_THREADS */
 
   /* Ignore returned value */
@@ -1439,7 +1461,7 @@ MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
   }
 
   if (NULL != next_max_wait)
-    *next_max_wait = mhd_daemon_get_wait_max ();
+    *next_max_wait = mhd_daemon_get_wait_max (daemon);
 
   return MHD_SC_OK;
 }
@@ -1472,7 +1494,7 @@ mhd_worker_all_events (void *cls)
   while (! d->threading.stop_requested)
   {
     if (d->threading.resume_requested)
-      mhd_daemon_resume_conns (d);
+      daemon_resume_conns (d);
 
     if (! process_all_events_and_data (d))
       break;

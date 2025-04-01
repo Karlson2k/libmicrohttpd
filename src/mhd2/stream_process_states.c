@@ -180,6 +180,22 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
 
 
 /**
+ * Finalise resuming of the connection
+ * @param c the connection to resume
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+finish_resume (struct MHD_Connection *restrict c)
+{
+  mhd_assert (! c->suspended);
+  mhd_assert (c->resuming);
+  mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS == c->event_loop_info);
+  mhd_stream_resumed_activity_mark (c);
+
+  c->resuming = false;
+}
+
+
+/**
  * Update current processing state: need to receive, need to send.
  * Mark stream as ready or not ready for processing.
  * Grow the receive buffer if neccesary, close stream if no buffer space left,
@@ -248,13 +264,9 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     }
   }
 
-  mhd_assert (c->resuming || ! c->suspended);
+  mhd_assert (! c->suspended);
   if (c->resuming)
-  {
-    // TODO: finish resuming, update activity mark
-    // TODO: move to special function
-    (void) 0;
-  }
+    finish_resume (c);
 
   if ((mhd_SOCKET_ERR_NO_ERROR != c->sk.state.discnt_err) ||
       (0 != (c->sk.ready & mhd_SOCKET_NET_STATE_ERROR_READY)))
@@ -277,6 +289,8 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     mhd_conn_start_closing_d_shutdown (c);
     return false;
   }
+
+  mhd_assert (! c->suspended);
 
   while (! c->suspended)
   {
@@ -509,8 +523,9 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 
   if (c->suspended)
   {
-    // TODO: process
-    mhd_assert (0 && "Not implemented yet");
+    /* Do not perform any network activity while suspended */
+    c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+    mhd_conn_remove_from_timeout_lists (c);
     return true;
   }
 

@@ -64,16 +64,6 @@ mhd_daemon_trigger_itc (struct MHD_Daemon *restrict d);
 
 
 /**
- * Check whether any resuming connections are pending and resume them
- * @param d the daemon to use
- */
-MHD_NORETURN_ // TODO: implement
-MHD_INTERNAL void
-mhd_daemon_resume_conns (struct MHD_Daemon *restrict d)
-MHD_FN_PAR_NONNULL_ALL_;
-
-
-/**
  * Request allocation of the large buffer
  * @param d the daemon to use
  * @param requested_size the requested size of allocation

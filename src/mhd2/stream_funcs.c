@@ -673,6 +673,48 @@ mhd_stream_update_activity_mark (struct MHD_Connection *restrict c)
 }
 
 
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_stream_resumed_activity_mark (struct MHD_Connection *restrict c)
+{
+  struct MHD_Daemon *const restrict d = c->daemon;
+#if defined(MHD_SUPPORT_THREADS)
+  mhd_assert (! mhd_D_HAS_WORKERS (d));
+#endif /* MHD_SUPPORT_THREADS */
+
+  mhd_assert (! c->suspended);
+  mhd_assert (c->resuming);
+
+  /* Update of activity for connections without timeout timer unless
+   * no timeout is set */
+  if (0 != c->connection_timeout_ms)
+    c->last_activity = mhd_monotonic_msec_counter (); // TODO: Get and use time value one time per round
+
+  if (mhd_D_HAS_THR_PER_CONN (d))
+    return; /* each connection has personal timeout */
+
+  if (c->connection_timeout_ms == d->conns.cfg.timeout)
+    mhd_DLINKEDL_INS_FIRST_D (&(d->conns.def_timeout), c, by_timeout);
+  else
+    mhd_DLINKEDL_INS_FIRST_D (&(d->conns.cust_timeout), c, by_timeout);
+}
+
+
+MHD_INTERNAL
+MHD_FN_PAR_NONNULL_ALL_ void
+mhd_conn_remove_from_timeout_lists (struct MHD_Connection *restrict c)
+{
+  if (! mhd_D_HAS_THR_PER_CONN (c->daemon))
+  {
+    if (c->connection_timeout_ms == c->daemon->conns.cfg.timeout)
+      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.def_timeout), \
+                          c, by_timeout);
+    else
+      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.cust_timeout), \
+                          c, by_timeout);
+  }
+}
+
+
 MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (1) MHD_FN_PAR_CSTR_ (3) void
 mhd_conn_start_closing (struct MHD_Connection *restrict c,
@@ -920,15 +962,7 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 #endif
   c->rq.app_aware = false;
 
-  if (! mhd_D_HAS_THR_PER_CONN (c->daemon))
-  {
-    if (c->connection_timeout_ms == c->daemon->conns.cfg.timeout)
-      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.def_timeout), \
-                          c, by_timeout);
-    else
-      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.cust_timeout), \
-                          c, by_timeout);
-  }
+  mhd_conn_remove_from_timeout_lists (c);
 
 #ifndef NDEBUG
   c->dbg.closing_started = true;

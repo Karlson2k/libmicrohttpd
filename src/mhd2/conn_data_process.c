@@ -58,6 +58,18 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
   bool has_sock_err;
   bool data_processed;
 
+  data_processed = false;
+
+  if (c->resuming)
+  {
+    mhd_assert (! c->suspended);
+    /* Fully resume the connection + call app callbacks for the data */
+    if (! mhd_conn_process_data (c))
+      return false;
+
+    data_processed = true;
+  }
+
 #ifdef MHD_SUPPORT_HTTPS
   if (mhd_C_HAS_TLS (c))
   {
@@ -86,7 +98,6 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
      (0 != (MHD_EVENT_LOOP_INFO_SEND & c->event_loop_info)));
   has_sock_err =
     (0 != (mhd_SOCKET_NET_STATE_ERROR_READY & c->sk.ready));
-  data_processed = false;
 
   if (0 != (MHD_EVENT_LOOP_INFO_RECV & c->event_loop_info))
   {

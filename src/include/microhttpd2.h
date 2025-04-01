@@ -5690,16 +5690,10 @@ MHD_FN_CONST_;
 
 
 /**
- * Resume handling of network data for suspended request.  It is
- * safe to resume a suspended request at any time.  Calling this
- * function on a request that was not previously suspended will
+ * Resume handling of network data for suspended request.
+ * It is safe to resume a suspended request at any time.
+ * Calling this function on a request that was not previously suspended will
  * result in undefined behaviour.
- *
- * If you are using this function in ``external'' select mode, you must make
- * sure to run #MHD_daemon_process_blocking() afterwards (as otherwise the
- * change may not be reflected in the set returned to your
- * MHD_SocketRegistrationUpdateCallback and you may end up with a request
- * that is stuck until the next network activity.
  *
  * @param[in,out] request the request to resume
  */
