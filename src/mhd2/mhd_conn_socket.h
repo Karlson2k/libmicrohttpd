@@ -151,7 +151,7 @@ struct mhd_ConnSocket
   struct mhd_ConnSocketState state;
 
   /**
-   * The receive / send / error readiness the socket
+   * The receive / send / error readiness of the socket
    */
   enum mhd_SocketNetState ready;
 
