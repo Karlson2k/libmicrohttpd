@@ -64,6 +64,32 @@
 
 #include "mhd_public_api.h"
 
+/**
+ * Log error message about broken ITC
+ * @param d the daemon to use
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+log_itc_broken (struct MHD_Daemon *restrict d)
+{
+  mhd_LOG_MSG (d, \
+               MHD_SC_ITC_STATUS_ERROR, \
+               "System reported that ITC has an error status or broken.");
+}
+
+
+/**
+ * Log error message about broken listen socket
+ * @param d the daemon to use
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+log_listen_broken (struct MHD_Daemon *restrict d)
+{
+  mhd_LOG_MSG (d, MHD_SC_LISTEN_STATUS_ERROR, \
+               "System reported that the listening socket has an error " \
+               "status or broken. The daemon will not listen any more.");
+}
+
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ uint_fast64_t
 mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
 {
@@ -532,8 +558,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
   if (FD_ISSET (mhd_itc_r_fd (d->threading.itc), efds))
   {
-    mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
-                 "System reported that ITC has an error status.");
+    log_itc_broken (d);
     /* ITC is broken, need to stop the daemon thread now as otherwise
        application will not be able to stop the thread. */
     return false;
@@ -560,9 +585,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
     if (FD_ISSET (d->net.listen.fd, efds))
     {
       --num_events;
-      mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
-                   "System reported that the listening socket has an error " \
-                   "status. The daemon will not listen any more.");
+      log_listen_broken (d);
       /* Close the listening socket unless the master daemon should close it */
       if (! mhd_D_HAS_MASTER (d))
         mhd_socket_close (d->net.listen.fd);
@@ -803,8 +826,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
               d->events.data.poll.rel[i_s].fd_id);
   if (0 != (d->events.data.poll.fds[i_s].revents & (POLLERR | POLLNVAL)))
   {
-    mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
-                 "System reported that ITC has an error status.");
+    log_itc_broken (d);
     /* ITC is broken, need to stop the daemon thread now as otherwise
        application will not be able to stop the thread. */
     return false;
@@ -835,9 +857,7 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     if (0 != (revents & (POLLERR | POLLNVAL | POLLHUP)))
     {
       --num_events;
-      mhd_LOG_MSG (d, MHD_SC_LISTEN_STATUS_ERROR, \
-                   "System reported that the listening socket has an error " \
-                   "status. The daemon will not listen any more.");
+      log_listen_broken (d);
       /* Close the listening socket unless the master daemon should close it */
       if (! mhd_D_HAS_MASTER (d))
         mhd_socket_close (d->net.listen.fd);
@@ -999,8 +1019,7 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
       mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
-        mhd_LOG_MSG (d, MHD_SC_ITC_STATUS_ERROR, \
-                     "System reported that ITC has an error status.");
+        log_itc_broken (d);
         /* ITC is broken, need to stop the daemon thread now as otherwise
            application will not be able to stop the thread. */
         return false;
@@ -1021,9 +1040,7 @@ poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
       mhd_assert (MHD_INVALID_SOCKET != d->net.listen.fd);
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
-        mhd_LOG_MSG (d, MHD_SC_LISTEN_STATUS_ERROR, \
-                     "System reported that the listening socket has an error " \
-                     "status. The daemon will not listen any more.");
+        log_listen_broken (d);
 
         /* Close the listening socket unless the master daemon should close it */
         if (! mhd_D_HAS_MASTER (d))
