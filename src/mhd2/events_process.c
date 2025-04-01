@@ -90,9 +90,6 @@ get_max_wait (struct MHD_Daemon *restrict d)
   uint_fast64_t ui64_wait = mhd_daemon_get_wait_max (d);
   int i_wait = (int) ui64_wait;
 
-  // TODO: move reset to the processing loop
-  d->events.zero_wait = false; /* Reset as this pending data will be processed */
-
   if ((0 > i_wait) ||
       (ui64_wait != (uint_fast64_t) i_wait))
     return INT_MAX;
@@ -1124,6 +1121,8 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
 static MHD_FN_PAR_NONNULL_ (1) bool
 process_all_events_and_data (struct MHD_Daemon *restrict d)
 {
+  d->events.zero_wait = false; /* Reset as all pending data will be processed */
+
   switch (d->events.poll_type)
   {
   case mhd_POLL_TYPE_EXT:
