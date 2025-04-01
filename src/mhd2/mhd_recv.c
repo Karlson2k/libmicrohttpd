@@ -61,7 +61,8 @@ mhd_recv_plain (struct MHD_Connection *restrict c,
   if (0 <= res)
   {
     *received = (size_t) res;
-    if (buf_size > (size_t) res)
+    if ((buf_size > (size_t) res)
+        || ! c->sk.props.is_nonblck)
       c->sk.ready = (enum mhd_SocketNetState) /* Clear 'recv-ready' */
                     (((unsigned int) c->sk.ready)
                      & (~(enum mhd_SocketNetState)
@@ -109,6 +110,11 @@ mhd_recv_tls (struct MHD_Connection *restrict c,
                       mhd_SOCKET_NET_STATE_RECV_READY));
   else if (mhd_SOCKET_ERR_NO_ERROR == res)
   {
+    if (! c->sk.props.is_nonblck)
+      c->sk.ready = (enum mhd_SocketNetState) /* Clear 'recv-ready' */
+                    (((unsigned int) c->sk.ready)
+                     & (~(enum mhd_SocketNetState)
+                        mhd_SOCKET_NET_STATE_RECV_READY));
     if (res == buf_size)
     {
       if (mhd_tls_conn_has_data_in (c->tls))

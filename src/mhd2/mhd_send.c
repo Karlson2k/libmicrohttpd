@@ -805,7 +805,7 @@ mhd_send_plain (struct MHD_Connection *restrict c,
 
   full_buf_sent = (buf_size == (size_t) res);
 
-  if (! full_buf_sent)
+  if (! full_buf_sent || ! c->sk.props.is_nonblck)
     c->sk.ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                   (((unsigned int) c->sk.ready)
                    & (~(enum mhd_SocketNetState)
@@ -857,6 +857,12 @@ mhd_send_tls (struct MHD_Connection *restrict c,
                         mhd_SOCKET_NET_STATE_SEND_READY));
     return res;
   }
+
+  if (! c->sk.props.is_nonblck)
+    c->sk.ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
+                  (((unsigned int) c->sk.ready)
+                   & (~(enum mhd_SocketNetState)
+                      mhd_SOCKET_NET_STATE_SEND_READY));
 
   /* If there is a need to push the data from network buffers
    * call post_send_setopt(). */
@@ -1104,7 +1110,8 @@ mhd_send_hdr_and_body (struct MHD_Connection *restrict connection,
 
     return err;
   }
-  if ((header_size + body_size) > *sent)
+  if (((header_size + body_size) > *sent)
+      || ! connection->sk.props.is_nonblck)
     connection->sk.ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                            (((unsigned int) connection->sk.ready)
                             & (~(enum mhd_SocketNetState)
@@ -1354,7 +1361,7 @@ mhd_send_sendfile (struct MHD_Connection *restrict c,
     return mhd_SOCKET_ERR_INTR;
   }
 
-  if ((mhd_SOCKET_ERR_AGAIN == ret) ||
+  if ((mhd_SOCKET_ERR_AGAIN == ret) || ! c->sk.props.is_nonblck ||
       ((mhd_SOCKET_ERR_NO_ERROR == ret) && (send_size > sent_bytes)))
     c->sk.ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
                   (((unsigned int) c->sk.ready)
@@ -1502,6 +1509,13 @@ send_iov_nontls (struct MHD_Connection *restrict connection,
   if (1)
   {
     size_t track_sent = (size_t) *sent;
+
+    if (! connection->sk.props.is_nonblck)
+      connection->sk.ready = (enum mhd_SocketNetState) /* Clear 'send-ready' */
+                             (((unsigned int) connection->sk.ready)
+                              & (~(enum mhd_SocketNetState)
+                                 mhd_SOCKET_NET_STATE_SEND_READY));
+
     /* Adjust the internal tracking information for the iovec to
      * take this last send into account. */
     while ((0 != track_sent) && (r_iov->iov[r_iov->sent].iov_len <= track_sent))
