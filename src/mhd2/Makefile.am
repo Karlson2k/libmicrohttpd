@@ -32,6 +32,7 @@ libmicrohttpd2_la_SOURCES = \
   sys_sendfile.h \
   compat_calloc.h \
   sys_w32_ver.h \
+  mhd_align.h               mhd_bithelpers.h          mhd_byteorder.h \
   mhd_assert.h              mhd_unreachable.h \
   mhd_cntnr_ptr.h           mhd_arr_num_elems.h \
   mhd_tristate.h            mhd_status_code_int.h \
@@ -51,6 +52,7 @@ libmicrohttpd2_la_SOURCES = \
   lib_get_info.c \
   mhd_dlinked_list.h \
   mhd_conn_socket.h         mhd_connection.h \
+  mhd_stream.h \
   mhd_locks.h \
   mhd_itc.c                 mhd_itc.h                 mhd_itc_types.h \
   mhd_threads.c             mhd_threads.h             sys_thread_entry_type.h \
