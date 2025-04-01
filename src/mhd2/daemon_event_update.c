@@ -36,6 +36,11 @@
 
 #include "daemon_logger.h"
 
+#ifdef mhd_DEBUG_EXTR_EVENTS
+#  include "mhd_itc.h"
+#  include <stdio.h>
+#endif /* mhd_DEBUG_EXTR_EVENTS */
+
 #include "mhd_public_api.h"
 
 MHD_EXTERN_
@@ -54,6 +59,44 @@ MHD_daemon_event_update (
     return;  /* FIXME: log error? */
   if (mhd_DAEMON_STATE_STARTED < daemon->state)
     return;
+
+#ifdef mhd_DEBUG_EXTR_EVENTS
+  if (1)
+  {
+    char state_str[] = "x:x:x";
+    state_str[0] = MHD_FD_STATE_IS_SET_RECV (fd_current_state) ? 'R' : '-';
+    state_str[2] = MHD_FD_STATE_IS_SET_SEND (fd_current_state) ? 'W' : '-';
+    state_str[4] = MHD_FD_STATE_IS_SET_EXCEPT (fd_current_state) ? 'E' : '-';
+
+    switch ((mhd_SockRelMarker) ecb_cntx)
+    {
+    case mhd_SOCKET_REL_MARKER_EMPTY:
+      fprintf (stderr,
+               "### MHD_daemon_event_update(daemon, [unknown],   %s)\n",
+               state_str);
+      break;
+    case mhd_SOCKET_REL_MARKER_ITC:
+      fprintf (stderr,
+               "### MHD_daemon_event_update(daemon, [ITC:  %llu], %s)\n",
+               (unsigned long long) mhd_itc_r_fd (daemon->threading.itc),
+               state_str);
+      break;
+    case mhd_SOCKET_REL_MARKER_LISTEN:
+      fprintf (stderr,
+               "### MHD_daemon_event_update(daemon, [lstn: %llu], %s)\n",
+               (unsigned long long) daemon->net.listen.fd,
+               state_str);
+      break;
+    default:
+      fprintf (stderr,
+               "### MHD_daemon_event_update(daemon, [conn: %llu], %s)\n",
+               (unsigned long long)
+               (((struct MHD_Connection *) ecb_cntx)->sk.fd),
+               state_str);
+      break;
+    }
+  }
+#endif /* mhd_DEBUG_EXTR_EVENTS */
 
   broken_app_data = false;
   unneeded_event = false;

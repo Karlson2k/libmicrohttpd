@@ -516,6 +516,11 @@
 #  endif
 #endif
 
+#ifndef mhd_DEBUG_EXTR_EVENTS
+/* Use debug-print for external events processing */
+/* #  define mhd_DEBUG_EXTR_EVENTS 1 */
+#endif
+
 #ifndef MHD_AUTH_DIGEST_DEF_TIMEOUT
 #  define MHD_AUTH_DIGEST_DEF_TIMEOUT 90
 #endif /* ! MHD_AUTH_DIGEST_DEF_TIMEOUT */

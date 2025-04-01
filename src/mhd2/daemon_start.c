@@ -36,6 +36,8 @@
 #include "mhd_sockets_macros.h"
 #include "sys_ip_headers.h"
 
+#include "extr_events_funcs.h"
+
 #ifdef MHD_SOCKETS_KIND_POSIX
 #  include "sys_errno.h"
 #endif
@@ -2082,12 +2084,12 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
       /* Register daemon's FDs now */
 #ifdef MHD_SUPPORT_THREADS
       d->events.data.extr.itc_data.app_cntx =
-        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
-                                        mhd_itc_r_fd (d->threading.itc),
-                                        MHD_FD_STATE_RECV_EXCEPT,
-                                        NULL,
-                                        (struct MHD_EventUpdateContext *)
-                                        mhd_SOCKET_REL_MARKER_ITC);
+        mhd_daemon_extr_event_reg (d,
+                                   mhd_itc_r_fd (d->threading.itc),
+                                   MHD_FD_STATE_RECV_EXCEPT,
+                                   NULL,
+                                   (struct MHD_EventUpdateContext *)
+                                   mhd_SOCKET_REL_MARKER_ITC);
       itc_reg_succeed = (NULL != d->events.data.extr.itc_data.app_cntx);
 #else  /* ! MHD_SUPPORT_THREADS */
       itc_reg_succeed = true;
@@ -2102,24 +2104,24 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
 
         /* Need to register the listen FD */
         d->events.data.extr.listen_data.app_cntx =
-          d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
-                                          d->net.listen.fd,
-                                          MHD_FD_STATE_RECV_EXCEPT,
-                                          NULL,
-                                          (struct MHD_EventUpdateContext *)
-                                          mhd_SOCKET_REL_MARKER_LISTEN);
+          mhd_daemon_extr_event_reg (d,
+                                     d->net.listen.fd,
+                                     MHD_FD_STATE_RECV_EXCEPT,
+                                     NULL,
+                                     (struct MHD_EventUpdateContext *)
+                                     mhd_SOCKET_REL_MARKER_LISTEN);
         if (NULL != d->events.data.extr.listen_data.app_cntx)
           return MHD_SC_OK; /* Success exit point */
 
         /* Below is a clean-up path for 'case mhd_POLL_TYPE_EXT:' */
 #ifdef MHD_SUPPORT_THREADS
         /* De-register ITC FD */
-        (void) d->events.data.extr.cb_data.cb (
-          d->events.data.extr.cb_data.cls,
-          mhd_itc_r_fd (d->threading.itc),
-          MHD_FD_STATE_NONE,
-          d->events.data.extr.itc_data.app_cntx,
-          (struct MHD_EventUpdateContext *) mhd_SOCKET_REL_MARKER_ITC);
+        (void) mhd_daemon_extr_event_reg (d,
+                                          mhd_itc_r_fd (d->threading.itc),
+                                          MHD_FD_STATE_NONE,
+                                          d->events.data.extr.itc_data.app_cntx,
+                                          (struct MHD_EventUpdateContext *)
+                                          mhd_SOCKET_REL_MARKER_ITC);
         d->events.data.extr.itc_data.app_cntx = NULL;
 #endif /* MHD_SUPPORT_THREADS */
       }
@@ -2240,20 +2242,20 @@ deinit_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
   {
   case mhd_POLL_TYPE_EXT:
     if (NULL != d->events.data.extr.listen_data.app_cntx)
-      (void) d->events.data.extr.cb_data.cb (
-        d->events.data.extr.cb_data.cls,
+      (void) mhd_daemon_extr_event_reg (
+        d,
         d->net.listen.fd,
         MHD_FD_STATE_NONE,
         d->events.data.extr.listen_data.app_cntx,
         (struct MHD_EventUpdateContext *) mhd_SOCKET_REL_MARKER_LISTEN);
 #ifdef MHD_SUPPORT_THREADS
     if (NULL != d->events.data.extr.itc_data.app_cntx)
-      (void) d->events.data.extr.cb_data.cb (
-        d->events.data.extr.cb_data.cls,
-        mhd_itc_r_fd (d->threading.itc),
-        MHD_FD_STATE_NONE,
-        d->events.data.extr.itc_data.app_cntx,
-        (struct MHD_EventUpdateContext *) mhd_SOCKET_REL_MARKER_ITC);
+      (void) mhd_daemon_extr_event_reg (d,
+                                        mhd_itc_r_fd (d->threading.itc),
+                                        MHD_FD_STATE_NONE,
+                                        d->events.data.extr.itc_data.app_cntx,
+                                        (struct MHD_EventUpdateContext *)
+                                        mhd_SOCKET_REL_MARKER_ITC);
 #endif /* MHD_SUPPORT_THREADS */
     return;
 #ifdef MHD_SUPPORT_SELECT

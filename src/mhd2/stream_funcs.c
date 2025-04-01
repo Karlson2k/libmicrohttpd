@@ -32,6 +32,7 @@
 #include "mhd_unreachable.h"
 
 #include <string.h>
+#include "extr_events_funcs.h"
 #ifdef MHD_SUPPORT_EPOLL
 #  include <sys/epoll.h>
 #endif
@@ -987,11 +988,11 @@ mhd_conn_pre_clean_part1 (struct MHD_Connection *restrict c)
     if (NULL != c->extr_event.app_cntx)
     {
       c->extr_event.app_cntx =
-        d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls,
-                                        c->sk.fd,
-                                        MHD_FD_STATE_NONE,
-                                        c->extr_event.app_cntx,
-                                        (struct MHD_EventUpdateContext *) c);
+        mhd_daemon_extr_event_reg (d,
+                                   c->sk.fd,
+                                   MHD_FD_STATE_NONE,
+                                   c->extr_event.app_cntx,
+                                   (struct MHD_EventUpdateContext *) c);
       if (NULL != c->extr_event.app_cntx)
         mhd_log_extr_event_dereg_failed (d);
     }
