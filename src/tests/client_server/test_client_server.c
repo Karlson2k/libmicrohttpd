@@ -125,6 +125,12 @@ main (int argc, char *argv[])
       .server_setup_cls = thread1auto,
       .server_runner = &MHDT_server_run_minimal,
     },
+    {
+      .label = "external events loop mode, no internal threads",
+      .server_setup = &MHDT_server_setup_external,
+      .server_setup_cls = NULL,
+      .server_runner = &MHDT_server_run_external,
+    },
 #if 1
     /* FIXME: remove once MHD_daemon_process_blocking
        has been implemented */
@@ -137,12 +143,6 @@ main (int argc, char *argv[])
       .server_setup = &MHDT_server_setup_minimal,
       .server_setup_cls = external0auto,
       .server_runner = &MHDT_server_run_blocking,
-    },
-    {
-      .label = "auto-selected external event loop mode, no threads",
-      .server_setup = &MHDT_server_setup_external,
-      .server_setup_cls = NULL,
-      .server_runner = &MHDT_server_run_external,
     },
     {
       .label = "END"

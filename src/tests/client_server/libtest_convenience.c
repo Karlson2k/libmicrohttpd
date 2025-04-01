@@ -339,7 +339,7 @@ update_fd (
   if (0 != (watch_for & MHD_FD_STATE_SEND))
     ev.events |= EPOLLOUT;
   if (0 != (watch_for & MHD_FD_STATE_EXCEPT))
-    ev.events |= EPOLLRDHUP | EPOLLHUP | EPOLLERR;
+    ev.events |= EPOLLHUP;
   if (0 !=
       epoll_ctl (my_epoll_fd,
                  NULL == app_cntx_old
@@ -403,7 +403,8 @@ MHDT_server_run_external (void *cls,
                "MHD_daemon_process_reg_events() failed\n");
       break;
     }
-    timeout.tv_usec = next_wait;
+    timeout.tv_sec = next_wait / 1000000;
+    timeout.tv_usec = next_wait % 1000000;
 
     FD_ZERO (&r);
     FD_SET (finsig,
@@ -453,20 +454,11 @@ MHDT_server_run_external (void *cls,
           state |= MHD_FD_STATE_RECV;
         if (0 != (events[i].events & EPOLLOUT))
           state |= MHD_FD_STATE_SEND;
-        if (0 != (events[i].events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP)) )
+        if (0 != (events[i].events & (EPOLLERR | EPOLLHUP)) )
           state |= MHD_FD_STATE_EXCEPT;
         MHD_daemon_event_update (d,
                                  events[i].data.ptr,
                                  state);
-      }
-
-      if (MHD_SC_OK !=
-          MHD_daemon_process_blocking (d,
-                                       1000))
-      {
-        fprintf (stderr,
-                 "Failure running MHD_daemon_process_blocking()\n");
-        break;
       }
     }
   }
