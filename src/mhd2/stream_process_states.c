@@ -250,6 +250,8 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 
   /* 'daemon' is not used if epoll is not available and asserts are disabled */
   (void) d; /* Mute compiler warning */
+  if (c->suspended)
+    return true;
 
   if ((c->sk.state.rmt_shut_wr) && (mhd_HTTP_STAGE_START_REPLY > c->stage))
   {
@@ -264,7 +266,6 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     }
   }
 
-  mhd_assert (! c->suspended);
   if (c->resuming)
     finish_resume (c);
 

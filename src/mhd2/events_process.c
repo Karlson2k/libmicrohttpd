@@ -114,9 +114,15 @@ mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
  * @param d the daemon to use
  */
 static MHD_FN_PAR_NONNULL_ALL_ void
-daemon_resume_conns (struct MHD_Daemon *restrict d)
+daemon_resume_conns_if_needed (struct MHD_Daemon *restrict d)
 {
   struct MHD_Connection *c;
+
+  if (! d->threading.resume_requested)
+    return;
+
+  d->threading.resume_requested = false; /* Reset flag before processing data */
+
   for (c = mhd_DLINKEDL_GET_FIRST (&(d->conns),all_conn);
        NULL != c;
        c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
@@ -1428,8 +1434,7 @@ process_reg_events_int (struct MHD_Daemon *MHD_RESTRICT daemon,
     return MHD_SC_DAEMON_SYS_DATA_BROKEN;
 
 #ifdef MHD_SUPPORT_THREADS
-  if (daemon->threading.resume_requested)
-    daemon_resume_conns (daemon);
+  daemon_resume_conns_if_needed (daemon);
 #endif /* MHD_SUPPORT_THREADS */
 
   /* Ignore returned value */
@@ -1524,8 +1529,7 @@ mhd_worker_all_events (void *cls)
 
   while (! d->threading.stop_requested)
   {
-    if (d->threading.resume_requested)
-      daemon_resume_conns (d);
+    daemon_resume_conns_if_needed (d);
 
     if (! process_all_events_and_data (d))
       break;
