@@ -94,13 +94,14 @@ log_listen_broken (struct MHD_Daemon *restrict d)
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ uint_fast64_t
 mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
 {
-  bool zero_wait = d->events.zero_wait;
 
   mhd_assert (! mhd_D_HAS_WORKERS (d));
 
   if (d->events.accept_pending && ! d->conns.block_new)
     return 0;
-  if (zero_wait)
+  if (d->threading.resume_requested) /* Remove? It is triggered by ITC anyway */
+    return 0;
+  if (d->events.zero_wait)
     return 0;
   if (NULL != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready))
     return 0;
