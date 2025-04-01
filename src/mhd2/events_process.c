@@ -1485,7 +1485,7 @@ MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
   else if (MHD_WAIT_INDEFINITELY == *next_max_wait)
     fprintf (stderr,
              "### (Finished) MHD_daemon_process_reg_events(daemon, "
-             "[MHD_WAIT_INDEFINITELY]) ->%u\n",
+             "->MHD_WAIT_INDEFINITELY) ->%u\n",
              (unsigned int) res);
   else
     fprintf (stderr,
