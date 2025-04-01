@@ -1294,7 +1294,7 @@ enum MHD_FIXED_ENUM_MHD_SET_ MHD_StatusCode
   /**
    * Unexpected reasons for thread stop
    */
-  MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED = 50350
+  MHD_SC_DAEMON_THREAD_STOP_UNEXPECTED = 50351
   ,
   /**
    * Failed to acquire response mutex lock
