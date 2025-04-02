@@ -3011,6 +3011,7 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
              "%%%%%% Suspending connection, FD: %llu\n",
              (unsigned long long) c->sk.fd);
 #endif /* mhd_DEBUG_SUSPEND_RESUME */
+    c->rq.app_act.head_act.act = mhd_ACTION_NO_ACTION;
     return false;
 #ifdef MHD_SUPPORT_UPGRADE
   case mhd_ACTION_UPGRADE:
@@ -3077,6 +3078,7 @@ mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
              "%%%%%% Suspending connection, FD: %llu\n",
              (unsigned long long) c->sk.fd);
 #endif /* mhd_DEBUG_SUSPEND_RESUME */
+    memset (&(c->rq.app_act.upl_act), 0, sizeof(c->rq.app_act.upl_act));
     return false;
 #ifdef MHD_SUPPORT_UPGRADE
   case mhd_UPLOAD_ACTION_UPGRADE:
