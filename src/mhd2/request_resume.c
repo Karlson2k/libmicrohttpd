@@ -47,6 +47,16 @@ MHD_request_resume (struct MHD_Request *request)
                                             rq);
   struct MHD_Daemon *d = c->daemon;
 
+  if (! c->suspended)
+  {
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+    fprintf (stderr,
+             "%%%%%% Requested conn resume, FD: %llu -> "
+             "failed as not suspended\n",
+             (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+    return;
+  }
   c->resuming = true;
 #ifdef mhd_DEBUG_SUSPEND_RESUME
   fprintf (stderr,
