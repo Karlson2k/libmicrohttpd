@@ -28,6 +28,10 @@
 
 #include "mhd_cntnr_ptr.h"
 
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+#  include <stdio.h>
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
 
@@ -44,6 +48,11 @@ MHD_request_resume (struct MHD_Request *request)
   struct MHD_Daemon *d = c->daemon;
 
   c->resuming = true;
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+  fprintf (stderr,
+           "%%%%%% Requested conn resume, FD: %llu\n",
+           (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
   d->threading.resume_requested = true;
   mhd_daemon_trigger_itc (d);
 }

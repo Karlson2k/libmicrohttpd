@@ -55,6 +55,10 @@
 #  include "upgrade_proc.h"
 #endif /* MHD_SUPPORT_UPGRADE */
 
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+#  include <stdio.h>
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+
 MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
 {
@@ -186,11 +190,16 @@ mhd_conn_event_loop_state_update (struct MHD_Connection *restrict c)
 static MHD_FN_PAR_NONNULL_ALL_ void
 finish_resume (struct MHD_Connection *restrict c)
 {
-  mhd_assert (! c->suspended);
   mhd_assert (c->resuming);
-  mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS == c->event_loop_info);
-
   c->resuming = false;
+
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+  fprintf (stderr,
+           "%%%%%%    Resumed connection, FD: %llu\n",
+           (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+  mhd_assert (! c->suspended);
+  mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS == c->event_loop_info);
 }
 
 
@@ -526,6 +535,11 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
 
     mhd_conn_mark_unready (c, d);
     mhd_conn_remove_from_timeout_lists (c);
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+    fprintf (stderr,
+             "%%%%%%          Suspended connection, FD: %llu\n",
+             (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
     return true;
   }
 

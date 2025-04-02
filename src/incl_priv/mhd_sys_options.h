@@ -521,6 +521,11 @@
 /* #  define mhd_DEBUG_EXTR_EVENTS 1 */
 #endif
 
+#ifndef mhd_DEBUG_SUSPEND_RESUME
+/* Use debug-print for suspending and resuming of the requests */
+/* #  define mhd_DEBUG_SUSPEND_RESUME 1 */
+#endif
+
 #ifndef MHD_AUTH_DIGEST_DEF_TIMEOUT
 #  define MHD_AUTH_DIGEST_DEF_TIMEOUT 90
 #endif /* ! MHD_AUTH_DIGEST_DEF_TIMEOUT */

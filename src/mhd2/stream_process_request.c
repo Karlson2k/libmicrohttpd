@@ -40,6 +40,10 @@
 
 #include "sys_malloc.h"
 
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+#  include <stdio.h>
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+
 #include "mhd_str_types.h"
 #include "mhd_str_macros.h"
 #include "mhd_str.h"
@@ -3002,6 +3006,11 @@ mhd_stream_call_app_request_cb (struct MHD_Connection *restrict c)
 #endif /* MHD_SUPPORT_POST_PARSER */
   case mhd_ACTION_SUSPEND:
     c->suspended = true;
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+    fprintf (stderr,
+             "%%%%%% Suspending connection, FD: %llu\n",
+             (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
     return false;
 #ifdef MHD_SUPPORT_UPGRADE
   case mhd_ACTION_UPGRADE:
@@ -3063,6 +3072,11 @@ mhd_stream_process_upload_action (struct MHD_Connection *restrict c,
     return false;
   case mhd_UPLOAD_ACTION_SUSPEND:
     c->suspended = true;
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+    fprintf (stderr,
+             "%%%%%% Suspending connection, FD: %llu\n",
+             (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
     return false;
 #ifdef MHD_SUPPORT_UPGRADE
   case mhd_UPLOAD_ACTION_UPGRADE:

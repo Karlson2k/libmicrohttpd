@@ -30,6 +30,10 @@
 #include "mhd_assert.h"
 #include "mhd_unreachable.h"
 
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+#  include <stdio.h>
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+
 #include "mhd_locks.h"
 
 #include "mhd_socket_type.h"
@@ -132,6 +136,12 @@ daemon_resume_conns_if_needed (struct MHD_Daemon *restrict d)
       continue;
 
     mhd_assert (c->suspended);
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+    fprintf (stderr,
+             "%%%%%%   Resuming connection, FD: %llu\n",
+             (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+
     c->suspended = false;
     mhd_stream_resumed_activity_mark (c);
     mhd_conn_mark_ready (c, d); /* Force processing connection in this round */
