@@ -687,7 +687,9 @@ MHD_FN_PAR_NONNULL_ (4) MHD_FN_PAR_OUT_SIZE_ (4,3);
  * @param kind what kind of value are we looking for
  * @param key the name of the value looking for (used for case-insensetive
               match), empty to lookup 'trailing' value without a key
- * @return NULL if no such item was found
+ * @return NULL if no such item was found,
+ *         non-NULL if item found (the inner pointer to string can be NULL
+ *         if item found, but has no value)
  * @ingroup request
  */
 MHD_EXTERN_ const struct MHD_StringNullable *
