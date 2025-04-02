@@ -704,15 +704,15 @@ MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ALL_ void
 mhd_conn_remove_from_timeout_lists (struct MHD_Connection *restrict c)
 {
-  if (! mhd_D_HAS_THR_PER_CONN (c->daemon))
-  {
-    if (c->connection_timeout_ms == c->daemon->conns.cfg.timeout)
-      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.def_timeout), \
-                          c, by_timeout);
-    else
-      mhd_DLINKEDL_DEL_D (&(c->daemon->conns.cust_timeout), \
-                          c, by_timeout);
-  }
+  if (mhd_D_HAS_THR_PER_CONN (c->daemon))
+    return;
+
+  if (c->connection_timeout_ms == c->daemon->conns.cfg.timeout)
+    mhd_DLINKEDL_DEL_D (&(c->daemon->conns.def_timeout), \
+                        c, by_timeout);
+  else
+    mhd_DLINKEDL_DEL_D (&(c->daemon->conns.cust_timeout), \
+                        c, by_timeout);
 }
 
 
@@ -963,7 +963,11 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
 #endif
   c->rq.app_aware = false;
 
-  mhd_conn_remove_from_timeout_lists (c);
+  if (! c->suspended)
+  {
+    mhd_assert (! c->resuming);
+    mhd_conn_remove_from_timeout_lists (c);
+  }
 
 #ifndef NDEBUG
   c->dbg.closing_started = true;

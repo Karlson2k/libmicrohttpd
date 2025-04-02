@@ -133,6 +133,7 @@ daemon_resume_conns_if_needed (struct MHD_Daemon *restrict d)
 
     mhd_assert (c->suspended);
     c->suspended = false;
+    mhd_stream_resumed_activity_mark (c);
     mhd_conn_mark_ready (c, d); /* Force processing connection in this round */
   }
 }
@@ -347,7 +348,9 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
   while (NULL != c)
   {
     struct MHD_Connection *next;
-    next = mhd_DLINKEDL_GET_NEXT (c, proc_ready); /* The current connection can be closed */
+    /* The current connection can be closed or removed from
+       "ready" list */
+    next = mhd_DLINKEDL_GET_NEXT (c, proc_ready);
     if (! mhd_conn_process_recv_send_data (c))
     {
       mhd_conn_pre_clean (c);

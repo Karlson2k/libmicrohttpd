@@ -189,7 +189,6 @@ finish_resume (struct MHD_Connection *restrict c)
   mhd_assert (! c->suspended);
   mhd_assert (c->resuming);
   mhd_assert (MHD_EVENT_LOOP_INFO_PROCESS == c->event_loop_info);
-  mhd_stream_resumed_activity_mark (c);
 
   c->resuming = false;
 }
@@ -248,8 +247,6 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   struct MHD_Daemon *const d = c->daemon;
   bool daemon_closing;
 
-  /* 'daemon' is not used if epoll is not available and asserts are disabled */
-  (void) d; /* Mute compiler warning */
   if (c->suspended)
     return true;
 
@@ -526,6 +523,8 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
   {
     /* Do not perform any network activity while suspended */
     c->event_loop_info = MHD_EVENT_LOOP_INFO_PROCESS;
+
+    mhd_conn_mark_unready (c, d);
     mhd_conn_remove_from_timeout_lists (c);
     return true;
   }
