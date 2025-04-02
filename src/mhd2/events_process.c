@@ -1422,7 +1422,7 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
     break;
   }
 
-  if (d->events.accept_pending)
+  if (d->events.accept_pending && ! d->conns.block_new)
     d->events.accept_pending = ! daemon_accept_new_conns (d);
 
   daemon_process_all_active_conns (d);
