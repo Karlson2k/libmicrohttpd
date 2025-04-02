@@ -1505,10 +1505,6 @@ process_reg_events_int (struct MHD_Daemon *MHD_RESTRICT daemon,
   if (daemon->net.listen.is_broken)
     return MHD_SC_DAEMON_SYS_DATA_BROKEN;
 
-#ifdef MHD_SUPPORT_THREADS
-  daemon_resume_conns_if_needed (daemon);
-#endif /* MHD_SUPPORT_THREADS */
-
   /* Ignore returned value */
   (void) process_all_events_and_data (daemon);
 
