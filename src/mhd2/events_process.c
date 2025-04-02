@@ -357,6 +357,7 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
       mhd_conn_remove_from_daemon (c);
       mhd_conn_close_final (c);
     }
+    mhd_assert (! c->resuming || c->suspended);
 
     c = next;
   }
@@ -479,6 +480,9 @@ ext_events_process_net_updates (struct MHD_Daemon *restrict d)
        c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
   {
     bool has_err_state;
+
+    mhd_assert (! c->resuming || c->suspended);
+
     if (is_conn_excluded_from_http_comm (c))
       continue;
 
@@ -580,6 +584,8 @@ ext_events_update_registrations (struct MHD_Daemon *restrict d)
     /* Get the next connection now, as the current connection could be removed
        from the daemon. */
     c_next = mhd_DLINKEDL_GET_NEXT (c,all_conn);
+
+    mhd_assert (! c->resuming || c->suspended);
 
     if (is_conn_excluded_from_http_comm (c))
     {
