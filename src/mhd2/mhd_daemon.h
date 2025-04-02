@@ -480,7 +480,7 @@ struct mhd_DaemonEventMonitoringData
    * Indicate that daemon already has some data to be processed on the next
    * cycle
    */
-  bool zero_wait;
+  bool zero_wait; // FIXME: Remove completely?
 
   /**
    * The list of the daemon's connections that need processing
