@@ -1245,8 +1245,8 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
  * listen socket states
  */
 static MHD_FN_PAR_NONNULL_ (1) bool
-poll_update_statuses_from_eevents (struct MHD_Daemon *restrict d,
-                                   unsigned int num_events)
+update_statuses_from_eevents (struct MHD_Daemon *restrict d,
+                              unsigned int num_events)
 {
   unsigned int i;
   struct epoll_event *const restrict events =
@@ -1362,7 +1362,7 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
       }
       return true; /* EINTR, try next time */
     }
-    if (! poll_update_statuses_from_eevents (d, (unsigned int) num_events))
+    if (! update_statuses_from_eevents (d, (unsigned int) num_events))
       return false;
 
     events_processed += (unsigned int) num_events; /* Avoid reading too many events */
