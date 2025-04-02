@@ -526,6 +526,11 @@
 /* #  define mhd_DEBUG_SUSPEND_RESUME 1 */
 #endif
 
+#ifndef mhd_DEBUG_CONN_ADD_CLOSE
+/* Use debug-print for adding and closing of the connections */
+/* #  define mhd_DEBUG_CONN_ADD_CLOSE 1 */
+#endif
+
 #ifndef MHD_AUTH_DIGEST_DEF_TIMEOUT
 #  define MHD_AUTH_DIGEST_DEF_TIMEOUT 90
 #endif /* ! MHD_AUTH_DIGEST_DEF_TIMEOUT */

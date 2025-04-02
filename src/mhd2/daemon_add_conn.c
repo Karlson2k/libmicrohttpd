@@ -43,6 +43,9 @@
 #include "sys_sockets_headers.h"
 #include "sys_ip_headers.h"
 
+#ifdef mhd_DEBUG_CONN_ADD_CLOSE
+#  include <stdio.h>
+#endif /* mhd_DEBUG_CONN_ADD_CLOSE */
 #include <string.h>
 #ifdef MHD_SUPPORT_EPOLL
 #  include <sys/epoll.h>
@@ -280,6 +283,7 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
 
 
 /**
+ * Internal (inner) function.
  * Finally insert the new connection to the list of connections
  * served by the daemon and start processing.
  * @remark To be called only from thread that process
@@ -287,11 +291,12 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
  *
  * @param daemon daemon that manages the connection
  * @param connection the newly created connection
- * @return #MHD_YES on success, #MHD_NO on error
+ * @return #MHD_SC_OK on success,
+ *         error code otherwise
  */
 static enum MHD_StatusCode
-new_connection_process_ (struct MHD_Daemon *restrict daemon,
-                         struct MHD_Connection *restrict connection)
+new_connection_process_inner (struct MHD_Daemon *restrict daemon,
+                              struct MHD_Connection *restrict connection)
 {
   enum MHD_StatusCode res;
   mhd_assert (connection->daemon == daemon);
@@ -434,6 +439,41 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
   free (connection);
   mhd_assert (MHD_SC_OK != res);
   return res;  /* *** Function failure exit point *** */
+}
+
+
+/**
+ * Finally insert the new connection to the list of connections
+ * served by the daemon and start processing.
+ * @remark To be called only from thread that process
+ * daemon's select()/poll()/etc.
+ *
+ * @param daemon daemon that manages the connection
+ * @param connection the newly created connection
+ * @return #MHD_SC_OK on success,
+ *         error code otherwise
+ */
+static enum MHD_StatusCode
+new_connection_process_ (struct MHD_Daemon *restrict daemon,
+                         struct MHD_Connection *restrict connection)
+{
+  enum MHD_StatusCode res;
+
+  res = new_connection_process_inner (daemon,
+                                      connection);
+#ifdef mhd_DEBUG_CONN_ADD_CLOSE
+  if (MHD_SC_OK == res)
+    fprintf (stderr,
+             "&&&  Added new connection, FD: %llu\n",
+             (unsigned long long) connection->sk.fd);
+  else
+    fprintf (stderr,
+             "&&& Failed add connection, FD: %llu -> %u\n",
+             (unsigned long long) connection->sk.fd,
+             (unsigned int) res);
+#endif /* mhd_DEBUG_CONN_ADD_CLOSE */
+
+  return res;
 }
 
 
@@ -1061,6 +1101,11 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   if (NULL != c->sk.addr.data)
     free (c->sk.addr.data);
   mhd_socket_close (c->sk.fd);
+#ifdef mhd_DEBUG_CONN_ADD_CLOSE
+  fprintf (stderr,
+           "&&&     Closed connection, FD: %llu\n",
+           (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_CONN_ADD_CLOSE */
 
   free (c);
 }

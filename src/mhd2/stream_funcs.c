@@ -31,6 +31,9 @@
 #include "mhd_assert.h"
 #include "mhd_unreachable.h"
 
+#ifdef mhd_DEBUG_CONN_ADD_CLOSE
+#  include <stdio.h>
+#endif /* mhd_DEBUG_CONN_ADD_CLOSE */
 #include <string.h>
 #include "extr_events_funcs.h"
 #ifdef MHD_SUPPORT_EPOLL
@@ -1025,7 +1028,11 @@ MHD_INTERNAL
 MHD_FN_PAR_NONNULL_ (1) void
 mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 {
-  // TODO: support suspended connections
+#ifdef mhd_DEBUG_CONN_ADD_CLOSE
+  fprintf (stderr,
+           "&&&    Closing connection, FD: %llu\n",
+           (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_CONN_ADD_CLOSE */
 
   mhd_assert (c->dbg.closing_started);
   mhd_assert (! c->dbg.pre_cleaned);
