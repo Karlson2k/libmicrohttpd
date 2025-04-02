@@ -60,9 +60,9 @@ mhd_conn_process_recv_send_data (struct MHD_Connection *restrict c)
 
   data_processed = false;
 
+  mhd_assert (! c->suspended);
   if (c->resuming)
   {
-    mhd_assert (! c->suspended);
     /* Fully resume the connection + call app callbacks for the data */
     if (! mhd_conn_process_data (c))
       return false;

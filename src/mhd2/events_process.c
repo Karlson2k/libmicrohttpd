@@ -114,6 +114,22 @@ mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
 }
 
 
+static MHD_FN_PAR_NONNULL_ALL_ void
+start_resuming_connection (struct MHD_Connection *restrict c,
+                           struct MHD_Daemon *restrict d)
+{
+  mhd_assert (c->suspended);
+#ifdef mhd_DEBUG_SUSPEND_RESUME
+  fprintf (stderr,
+           "%%%%%%   Resuming connection, FD: %llu\n",
+           (unsigned long long) c->sk.fd);
+#endif /* mhd_DEBUG_SUSPEND_RESUME */
+  c->suspended = false;
+  mhd_stream_resumed_activity_mark (c);
+  mhd_conn_mark_ready (c, d); /* Force processing connection in this round */
+}
+
+
 /**
  * Check whether any resuming connections are pending and resume them
  * @param d the daemon to use
@@ -132,19 +148,8 @@ daemon_resume_conns_if_needed (struct MHD_Daemon *restrict d)
        NULL != c;
        c = mhd_DLINKEDL_GET_NEXT (c,all_conn))
   {
-    if (! c->resuming)
-      continue;
-
-    mhd_assert (c->suspended);
-#ifdef mhd_DEBUG_SUSPEND_RESUME
-    fprintf (stderr,
-             "%%%%%%   Resuming connection, FD: %llu\n",
-             (unsigned long long) c->sk.fd);
-#endif /* mhd_DEBUG_SUSPEND_RESUME */
-
-    c->suspended = false;
-    mhd_stream_resumed_activity_mark (c);
-    mhd_conn_mark_ready (c, d); /* Force processing connection in this round */
+    if (c->resuming)
+      start_resuming_connection (c, d);
   }
 }
 
@@ -179,6 +184,8 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
   enum mhd_SocketNetState sk_state;
 
   mhd_assert (d == c->daemon);
+  /* "resuming" must be not processed yet */
+  mhd_assert (! c->resuming || c->suspended);
 
   sk_state = mhd_SOCKET_NET_STATE_NOTHING;
   if (recv_ready)
@@ -192,7 +199,10 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
                (sk_state | (unsigned int) mhd_SOCKET_NET_STATE_ERROR_READY);
   c->sk.ready = sk_state;
 
-  mhd_conn_mark_ready_update3 (c, err_state, d);
+  if (! c->suspended)
+    mhd_conn_mark_ready_update3 (c, err_state, d);
+  else
+    mhd_assert (! c->in_proc_ready);
 }
 
 
@@ -460,18 +470,20 @@ mhd_daemon_close_all_conns (struct MHD_Daemon *d)
 /**
  * Process all external events updated of existing connections, information
  * about new connections pending to be accept()'ed, presence of the events on
- * the daemon's ITC.
+ * the daemon's ITC; resume connections.
  * @return 'true' if processed successfully,
  *         'false' is unrecoverable error occurs and the daemon must be
  *         closed
  */
 static MHD_FN_PAR_NONNULL_ (1) bool
-ext_events_process_net_updates (struct MHD_Daemon *restrict d)
+ext_events_process_net_updates_and_resume_conn (struct MHD_Daemon *restrict d)
 {
   struct MHD_Connection *restrict c;
 
   mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
   mhd_assert (mhd_POLL_TYPE_EXT == d->events.poll_type);
+
+  d->threading.resume_requested = false; /* Reset flag before processing data */
 
 #ifdef MHD_SUPPORT_THREADS
   if (d->events.data.extr.itc_data.is_active)
@@ -491,17 +503,23 @@ ext_events_process_net_updates (struct MHD_Daemon *restrict d)
   {
     bool has_err_state;
 
-    mhd_assert (! c->resuming || c->suspended);
+    if (c->resuming)
+      start_resuming_connection (c, d);
+    else
+    {
+      if (is_conn_excluded_from_http_comm (c))
+      {
+        mhd_assert (! c->in_proc_ready);
+        continue;
+      }
 
-    if (is_conn_excluded_from_http_comm (c))
-      continue;
+      has_err_state = (0 != (((unsigned int) c->sk.ready)
+                             & mhd_SOCKET_NET_STATE_ERROR_READY));
 
-    has_err_state =
-      (0 != (((unsigned int) c->sk.ready) & mhd_SOCKET_NET_STATE_ERROR_READY));
-
-    mhd_conn_mark_ready_update3 (c,
-                                 has_err_state,
-                                 d);
+      mhd_conn_mark_ready_update3 (c,
+                                   has_err_state,
+                                   d);
+    }
   }
 
   return true;
@@ -778,17 +796,25 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
 
 
 static MHD_FN_PAR_NONNULL_ (1) bool
-select_update_statuses_from_fdsets (struct MHD_Daemon *d,
-                                    int num_events)
+select_update_statuses_from_fdsets_and_resume_conn (struct MHD_Daemon *d,
+                                                    int num_events)
 {
   struct MHD_Connection *c;
   fd_set *const restrict rfds = d->events.data.select.rfds;
   fd_set *const restrict wfds = d->events.data.select.wfds;
   fd_set *const restrict efds = d->events.data.select.efds;
+  bool resuming_conn;
 
   mhd_assert (mhd_POLL_TYPE_SELECT == d->events.poll_type);
   mhd_assert (0 <= num_events);
   mhd_assert (((unsigned int) num_events) <= d->dbg.num_events_elements);
+
+  resuming_conn = d->threading.resume_requested;
+  if (resuming_conn)
+  {
+    num_events = (int) -1; /* Force process all connections */
+    d->threading.resume_requested = false;
+  }
 
 #ifndef MHD_FAVOR_SMALL_CODE
   if (0 == num_events)
@@ -844,8 +870,10 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
     }
   }
 
-  mhd_assert ((0 == num_events) || \
+  mhd_assert ((0 == num_events) || resuming_conn || \
               (mhd_DAEMON_TYPE_LISTEN_ONLY != d->threading.d_type));
+  if (mhd_DAEMON_TYPE_LISTEN_ONLY != d->threading.d_type)
+    return true;
 
 #ifdef MHD_FAVOR_SMALL_CODE
   (void) num_events;
@@ -856,32 +884,37 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
        (NULL != c) && (0 != num_events);
        c = mhd_DLINKEDL_GET_NEXT (c, all_conn))
   {
-    MHD_Socket sk;
-    bool recv_ready;
-    bool send_ready;
-    bool err_state;
+    if (c->resuming)
+      start_resuming_connection (c, d);
+    else
+    {
+      MHD_Socket sk;
+      bool recv_ready;
+      bool send_ready;
+      bool err_state;
 
-    if (is_conn_excluded_from_http_comm (c))
-      continue;
+      if (is_conn_excluded_from_http_comm (c))
+        continue;
 
-    sk = c->sk.fd;
-    recv_ready = FD_ISSET (sk, rfds);
-    send_ready = FD_ISSET (sk, wfds);
-    err_state = FD_ISSET (sk, efds);
+      sk = c->sk.fd;
+      recv_ready = FD_ISSET (sk, rfds);
+      send_ready = FD_ISSET (sk, wfds);
+      err_state = FD_ISSET (sk, efds);
 
-    update_conn_net_status (d,
-                            c,
-                            recv_ready,
-                            send_ready,
-                            err_state);
+      update_conn_net_status (d,
+                              c,
+                              recv_ready,
+                              send_ready,
+                              err_state);
 #ifndef MHD_FAVOR_SMALL_CODE
-    if (recv_ready || send_ready || err_state)
-      --num_events;
+      if (recv_ready || send_ready || err_state)
+        --num_events;
 #endif /* MHD_FAVOR_SMALL_CODE */
+    }
   }
 
 #ifndef MHD_FAVOR_SMALL_CODE
-  mhd_assert (0 == num_events);
+  mhd_assert ((0 == num_events) || resuming_conn);
 #endif /* MHD_FAVOR_SMALL_CODE */
   return true;
 }
@@ -889,7 +922,7 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
 
 /**
  * Update states of all connections, check for connection pending
- * to be accept()'ed, check for the events on ITC.
+ * to be accept()'ed, check for the events on ITC; resume connections
  * @param listen_only set to 'true' if connections's sockets should NOT
  *                    be monitored
  * @return 'true' if processed successfully,
@@ -897,8 +930,8 @@ select_update_statuses_from_fdsets (struct MHD_Daemon *d,
  *         closed
  */
 static MHD_FN_PAR_NONNULL_ (1) bool
-get_all_net_updates_by_select (struct MHD_Daemon *restrict d,
-                               bool listen_only)
+get_all_net_updates_by_select_and_resume_conn (struct MHD_Daemon *restrict d,
+                                               bool listen_only)
 {
   int max_socket;
   int max_wait;
@@ -967,7 +1000,7 @@ get_all_net_updates_by_select (struct MHD_Daemon *restrict d,
     }
   }
 
-  return select_update_statuses_from_fdsets (d, num_events);
+  return select_update_statuses_from_fdsets_and_resume_conn (d, num_events);
 }
 
 
@@ -1402,15 +1435,13 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
   {
   case mhd_POLL_TYPE_EXT:
     mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
-    if (! ext_events_process_net_updates (d))
+    if (! ext_events_process_net_updates_and_resume_conn (d))
       return false;
-    daemon_resume_conns_if_needed (d);
     break;
 #ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
-    if (! get_all_net_updates_by_select (d, false))
+    if (! get_all_net_updates_by_select_and_resume_conn (d, false))
       return false;
-    daemon_resume_conns_if_needed (d);
     break;
 #endif /* MHD_SUPPORT_SELECT */
 #ifdef MHD_SUPPORT_POLL
