@@ -1376,6 +1376,23 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
 #endif /* MHD_SUPPORT_EPOLL */
 
 
+/**
+ * Perform one round of daemon connection and data processing.
+ *
+ * This function do the following:
+ * + poll all connections and daemon FDs (if internal polling is used);
+ * + resume connections pending to be resumed;
+ * + update connection statuses based on socket states (recv/send ready or
+ *   disconnect detection);
+ * + receive, send and/or parse connections data as needed, including call of
+ *   callbacks for processing requests and response generation;
+ * + close broken connections;
+ * + accept new connection (if needed);
+ * + cleanup closed "upgraded" connections.
+ * @param d the daemon to use
+ * @return 'true' on success,
+ *         'false' if daemon is broken
+ */
 static MHD_FN_PAR_NONNULL_ (1) bool
 process_all_events_and_data (struct MHD_Daemon *restrict d)
 {
@@ -1387,23 +1404,27 @@ process_all_events_and_data (struct MHD_Daemon *restrict d)
     mhd_assert (mhd_WM_INT_HAS_EXT_EVENTS (d->wmode_int));
     if (! ext_events_process_net_updates (d))
       return false;
+    daemon_resume_conns_if_needed (d);
     break;
 #ifdef MHD_SUPPORT_SELECT
   case mhd_POLL_TYPE_SELECT:
     if (! get_all_net_updates_by_select (d, false))
       return false;
+    daemon_resume_conns_if_needed (d);
     break;
 #endif /* MHD_SUPPORT_SELECT */
 #ifdef MHD_SUPPORT_POLL
   case mhd_POLL_TYPE_POLL:
     if (! get_all_net_updates_by_poll (d, false))
       return false;
+    daemon_resume_conns_if_needed (d);
     break;
 #endif /* MHD_SUPPORT_POLL */
 #ifdef MHD_SUPPORT_EPOLL
   case mhd_POLL_TYPE_EPOLL:
     if (! get_all_net_updates_by_epoll (d))
       return false;
+    daemon_resume_conns_if_needed (d);
     break;
 #endif /* MHD_SUPPORT_EPOLL */
 #ifndef MHD_SUPPORT_SELECT
@@ -1549,8 +1570,6 @@ mhd_worker_all_events (void *cls)
 
   while (! d->threading.stop_requested)
   {
-    daemon_resume_conns_if_needed (d);
-
     if (! process_all_events_and_data (d))
       break;
   }
