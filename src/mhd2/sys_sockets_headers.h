@@ -124,9 +124,9 @@
 
 #ifdef HAVE_DCLR_MSG_MORE
 #  ifdef __linux__
-/* MSG_MORE signal kernel to buffer outbond data and works like
- * TCP_CORK per call without actually setting TCP_CORK value.
- * It's known to work on Linux. Add more OSes if they are compatible. */
+/* MSG_MORE signal kernel to buffer outbound data and works like
+   TCP_CORK for a single call without actually setting the TCP_CORK flag.
+   It's known to work on Linux. Add more OSes if they are compatible. */
 /**
  * Indicate MSG_MORE is usable for buffered send().
  */
