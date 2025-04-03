@@ -1008,7 +1008,7 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
     if (! daemon->sigpipe_blocked)
     {
       (void) MHD_socket_close_ (s);
-      return MHD_NO;
+      return mhd_DAEMON_ACCEPT_FAILED;
     }
 #endif /* HAVE_DCLR_MSG_NOSIGNAL */
   }
