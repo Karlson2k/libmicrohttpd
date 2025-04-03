@@ -978,20 +978,22 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
 #endif /* HAVE_INET6 */
   }
 
-  if (! sk_nonbl && ! mhd_socket_nonblocking (s))
-  {
-    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED, \
-                 "Failed to set nonblocking mode on incoming connection " \
-                 "socket.");
+  if (! sk_nonbl)
+  { /* Was not set automatically */
+    sk_nonbl = mhd_socket_nonblocking (s);
+    if (! sk_nonbl)
+      mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NONBLOCKING_FAILED, \
+                   "Failed to set nonblocking mode on "
+                   "new connection socket.");
   }
-  else
-    sk_nonbl = true;
 
-  if (! sk_cloexec && ! mhd_socket_noninheritable (s))
-  {
-    mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED, \
-                 "Failed to set non-inheritable mode on incoming connection " \
-                 "socket.");
+  if (! sk_cloexec)
+  { /* Was not set automatically */
+    sk_cloexec =  mhd_socket_noninheritable (s);
+    if (! sk_cloexec)
+      mhd_LOG_MSG (daemon, MHD_SC_ACCEPT_CONFIGURE_NOINHERIT_FAILED, \
+                   "Failed to set non-inheritable mode on "
+                   "new connection socket.");
   }
 
 #if defined(mhd_socket_nosignal)
