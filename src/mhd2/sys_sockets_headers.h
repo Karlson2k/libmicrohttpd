@@ -141,6 +141,12 @@
 #endif
 
 
+#if defined(HAVE_ACCEPT4) && (defined(HAVE_DCLR_SOCK_NONBLOCK) || \
+  defined(HAVE_DCLR_SOCK_CLOEXEC) || defined(HAVE_DCLR_SOCK_NOSIGPIPE))
+#  define mhd_USE_ACCEPT4 1
+#endif
+
+
 /**
  * mhd_SCKT_OPT_BOOL is the type for bool parameters
  * for setsockopt()/getsockopt() functions

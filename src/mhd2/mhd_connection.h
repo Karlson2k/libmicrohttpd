@@ -480,6 +480,7 @@ struct mhd_ConnDebugData
   bool pre_cleaned;
   bool removed_from_daemon;
   bool tls_inited;
+  bool avoid_accept4;
 };
 
 /**

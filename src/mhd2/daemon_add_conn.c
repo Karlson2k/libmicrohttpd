@@ -817,9 +817,9 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
   bool sk_spipe_supprs;
   bool sk_cloexec;
   enum mhd_Tristate sk_non_ip;
-#if defined(_DEBUG) && defined (USE_ACCEPT4)
+#if defined(_DEBUG) && defined (mhd_USE_ACCEPT4)
   const bool use_accept4 = ! daemon->dbg.avoid_accept4;
-#elif defined (USE_ACCEPT4)
+#elif defined (mhd_USE_ACCEPT4)
   static const bool use_accept4 = true;
 #else  /* ! USE_ACCEPT4 && ! _DEBUG */
   static const bool use_accept4 = false;
@@ -849,44 +849,47 @@ mhd_daemon_accept_connection (struct MHD_Daemon *restrict daemon)
   sk_cloexec = false;
   s = MHD_INVALID_SOCKET;
 
-#ifdef USE_ACCEPT4
-  if (use_accept4 &&
-      (MHD_INVALID_SOCKET !=
-       (s = accept4 (fd,
-                     (struct sockaddr *) &addrstorage,
-                     &addrlen,
-                     SOCK_CLOEXEC_OR_ZERO | SOCK_NONBLOCK_OR_ZERO
-                     | SOCK_NOSIGPIPE_OR_ZERO))))
+#ifdef mhd_USE_ACCEPT4
+  if (use_accept4)
   {
-    sk_nonbl = (SOCK_NONBLOCK_OR_ZERO != 0);
+    s = accept4 (fd,
+                 (struct sockaddr *) &addrstorage,
+                 &addrlen,
+                 mhd_SOCK_CLOEXEC | mhd_SOCK_NONBLOCK | mhd_SOCK_NOSIGPIPE);
+    if (MHD_INVALID_SOCKET != s)
+    {
+      sk_nonbl = (mhd_SOCK_NONBLOCK != 0);
 #ifndef MHD_SOCKETS_KIND_WINSOCK
-    sk_spipe_supprs = (SOCK_NOSIGPIPE_OR_ZERO != 0);
+      sk_spipe_supprs = (mhd_SOCK_NOSIGPIPE != 0);
 #else  /* MHD_SOCKETS_KIND_WINSOCK */
-    sk_spipe_supprs = true; /* Nothing to suppress on W32 */
+      sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_SOCKETS_KIND_WINSOCK */
-    sk_cloexec = (SOCK_CLOEXEC_OR_ZERO != 0);
+      sk_cloexec = (mhd_SOCK_CLOEXEC != 0);
+    }
   }
-#endif /* USE_ACCEPT4 */
-#if defined(_DEBUG) || ! defined(USE_ACCEPT4)
-  if (! use_accept4 &&
-      (MHD_INVALID_SOCKET !=
-       (s = accept (fd,
-                    (struct sockaddr *) &addrstorage,
-                    &addrlen))))
+#endif /* mhd_USE_ACCEPT4 */
+#if ! defined(mhd_USE_ACCEPT4) || defined(_DEBUG)
+  if (! use_accept4)
   {
-#ifdef MHD_ACCEPT_INHERIT_NONBLOCK
-    sk_nonbl = daemon->listen_nonblk;
-#else  /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
-    sk_nonbl = false;
-#endif /* ! MHD_ACCEPT_INHERIT_NONBLOCK */
+    s = accept (fd,
+                (struct sockaddr *) &addrstorage,
+                &addrlen);
+    if (MHD_INVALID_SOCKET != s)
+    {
+#ifdef MHD_ACCEPTED_INHERITS_NONBLOCK
+      sk_nonbl = daemon->net.listen.non_block;
+#else  /* ! MHD_ACCEPTED_INHERITS_NONBLOCK */
+      sk_nonbl = false;
+#endif /* ! MHD_ACCEPTED_INHERITS_NONBLOCK */
 #ifndef MHD_SOCKETS_KIND_WINSOCK
-    sk_spipe_supprs = false;
+      sk_spipe_supprs = false;
 #else  /* MHD_SOCKETS_KIND_WINSOCK */
-    sk_spipe_supprs = true; /* Nothing to suppress on W32 */
+      sk_spipe_supprs = true; /* Nothing to suppress on W32 */
 #endif /* MHD_SOCKETS_KIND_WINSOCK */
-    sk_cloexec = false;
+      sk_cloexec = false;
+    }
   }
-#endif /* _DEBUG || !USE_ACCEPT4 */
+#endif /* !mhd_USE_ACCEPT4 || _DEBUG */
 
   if (MHD_INVALID_SOCKET == s)
   { /* This could be a common occurrence with multiple worker threads */
