@@ -377,7 +377,10 @@ daemon_process_all_active_conns (struct MHD_Daemon *restrict d)
       mhd_conn_remove_from_daemon (c);
       mhd_conn_close_final (c);
     }
-    mhd_assert (! c->resuming || c->suspended);
+    else
+    {
+      mhd_assert (! c->resuming || c->suspended);
+    }
 
     c = next;
   }
