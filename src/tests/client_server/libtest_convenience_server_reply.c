@@ -874,7 +874,7 @@ MHDT_server_reply_check_digest_auth (
       NULL, /* domain */
       (MHD_DAUTH_NONCE_STALE == dar) ? MHD_YES : MHD_NO, /* indicate stale */
       MHD_DIGEST_AUTH_MULT_QOP_AUTH,
-      MHD_DIGEST_AUTH_MULT_ALGO_SHA256,
+      (enum MHD_DigestAuthMultiAlgo) algo,
       MHD_NO /* userhash_support */,
       MHD_YES /* prefer UTF8 */);
     if (MHD_SC_OK != sc)
