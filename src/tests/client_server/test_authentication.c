@@ -56,7 +56,6 @@ main (int argc, char *argv[])
     },
   };
   struct MHDT_Phase phases[] = {
-#if FIXME
     {
       .label = "simple basic authentication",
       .server_cb = &MHDT_server_reply_check_basic_auth,
@@ -73,7 +72,6 @@ main (int argc, char *argv[])
       .client_cb_cls = (void *) "username:word", /* incorrect on purpose */
       .timeout_ms = 2500,
     },
-#endif
     {
       .label = "simple digest authentication",
       .server_cb = &MHDT_server_reply_check_digest_auth,
