@@ -814,6 +814,8 @@ MHDT_server_reply_check_digest_auth (
 #endif
   size_t digest_len = MHD_digest_get_hash_size (algo);
 
+  (void) cls; /* Unused, mute compiler warning */
+
   if (0 == digest_len)
     return NULL;
   assert (NULL != colon);
