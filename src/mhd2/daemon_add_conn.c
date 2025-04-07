@@ -361,7 +361,7 @@ new_connection_process_inner (struct MHD_Daemon *restrict daemon,
       daemon->conns.block_new =
         (daemon->conns.count >= daemon->conns.cfg.count_limit);
       mhd_DLINKEDL_INS_LAST (&(daemon->conns), connection, all_conn);
-      if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION != daemon->wmode_int)
+      if (! mhd_D_HAS_THR_PER_CONN (daemon))
         mhd_DLINKEDL_INS_FIRST_D (&(daemon->conns.def_timeout), \
                                   connection, by_timeout);
 
@@ -450,7 +450,7 @@ new_connection_process_inner (struct MHD_Daemon *restrict daemon,
       mhd_assert (MHD_SC_OK != res);
       notify_app_conn (daemon, connection, true);
 
-      if (mhd_WM_INT_INTERNAL_EVENTS_THREAD_PER_CONNECTION != daemon->wmode_int)
+      if (! mhd_D_HAS_THR_PER_CONN (daemon))
         mhd_DLINKEDL_DEL_D (&(daemon->conns.def_timeout), \
                             connection, by_timeout);
 
