@@ -922,6 +922,7 @@ select_update_statuses_from_fdsets_and_resume_conn (struct MHD_Daemon *d,
   resuming_conn = d->threading.resume_requested;
   if (resuming_conn)
   {
+    mhd_assert (mhd_DAEMON_TYPE_LISTEN_ONLY != d->threading.d_type);
     num_events = (int) -1; /* Force process all connections */
     d->threading.resume_requested = false;
   }
@@ -990,10 +991,8 @@ select_update_statuses_from_fdsets_and_resume_conn (struct MHD_Daemon *d,
     }
   }
 
-  mhd_assert ((0 == num_events) || resuming_conn || \
+  mhd_assert ((0 == num_events) || \
               (mhd_DAEMON_TYPE_LISTEN_ONLY != d->threading.d_type));
-  if (mhd_DAEMON_TYPE_LISTEN_ONLY != d->threading.d_type)
-    return true;
 
 #ifdef MHD_FAVOR_SMALL_CODE
   (void) num_events;
