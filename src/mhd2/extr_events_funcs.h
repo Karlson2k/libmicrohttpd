@@ -112,7 +112,7 @@ mhd_daemon_extr_event_reg (struct MHD_Daemon *d,
     break;
   }
   fprintf (stderr,
-           "### %s callback (cls, [%s %llu], %s, 0x%08llX, ptr) "
+           "### %s callback (cls, [%s %2llu], %s, 0x%08llX, ptr) "
            "-> 0x%08llX\n",
            reg_type,
            fd_rel,

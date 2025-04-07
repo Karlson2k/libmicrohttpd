@@ -195,7 +195,7 @@ finish_resume (struct MHD_Connection *restrict c)
 
 #ifdef mhd_DEBUG_SUSPEND_RESUME
   fprintf (stderr,
-           "%%%%%%    Resumed connection, FD: %llu\n",
+           "%%%%%%    Resumed connection, FD: %2llu\n",
            (unsigned long long) c->sk.fd);
 #endif /* mhd_DEBUG_SUSPEND_RESUME */
   mhd_assert (! c->suspended);
@@ -537,7 +537,7 @@ mhd_conn_process_data (struct MHD_Connection *restrict c)
     mhd_conn_remove_from_timeout_lists (c);
 #ifdef mhd_DEBUG_SUSPEND_RESUME
     fprintf (stderr,
-             "%%%%%%  Connection suspended, FD: %llu\n",
+             "%%%%%%  Connection suspended, FD: %2llu\n",
              (unsigned long long) c->sk.fd);
 #endif /* mhd_DEBUG_SUSPEND_RESUME */
     return true;

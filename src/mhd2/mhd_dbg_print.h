@@ -35,7 +35,7 @@
 #endif /* mhd_DEBUG_POLLING_FDS */
 
 
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
 /**
  * Debug-printf request of FD polling/monitoring
  * @param fd_name the name of FD ("ITC", "lstn" or "conn")
@@ -54,7 +54,7 @@ mhd_dbg_print_fd_mon_req (const char *fd_name,
 MHD_FN_PAR_NONNULL_ALL_;
 
 #else  /* ! mhd_DEBUG_POLLING_FDS */
-#  define dbg_print_fd_state_update(fd_n,fd,r_ready,w_ready,e_ready) ((void) 0)
+#  define mhd_dbg_print_fd_mon_req(fd_n,fd,r_ready,w_ready,e_ready) ((void) 0)
 #endif /* ! mhd_DEBUG_POLLING_FDS */
 
 

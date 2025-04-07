@@ -77,19 +77,19 @@ MHD_daemon_event_update (
       break;
     case mhd_SOCKET_REL_MARKER_ITC:
       fprintf (stderr,
-               "### MHD_daemon_event_update(daemon, [ITC:  %llu], %s)\n",
+               "### MHD_daemon_event_update(daemon, [ITC:  %2llu], %s)\n",
                (unsigned long long) mhd_itc_r_fd (daemon->threading.itc),
                state_str);
       break;
     case mhd_SOCKET_REL_MARKER_LISTEN:
       fprintf (stderr,
-               "### MHD_daemon_event_update(daemon, [lstn: %llu], %s)\n",
+               "### MHD_daemon_event_update(daemon, [lstn: %2llu], %s)\n",
                (unsigned long long) daemon->net.listen.fd,
                state_str);
       break;
     default:
       fprintf (stderr,
-               "### MHD_daemon_event_update(daemon, [conn: %llu], %s)\n",
+               "### MHD_daemon_event_update(daemon, [conn: %2llu], %s)\n",
                (unsigned long long)
                (((struct MHD_Connection *) ecb_cntx)->sk.fd),
                state_str);

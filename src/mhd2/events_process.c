@@ -70,7 +70,7 @@
 
 #include "mhd_public_api.h"
 
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
 /**
  * Debug-printf request of FD polling/monitoring
  * @param fd_name the name of FD ("ITC", "lstn" or "conn")
@@ -92,7 +92,7 @@ mhd_dbg_print_fd_mon_req (const char *fd_name,
   state_str[4] = e_ready ? 'E' : '-';
 
   fprintf (stderr,
-           "### Set FD watching: %4s [%llu] for %s\n",
+           "### Set FD watching: %4s [%2llu] for %s\n",
            fd_name,
            (unsigned long long) fd,
            state_str);
@@ -120,7 +120,7 @@ dbg_print_fd_state_update (const char *fd_name,
   state_str[4] = e_ready ? 'E' : '-';
 
   fprintf (stderr,
-           "### FD state update: %4s [%llu]  -> %s\n",
+           "### FD state update: %4s [%2llu]  -> %s\n",
            fd_name,
            (unsigned long long) fd,
            state_str);
@@ -128,8 +128,8 @@ dbg_print_fd_state_update (const char *fd_name,
 
 
 #else  /* ! mhd_DEBUG_POLLING_FDS */
-#  defined dbg_print_fd_state_update (fd_n,fd,r_ready,w_ready,e_ready) ((void) 0 \
-                                                                        )
+#  define dbg_print_fd_state_update(fd_n,fd,r_ready,w_ready,e_ready) \
+        ((void) 0)
 #endif /* ! mhd_DEBUG_POLLING_FDS */
 
 /**
@@ -207,7 +207,7 @@ start_resuming_connection (struct MHD_Connection *restrict c,
   mhd_assert (c->suspended);
 #ifdef mhd_DEBUG_SUSPEND_RESUME
   fprintf (stderr,
-           "%%%%%%   Resuming connection, FD: %llu\n",
+           "%%%%%%   Resuming connection, FD: %2llu\n",
            (unsigned long long) c->sk.fd);
 #endif /* mhd_DEBUG_SUSPEND_RESUME */
   c->suspended = false;
@@ -1078,7 +1078,7 @@ get_all_net_updates_by_select_and_resume_conn (struct MHD_Daemon *restrict d,
   tmvl.tv_usec = (int) ((max_wait % 1000) * 1000);
 #endif
 
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
   fprintf (stderr,
            "### (Starting) select(%d, rfds, wfds, efds, [%llu, %llu])...\n",
            max_socket + 1,
@@ -1090,7 +1090,7 @@ get_all_net_updates_by_select_and_resume_conn (struct MHD_Daemon *restrict d,
                        d->events.data.select.wfds,
                        d->events.data.select.efds,
                        &tmvl);
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
   fprintf (stderr,
            "### (Finished) select(%d, rfds, wfds, efds, ->[%llu, %llu]) -> "
            "%d\n",
@@ -1383,7 +1383,7 @@ static MHD_FN_PAR_NONNULL_ (1) bool
 get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
                              bool listen_only)
 {
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
 #  ifdef MHD_SOCKETS_KIND_POSIX
   static const char poll_fn_name[] = "poll";
 #  else  /* MHD_SOCKETS_KIND_WINSOCK */
@@ -1401,7 +1401,7 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
   // TODO: handle empty list situation
   max_wait = get_max_wait (d); // TODO: use correct timeout value
 
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
   fprintf (stderr,
            "### (Starting) %s(fds, %u, %d)...\n",
            poll_fn_name,
@@ -1411,7 +1411,7 @@ get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
   num_events = mhd_poll (d->events.data.poll.fds,
                          num_fds,
                          max_wait); // TODO: use correct timeout value
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
   fprintf (stderr,
            "### (Finished) %s(fds, %u, %d) -> %d\n",
            poll_fn_name,
@@ -1580,7 +1580,7 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
   max_wait = get_max_wait (d); // TODO: use correct timeout value
   do
   {
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
     fprintf (stderr,
              "### (Starting) epoll_wait(%d, events, %d, %d)...\n",
              d->events.data.epoll.e_fd,
@@ -1591,7 +1591,7 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
                              d->events.data.epoll.events,
                              (int) d->events.data.epoll.num_elements,
                              max_wait);
-#if mhd_DEBUG_POLLING_FDS
+#ifdef mhd_DEBUG_POLLING_FDS
     fprintf (stderr,
              "### (Finished) epoll_wait(%d, events, %d, %d) -> %d\n",
              d->events.data.epoll.e_fd,
@@ -1758,7 +1758,7 @@ MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
   enum MHD_StatusCode res;
 #ifdef mhd_DEBUG_POLLING_FDS
   fprintf (stderr,
-           "### (Started)  MHD_daemon_process_reg_events(daemon, [%s])...\n",
+           "### (Starting) MHD_daemon_process_reg_events(daemon, [%s])...\n",
            (NULL != next_max_wait) ? "non-NULL" : "NULL");
 #endif
   res = process_reg_events_int (daemon,

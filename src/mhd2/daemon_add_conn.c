@@ -470,11 +470,11 @@ new_connection_process_ (struct MHD_Daemon *restrict daemon,
 #ifdef mhd_DEBUG_CONN_ADD_CLOSE
   if (MHD_SC_OK == res)
     fprintf (stderr,
-             "&&&  Added new connection, FD: %llu\n",
+             "&&&  Added new connection, FD: %2llu\n",
              (unsigned long long) connection->sk.fd);
   else
     fprintf (stderr,
-             "&&& Failed add connection, FD: %llu -> %u\n",
+             "&&& Failed add connection, FD: %2llu -> %u\n",
              (unsigned long long) connection->sk.fd,
              (unsigned int) res);
 #endif /* mhd_DEBUG_CONN_ADD_CLOSE */
@@ -1114,7 +1114,7 @@ mhd_conn_close_final (struct MHD_Connection *restrict c)
   mhd_socket_close (c->sk.fd);
 #ifdef mhd_DEBUG_CONN_ADD_CLOSE
   fprintf (stderr,
-           "&&&     Closed connection, FD: %llu\n",
+           "&&&     Closed connection, FD: %2llu\n",
            (unsigned long long) c->sk.fd);
 #endif /* mhd_DEBUG_CONN_ADD_CLOSE */
 

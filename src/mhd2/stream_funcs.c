@@ -1030,7 +1030,7 @@ mhd_conn_pre_clean (struct MHD_Connection *restrict c)
 {
 #ifdef mhd_DEBUG_CONN_ADD_CLOSE
   fprintf (stderr,
-           "&&&    Closing connection, FD: %llu\n",
+           "&&&    Closing connection, FD: %2llu\n",
            (unsigned long long) c->sk.fd);
 #endif /* mhd_DEBUG_CONN_ADD_CLOSE */
 
