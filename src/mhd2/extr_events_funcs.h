@@ -29,12 +29,12 @@
 
 #include "mhd_sys_options.h"
 
-#ifdef mhd_DEBUG_EXTR_EVENTS
+#ifdef mhd_DEBUG_POLLING_FDS
 #  include <stdio.h>
 #  include "mhd_daemon.h"
 #  include "mhd_assert.h"
 #  include "sys_null_macro.h"
-#endif /* mhd_DEBUG_EXTR_EVENTS */
+#endif /* mhd_DEBUG_POLLING_FDS */
 
 #ifdef MHD_SUPPORT_LOG_FUNCTIONALITY
 
@@ -55,7 +55,7 @@ mhd_log_extr_event_dereg_failed (struct MHD_Daemon *restrict d);
 
 #endif /* ! MHD_SUPPORT_LOG_FUNCTIONALITY */
 
-#ifdef mhd_DEBUG_EXTR_EVENTS
+#ifdef mhd_DEBUG_POLLING_FDS
 /**
  * Call application event registration callback
  * @param d the daemon to use
@@ -123,12 +123,12 @@ mhd_daemon_extr_event_reg (struct MHD_Daemon *d,
 
   return res;
 }
-#else  /* ! mhd_DEBUG_EXTR_EVENTS */
+#else  /* ! mhd_DEBUG_POLLING_FDS */
 #  define mhd_daemon_extr_event_reg(d,fd,w_for,app_cntx_old,ecb_cntx) \
         d->events.data.extr.cb_data.cb (d->events.data.extr.cb_data.cls, \
                                         fd, w_for, app_cntx_old, ecb_cntx)
 
-#endif /* ! mhd_DEBUG_EXTR_EVENTS */
+#endif /* ! mhd_DEBUG_POLLING_FDS */
 
 
 #endif /* ! MHD_EXTR_EVENTS_FUNCS_H */

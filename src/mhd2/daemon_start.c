@@ -36,8 +36,6 @@
 #include "mhd_sockets_macros.h"
 #include "sys_ip_headers.h"
 
-#include "extr_events_funcs.h"
-
 #ifdef MHD_SOCKETS_KIND_POSIX
 #  include "sys_errno.h"
 #endif
@@ -63,6 +61,10 @@
 #    endif
 #  endif
 #endif
+
+#include "extr_events_funcs.h"
+
+#include "mhd_dbg_print.h"
 
 #include "mhd_limits.h"
 
@@ -2189,9 +2191,14 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
                           mhd_itc_r_fd (d->threading.itc), &reg_event))
       {
         mhd_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
-                     "Failed to add ITC fd to the epoll monitoring.");
+                     "Failed to add ITC FD to the epoll monitoring.");
         return MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE;
       }
+      mhd_dbg_print_fd_mon_req ("ITC", \
+                                mhd_itc_r_fd (d->threading.itc), \
+                                true, \
+                                false, \
+                                false);
 #endif
       if (MHD_INVALID_SOCKET != d->net.listen.fd)
       {
@@ -2201,9 +2208,14 @@ init_daemon_fds_monitoring (struct MHD_Daemon *restrict d)
                             d->net.listen.fd, &reg_event))
         {
           mhd_LOG_MSG (d, MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE, \
-                       "Failed to add listening fd to the epoll monitoring.");
+                       "Failed to add listening FD to the epoll monitoring.");
           return MHD_SC_EPOLL_ADD_DAEMON_FDS_FAILURE;
         }
+        mhd_dbg_print_fd_mon_req ("lstn", \
+                                  d->net.listen.fd, \
+                                  true, \
+                                  false, \
+                                  false);
       }
     }
     return MHD_SC_OK;

@@ -36,10 +36,10 @@
 
 #include "daemon_logger.h"
 
-#ifdef mhd_DEBUG_EXTR_EVENTS
+#ifdef mhd_DEBUG_POLLING_FDS
 #  include "mhd_itc.h"
 #  include <stdio.h>
-#endif /* mhd_DEBUG_EXTR_EVENTS */
+#endif /* mhd_DEBUG_POLLING_FDS */
 
 #include "mhd_public_api.h"
 
@@ -60,7 +60,7 @@ MHD_daemon_event_update (
   if (mhd_DAEMON_STATE_STARTED < daemon->state)
     return;
 
-#ifdef mhd_DEBUG_EXTR_EVENTS
+#ifdef mhd_DEBUG_POLLING_FDS
   if (1)
   {
     char state_str[] = "x:x:x";
@@ -96,7 +96,7 @@ MHD_daemon_event_update (
       break;
     }
   }
-#endif /* mhd_DEBUG_EXTR_EVENTS */
+#endif /* mhd_DEBUG_POLLING_FDS */
 
   broken_app_data = false;
   unneeded_event = false;

@@ -46,6 +46,7 @@ libmicrohttpd2_la_SOURCES = \
   mhd_buffer.h \
   mhd_limits.h \
   mhd_iovec.h \
+  mhd_dbg_print.h \
   mhd_panic.c               mhd_panic.h \
   mhd_lib_init.c            mhd_lib_init_impl.h       mhd_lib_init.h \
   mhd_lib_init_auto.h \

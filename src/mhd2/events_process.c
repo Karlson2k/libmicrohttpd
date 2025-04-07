@@ -30,7 +30,7 @@
 #include "mhd_assert.h"
 #include "mhd_unreachable.h"
 
-#ifdef mhd_DEBUG_SUSPEND_RESUME
+#if defined(mhd_DEBUG_SUSPEND_RESUME) || defined(mhd_DEBUG_POLLING_FDS)
 #  include <stdio.h>
 #endif /* mhd_DEBUG_SUSPEND_RESUME */
 
@@ -49,6 +49,7 @@
 #include "mhd_itc.h"
 
 #include "mhd_panic.h"
+#include "mhd_dbg_print.h"
 
 #include "mhd_sockets_macros.h"
 
@@ -68,6 +69,68 @@
 #endif /* MHD_SUPPORT_UPGRADE */
 
 #include "mhd_public_api.h"
+
+#if mhd_DEBUG_POLLING_FDS
+/**
+ * Debug-printf request of FD polling/monitoring
+ * @param fd_name the name of FD ("ITC", "lstn" or "conn")
+ * @param fd the FD value
+ * @param r_ready the request for read (or receive) readiness
+ * @param w_ready the request for write (or send) readiness
+ * @param e_ready the request for exception (or error) readiness
+ */
+MHD_INTERNAL MHD_FN_PAR_NONNULL_ALL_ void
+mhd_dbg_print_fd_mon_req (const char *fd_name,
+                          MHD_Socket fd,
+                          bool r_ready,
+                          bool w_ready,
+                          bool e_ready)
+{
+  char state_str[] = "x:x:x";
+  state_str[0] = r_ready ? 'R' : '-';
+  state_str[2] = w_ready ? 'W' : '-';
+  state_str[4] = e_ready ? 'E' : '-';
+
+  fprintf (stderr,
+           "### Set FD watching: %4s [%llu] for %s\n",
+           fd_name,
+           (unsigned long long) fd,
+           state_str);
+}
+
+
+/**
+ * Debug-printf reported (by polling) status of FD
+ * @param fd_name the name of FD ("ITC", "lstn" or "conn")
+ * @param fd the FD value
+ * @param r_ready the read (or receive) readiness
+ * @param w_ready the write (or send) readiness
+ * @param e_ready the exception (or error) readiness
+ */
+static MHD_FN_PAR_NONNULL_ALL_ void
+dbg_print_fd_state_update (const char *fd_name,
+                           MHD_Socket fd,
+                           bool r_ready,
+                           bool w_ready,
+                           bool e_ready)
+{
+  char state_str[] = "x:x:x";
+  state_str[0] = r_ready ? 'R' : '-';
+  state_str[2] = w_ready ? 'W' : '-';
+  state_str[4] = e_ready ? 'E' : '-';
+
+  fprintf (stderr,
+           "### FD state update: %4s [%llu]  -> %s\n",
+           fd_name,
+           (unsigned long long) fd,
+           state_str);
+}
+
+
+#else  /* ! mhd_DEBUG_POLLING_FDS */
+#  defined dbg_print_fd_state_update (fd_n,fd,r_ready,w_ready,e_ready) ((void) 0 \
+                                                                        )
+#endif /* ! mhd_DEBUG_POLLING_FDS */
 
 /**
  * Log error message about broken ITC
@@ -102,12 +165,37 @@ mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
   mhd_assert (! mhd_D_HAS_WORKERS (d));
 
   if (d->events.accept_pending && ! d->conns.block_new)
+  {
+#ifdef mhd_DEBUG_POLLING_FDS
+    fprintf (stderr,
+             "### mhd_daemon_get_wait_max(daemon) -> zero "
+             "(accept new conn pending)\n");
+#endif
     return 0;
+  }
   if (d->threading.resume_requested) /* Remove? It is triggered by ITC anyway */
+  {
+#ifdef mhd_DEBUG_POLLING_FDS
+    fprintf (stderr,
+             "### mhd_daemon_get_wait_max(daemon) -> zero "
+             "(resume connection pending)\n");
+#endif
     return 0;
+  }
   if (NULL != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready))
+  {
+#ifdef mhd_DEBUG_POLLING_FDS
+    fprintf (stderr,
+             "### mhd_daemon_get_wait_max(daemon) -> zero "
+             "(connection(s) is already ready)\n");
+#endif
     return 0;
+  }
 
+#ifdef mhd_DEBUG_POLLING_FDS
+  fprintf (stderr,
+           "### mhd_daemon_get_wait_max(daemon) -> MHD_WAIT_INDEFINITELY\n");
+#endif
   return MHD_WAIT_INDEFINITELY; // TODO: calculate correct timeout value
 }
 
@@ -184,6 +272,12 @@ update_conn_net_status (struct MHD_Daemon *restrict d,
   mhd_assert (d == c->daemon);
   /* "resuming" must be not processed yet */
   mhd_assert (! c->resuming || c->suspended);
+
+  dbg_print_fd_state_update ("conn", \
+                             c->sk.fd, \
+                             recv_ready, \
+                             send_ready, \
+                             err_state);
 
   sk_state = mhd_SOCKET_NET_STATE_NOTHING;
   if (recv_ready)
@@ -751,6 +845,11 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
                efds,
                &ret,
                d);
+  mhd_dbg_print_fd_mon_req ("ITC", \
+                            mhd_itc_r_fd (d->threading.itc), \
+                            true, \
+                            false, \
+                            true);
 #endif
   if ((MHD_INVALID_SOCKET != d->net.listen.fd)
       && ! d->conns.block_new)
@@ -765,6 +864,11 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
                  efds,
                  &ret,
                  d);
+    mhd_dbg_print_fd_mon_req ("lstn", \
+                              d->net.listen.fd, \
+                              true, \
+                              false, \
+                              true);
   }
   if (listen_only)
     return ret;
@@ -790,6 +894,11 @@ select_update_fdsets (struct MHD_Daemon *restrict d,
                  efds,
                  &ret,
                  d);
+    mhd_dbg_print_fd_mon_req ("conn", \
+                              c->sk.fd, \
+                              FD_ISSET (c->sk.fd, rfds), \
+                              FD_ISSET (c->sk.fd, wfds), \
+                              true);
   }
 
   return ret;
@@ -824,6 +933,11 @@ select_update_statuses_from_fdsets_and_resume_conn (struct MHD_Daemon *d,
 
 #ifdef MHD_SUPPORT_THREADS
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
+  dbg_print_fd_state_update ("ITC", \
+                             mhd_itc_r_fd (d->threading.itc), \
+                             FD_ISSET (mhd_itc_r_fd (d->threading.itc), rfds), \
+                             FD_ISSET (mhd_itc_r_fd (d->threading.itc), wfds), \
+                             FD_ISSET (mhd_itc_r_fd (d->threading.itc), efds));
   if (FD_ISSET (mhd_itc_r_fd (d->threading.itc), efds))
   {
     log_itc_broken (d);
@@ -850,6 +964,11 @@ select_update_statuses_from_fdsets_and_resume_conn (struct MHD_Daemon *d,
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
   {
     mhd_assert (! d->net.listen.is_broken);
+    dbg_print_fd_state_update ("lstn", \
+                               d->net.listen.fd, \
+                               FD_ISSET (d->net.listen.fd, rfds), \
+                               FD_ISSET (d->net.listen.fd, wfds), \
+                               FD_ISSET (d->net.listen.fd, efds));
     if (FD_ISSET (d->net.listen.fd, efds))
     {
       --num_events;
@@ -960,11 +1079,27 @@ get_all_net_updates_by_select_and_resume_conn (struct MHD_Daemon *restrict d,
   tmvl.tv_usec = (int) ((max_wait % 1000) * 1000);
 #endif
 
+#if mhd_DEBUG_POLLING_FDS
+  fprintf (stderr,
+           "### (Starting) select(%d, rfds, wfds, efds, [%llu, %llu])...\n",
+           max_socket + 1,
+           (unsigned long long) tmvl.tv_sec,
+           (unsigned long long) tmvl.tv_usec);
+#endif /* mhd_DEBUG_POLLING_FDS */
   num_events = select (max_socket + 1,
                        d->events.data.select.rfds,
                        d->events.data.select.wfds,
                        d->events.data.select.efds,
                        &tmvl);
+#if mhd_DEBUG_POLLING_FDS
+  fprintf (stderr,
+           "### (Finished) select(%d, rfds, wfds, efds, ->[%llu, %llu]) -> "
+           "%d\n",
+           max_socket + 1,
+           (unsigned long long) tmvl.tv_sec,
+           (unsigned long long) tmvl.tv_usec,
+           num_events);
+#endif /* mhd_DEBUG_POLLING_FDS */
 
   if (0 > num_events)
   {
@@ -1028,8 +1163,14 @@ poll_update_fds (struct MHD_Daemon *restrict d,
   mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
   mhd_assert (d->events.data.poll.fds[i_s].fd == \
               mhd_itc_r_fd (d->threading.itc));
+  mhd_assert (POLLIN == d->events.data.poll.fds[i_s].events);
   mhd_assert (mhd_SOCKET_REL_MARKER_ITC == \
               d->events.data.poll.rel[i_s].fd_id);
+  mhd_dbg_print_fd_mon_req ("ITC", \
+                            mhd_itc_r_fd (d->threading.itc), \
+                            true, \
+                            false, \
+                            false);
   ++i_s;
 #endif
   if (MHD_INVALID_SOCKET != d->net.listen.fd)
@@ -1039,6 +1180,11 @@ poll_update_fds (struct MHD_Daemon *restrict d,
     mhd_assert (mhd_SOCKET_REL_MARKER_LISTEN == \
                 d->events.data.poll.rel[i_s].fd_id);
     d->events.data.poll.fds[i_s].events = d->conns.block_new ? 0 : POLLIN;
+    mhd_dbg_print_fd_mon_req ("lstn", \
+                              d->net.listen.fd, \
+                              POLLIN == d->events.data.poll.fds[i_s].events, \
+                              false, \
+                              false);
     ++i_s;
   }
   if (listen_only)
@@ -1071,6 +1217,11 @@ poll_update_fds (struct MHD_Daemon *restrict d,
       events |= MHD_POLL_OUT;
 
     d->events.data.poll.fds[i_c].events = (short) events;
+    mhd_dbg_print_fd_mon_req ("conn", \
+                              c->sk.fd, \
+                              MHD_POLL_IN == (MHD_POLL_IN & events), \
+                              MHD_POLL_OUT == (MHD_POLL_OUT & events), \
+                              false);
     ++i_c;
   }
   mhd_assert ((d->conns.count - num_skipped) == (i_c - i_s));
@@ -1099,6 +1250,13 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
               mhd_itc_r_fd (d->threading.itc));
   mhd_assert (mhd_SOCKET_REL_MARKER_ITC == \
               d->events.data.poll.rel[i_s].fd_id);
+  dbg_print_fd_state_update ( \
+    "ITC", \
+    d->events.data.poll.fds[i_s].fd, \
+    0 != (d->events.data.poll.fds[i_s].revents & (MHD_POLL_IN | POLLIN)), \
+    0 != (d->events.data.poll.fds[i_s].revents & (MHD_POLL_OUT | POLLOUT)), \
+    0 != (d->events.data.poll.fds[i_s].revents & (POLLERR | POLLNVAL)));
+
   if (0 != (d->events.data.poll.fds[i_s].revents & (POLLERR | POLLNVAL)))
   {
     log_itc_broken (d);
@@ -1129,6 +1287,11 @@ poll_update_statuses_from_fds (struct MHD_Daemon *restrict d,
     mhd_assert (d->events.data.poll.fds[i_s].fd == d->net.listen.fd);
     mhd_assert (mhd_SOCKET_REL_MARKER_LISTEN == \
                 d->events.data.poll.rel[i_s].fd_id);
+    dbg_print_fd_state_update ("lstn", \
+                               d->events.data.poll.fds[i_s].fd, \
+                               0 != (revents & (MHD_POLL_IN | POLLIN)), \
+                               0 != (revents & (MHD_POLL_OUT | POLLOUT)), \
+                               0 != (revents & (POLLERR | POLLNVAL | POLLHUP)));
     if (0 != (revents & (POLLERR | POLLNVAL | POLLHUP)))
     {
       --num_events;
@@ -1221,17 +1384,42 @@ static MHD_FN_PAR_NONNULL_ (1) bool
 get_all_net_updates_by_poll (struct MHD_Daemon *restrict d,
                              bool listen_only)
 {
+#if mhd_DEBUG_POLLING_FDS
+#  ifdef MHD_SOCKETS_KIND_POSIX
+  static const char poll_fn_name[] = "poll";
+#  else  /* MHD_SOCKETS_KIND_WINSOCK */
+  static const char poll_fn_name[] = "WSAPoll";
+#  endif /* MHD_SOCKETS_KIND_WINSOCK */
+#endif /* mhd_DEBUG_POLLING_FDS */
   unsigned int num_fds;
+  int max_wait;
   int num_events;
+
   mhd_assert (mhd_POLL_TYPE_POLL == d->events.poll_type);
 
   num_fds = poll_update_fds (d, listen_only);
 
   // TODO: handle empty list situation
+  max_wait = get_max_wait (d); // TODO: use correct timeout value
 
+#if mhd_DEBUG_POLLING_FDS
+  fprintf (stderr,
+           "### (Starting) %s(fds, %u, %d)...\n",
+           poll_fn_name,
+           num_fds,
+           max_wait);
+#endif /* mhd_DEBUG_POLLING_FDS */
   num_events = mhd_poll (d->events.data.poll.fds,
                          num_fds,
-                         get_max_wait (d)); // TODO: use correct timeout value
+                         max_wait); // TODO: use correct timeout value
+#if mhd_DEBUG_POLLING_FDS
+  fprintf (stderr,
+           "### (Finished) %s(fds, %u, %d) -> %d\n",
+           poll_fn_name,
+           num_fds,
+           max_wait,
+           num_events);
+#endif /* mhd_DEBUG_POLLING_FDS */
   if (0 > num_events)
   {
     int err;
@@ -1292,6 +1480,13 @@ update_statuses_from_eevents (struct MHD_Daemon *restrict d,
     if (((uint64_t) mhd_SOCKET_REL_MARKER_ITC) == e->data.u64) /* uint64_t is in the system header */
     {
       mhd_assert (mhd_ITC_IS_VALID (d->threading.itc));
+      dbg_print_fd_state_update ( \
+        "ITC", \
+        mhd_itc_r_fd (d->threading.itc), \
+        0 != (e->events & EPOLLIN), \
+        0 != (e->events & EPOLLOUT), \
+        0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)));
+
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
         log_itc_broken (d);
@@ -1313,6 +1508,12 @@ update_statuses_from_eevents (struct MHD_Daemon *restrict d,
     if (((uint64_t) mhd_SOCKET_REL_MARKER_LISTEN) == e->data.u64) /* uint64_t is in the system header */
     {
       mhd_assert (MHD_INVALID_SOCKET != d->net.listen.fd);
+      dbg_print_fd_state_update ( \
+        "lstn", \
+        d->net.listen.fd, \
+        0 != (e->events & EPOLLIN), \
+        0 != (e->events & EPOLLOUT), \
+        0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)));
       if (0 != (e->events & (EPOLLPRI | EPOLLERR | EPOLLHUP)))
       {
         log_listen_broken (d);
@@ -1380,10 +1581,25 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
   max_wait = get_max_wait (d); // TODO: use correct timeout value
   do
   {
+#if mhd_DEBUG_POLLING_FDS
+    fprintf (stderr,
+             "### (Starting) epoll_wait(%d, events, %d, %d)...\n",
+             d->events.data.epoll.e_fd,
+             (int) d->events.data.epoll.num_elements,
+             max_wait);
+#endif /* mhd_DEBUG_POLLING_FDS */
     num_events = epoll_wait (d->events.data.epoll.e_fd,
                              d->events.data.epoll.events,
                              (int) d->events.data.epoll.num_elements,
                              max_wait);
+#if mhd_DEBUG_POLLING_FDS
+    fprintf (stderr,
+             "### (Finished) epoll_wait(%d, events, %d, %d) -> %d\n",
+             d->events.data.epoll.e_fd,
+             (int) d->events.data.epoll.num_elements,
+             max_wait,
+             num_events);
+#endif /* mhd_DEBUG_POLLING_FDS */
     max_wait = 0;
     if (0 > num_events)
     {
@@ -1541,14 +1757,14 @@ MHD_daemon_process_reg_events (struct MHD_Daemon *MHD_RESTRICT daemon,
                                uint_fast64_t *MHD_RESTRICT next_max_wait)
 {
   enum MHD_StatusCode res;
-#ifdef mhd_DEBUG_EXTR_EVENTS
+#ifdef mhd_DEBUG_POLLING_FDS
   fprintf (stderr,
            "### (Started)  MHD_daemon_process_reg_events(daemon, [%s])...\n",
            (NULL != next_max_wait) ? "non-NULL" : "NULL");
 #endif
   res = process_reg_events_int (daemon,
                                 next_max_wait);
-#ifdef mhd_DEBUG_EXTR_EVENTS
+#ifdef mhd_DEBUG_POLLING_FDS
   if (NULL == next_max_wait)
     fprintf (stderr,
              "### (Finished) MHD_daemon_process_reg_events(daemon, [NULL]) ->"

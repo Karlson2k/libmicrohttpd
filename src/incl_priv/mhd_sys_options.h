@@ -516,9 +516,9 @@
 #  endif
 #endif
 
-#ifndef mhd_DEBUG_EXTR_EVENTS
-/* Use debug-print for external events processing */
-/* #  define mhd_DEBUG_EXTR_EVENTS 1 */
+#ifndef mhd_DEBUG_POLLING_FDS
+/* Use debug-print for FDs polling */
+/* #  define mhd_DEBUG_POLLING_FDS 1 */
 #endif
 
 #ifndef mhd_DEBUG_SUSPEND_RESUME

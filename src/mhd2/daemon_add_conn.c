@@ -57,6 +57,7 @@
 #include "mhd_sockets_funcs.h"
 
 #include "mhd_panic.h"
+#include "mhd_dbg_print.h"
 
 #include "mhd_daemon.h"
 #include "mhd_connection.h"
@@ -396,6 +397,11 @@ new_connection_process_inner (struct MHD_Daemon *restrict daemon,
           }
           else
           {
+            mhd_dbg_print_fd_mon_req ("conn", \
+                                      connection->sk.fd, \
+                                      true, \
+                                      true, \
+                                      false);
             if (0) // TODO: implement turbo
             {
               connection->sk.ready = mhd_SOCKET_NET_STATE_RECV_READY
