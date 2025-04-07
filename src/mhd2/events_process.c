@@ -105,8 +105,6 @@ mhd_daemon_get_wait_max (struct MHD_Daemon *restrict d)
     return 0;
   if (d->threading.resume_requested) /* Remove? It is triggered by ITC anyway */
     return 0;
-  if (d->events.zero_wait)
-    return 0;
   if (NULL != mhd_DLINKEDL_GET_FIRST (&(d->events), proc_ready))
     return 0;
 
@@ -1432,8 +1430,6 @@ get_all_net_updates_by_epoll (struct MHD_Daemon *restrict d)
 static MHD_FN_PAR_NONNULL_ (1) bool
 process_all_events_and_data (struct MHD_Daemon *restrict d)
 {
-  d->events.zero_wait = false; /* Reset as all pending data will be processed */
-
   switch (d->events.poll_type)
   {
   case mhd_POLL_TYPE_EXT:

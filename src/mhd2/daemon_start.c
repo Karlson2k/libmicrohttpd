@@ -1797,7 +1797,6 @@ allocate_events (struct MHD_Daemon *restrict d)
   mhd_assert (0 != d->conns.cfg.count_limit);
   mhd_assert (mhd_D_TYPE_HAS_EVENTS_PROCESSING (d->threading.d_type));
 
-  d->events.zero_wait = false;
   mhd_DLINKEDL_INIT_LIST (&(d->events),proc_ready);
 
   switch (d->events.poll_type)
