@@ -81,6 +81,11 @@
 /**
  * Set initial internal states for the connection to start reading and
  * processing incoming data.
+ * This sets:
+ * + data processing stage
+ * + stream request and reply initial data
+ * + connection read and write buffers
+ *
  * @param c the connection to process
  */
 static void
@@ -93,14 +98,28 @@ connection_set_initial_state (struct MHD_Connection *restrict c)
   c->conn_reuse = mhd_CONN_KEEPALIVE_POSSIBLE;
   c->event_loop_info = MHD_EVENT_LOOP_INFO_RECV;
 
-  memset (&c->rq, 0, sizeof(c->rq));
-  memset (&c->rp, 0, sizeof(c->rp));
+  // TODO: move request reset to special function
+  memset (&(c->rq), 0, sizeof(c->rq));
+  // TODO: move reply reset to special function
+  memset (&(c->rp), 0, sizeof(c->rp));
 
 #ifndef HAVE_NULL_PTR_ALL_ZEROS
-  mhd_DLINKEDL_INIT_LINKS (c, all_conn);
-  mhd_DLINKEDL_INIT_LINKS (c, proc_ready);
-  mhd_DLINKEDL_INIT_LINKS (c, by_timeout);
-  // TODO: set all other pointers manually
+  // TODO: move request reset to special function
+  mhd_DLINKEDL_INIT_LIST (&(c->rq), fields);
+#ifdef MHD_SUPPORT_POST_PARSER
+  mhd_DLINKEDL_INIT_LIST (&(c->rq), post_fields);
+#endif /* MHD_SUPPORT_POST_PARSER */
+  c->rq.version = NULL;
+  c->rq.url = NULL;
+  c->rq.field_lines.start = NULL;
+  c->rq.app_context = NULL;
+  c->rq.hdrs.rq_line.rq_tgt = NULL;
+  c->rq.hdrs.rq_line.rq_tgt_qmark = NULL;
+
+  // TODO: move reply reset to special function
+  c->rp.app_act_ctx.connection = NULL;
+  c->rp.response = NULL;
+  c->rp.resp_iov.iov = NULL;
 #endif /* ! HAVE_NULL_PTR_ALL_ZEROS */
 
   c->write_buffer = NULL;
@@ -188,6 +207,17 @@ new_connection_prepare_ (struct MHD_Daemon *restrict daemon,
   }
   else
   {
+#ifndef HAVE_NULL_PTR_ALL_ZEROS
+    mhd_DLINKEDL_INIT_LINKS (c, all_conn);
+    c->extr_event.app_cntx = NULL;
+    mhd_DLINKEDL_INIT_LINKS (c, proc_ready);
+    mhd_DLINKEDL_INIT_LINKS (c, by_timeout);
+#  ifdef MHD_SUPPORT_UPGRADE
+    c->upgr.c = NULL;
+    mhd_DLINKEDL_INIT_LINKS (c, upgr_cleanup);
+#  endif /* MHD_SUPPORT_UPGRADE */
+    c->socket_context = NULL;
+#endif /* ! HAVE_NULL_PTR_ALL_ZEROS */
 #ifdef MHD_SUPPORT_HTTPS
     if (0 != tls_data_size)
       c->tls = (struct mhd_TlsConnData *) (c + 1);

@@ -571,12 +571,31 @@ mhd_stream_finish_req_serving (struct MHD_Connection *restrict c,
       (0 == c->read_buffer_offset) ?
       MHD_EVENT_LOOP_INFO_RECV : MHD_EVENT_LOOP_INFO_PROCESS;
 
+    // TODO: move request reset to special function
     memset (&c->rq, 0, sizeof(c->rq));
 
+    // TODO: move reply reset to special function
     /* iov (if any) will be deallocated by mhd_pool_reset */
     memset (&c->rp, 0, sizeof(c->rp));
 
-    // TODO: set all rq and tp pointers to NULL manually. Do the same in other places.
+#ifndef HAVE_NULL_PTR_ALL_ZEROS
+    // TODO: move request reset to special function
+    mhd_DLINKEDL_INIT_LIST (&(c->rq), fields);
+#ifdef MHD_SUPPORT_POST_PARSER
+    mhd_DLINKEDL_INIT_LIST (&(c->rq), post_fields);
+#endif /* MHD_SUPPORT_POST_PARSER */
+    c->rq.version = NULL;
+    c->rq.url = NULL;
+    c->rq.field_lines.start = NULL;
+    c->rq.app_context = NULL;
+    c->rq.hdrs.rq_line.rq_tgt = NULL;
+    c->rq.hdrs.rq_line.rq_tgt_qmark = NULL;
+
+    // TODO: move reply reset to special function
+    c->rp.app_act_ctx.connection = NULL;
+    c->rp.response = NULL;
+    c->rp.resp_iov.iov = NULL;
+#endif /* ! HAVE_NULL_PTR_ALL_ZEROS */
 
     c->write_buffer = NULL;
     c->write_buffer_size = 0;
