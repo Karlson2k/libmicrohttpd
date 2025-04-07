@@ -748,6 +748,16 @@ mhd_conn_start_closing (struct MHD_Connection *restrict c,
   enum MHD_RequestEndedCode end_code;
   enum MHD_StatusCode sc;
 
+#ifdef mhd_DEBUG_CONN_ADD_CLOSE
+  fprintf (stderr,
+           "&&& mhd_conn_start_closing([FD: %2llu], %u, %s%s%s)...\n",
+           (unsigned long long) c->sk.fd,
+           (unsigned int) reason,
+           log_msg ? "\"" : "",
+           log_msg ? log_msg : "[NULL]",
+           log_msg ? "\"" : "");
+#endif /* mhd_DEBUG_CONN_ADD_CLOSE */
+
   sc = MHD_SC_INTERNAL_ERROR;
   switch (reason)
   {
