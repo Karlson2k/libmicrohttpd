@@ -146,12 +146,12 @@
           mhd_assert ((p_obj) != (p_list)->last);        \
           if (NULL != (p_list)->first)                             \
           { mhd_assert (NULL == (p_list)->first->links_name.prev); \
-            mhd_assert ((p_obj) != (p_list)->first->links_name.next);   \
-            mhd_assert (NULL != (p_list)->last);                        \
-            (p_obj)->links_name.next = (p_list)->first;                 \
-            (p_obj)->links_name.next->links_name.prev = (p_obj); } else \
-          { mhd_assert (NULL == (p_list)->last); \
-            (p_list)->last = (p_obj); }          \
+            mhd_assert ((p_obj) != (p_list)->first->links_name.next); \
+            mhd_assert (NULL != (p_list)->last);                   \
+            ((p_obj)->links_name.next = (p_list)->first)           \
+            ->links_name.prev = (p_obj); } else \
+          { mhd_assert (NULL == (p_list)->last);               \
+            (p_list)->last = (p_obj); }                        \
           (p_list)->first = (p_obj);  } while (0)
 
 /**
@@ -169,12 +169,12 @@
           mhd_assert ((p_obj) != (p_list)->last);        \
           if (NULL != (p_list)->last)                             \
           { mhd_assert (NULL == (p_list)->last->links_name.next); \
-            mhd_assert ((p_obj) != (p_list)->last->links_name.prev);    \
-            mhd_assert (NULL != (p_list)->first);                       \
-            (p_obj)->links_name.prev = (p_list)->last;                  \
-            (p_obj)->links_name.prev->links_name.next = (p_obj); } else \
-          { mhd_assert (NULL == (p_list)->first); \
-            (p_list)->first = (p_obj); }          \
+            mhd_assert ((p_obj) != (p_list)->last->links_name.prev); \
+            mhd_assert (NULL != (p_list)->first);                 \
+            ((p_obj)->links_name.prev = (p_list)->last)           \
+            ->links_name.next = (p_obj); } else \
+          { mhd_assert (NULL == (p_list)->first);             \
+            (p_list)->first = (p_obj); }                      \
           (p_list)->last = (p_obj);  } while (0)
 
 /**
