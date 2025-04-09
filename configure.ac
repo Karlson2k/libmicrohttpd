@@ -841,7 +841,7 @@ AC_CACHE_CHECK([whether the NULL pointer has all zero bits],
 #include <string.h>
 #if defined(HAVE_STDDEF_H)
 #include <stddef.h>
-#elif define(HAVE_STDLIB_H)
+#elif defined(HAVE_STDLIB_H)
 #include <stdlib.h>
 #else
 #include <stdio.h>
@@ -864,8 +864,8 @@ int main(void)
   if (0 != memcmp (&ptr1, &ptr2, sizeof(ptr1)))
     return 3;
 
-  ptr1 = &ptr1;
-  ptr2 = &ptr2;
+  ptr1 = (void*)&ptr1;
+  ptr2 = (void*)&ptr2;
   memset(&ptr1, 0, sizeof(ptr1));
   memset(&ptr2, 0, sizeof(ptr2));
   if (NULL != ptr1)
