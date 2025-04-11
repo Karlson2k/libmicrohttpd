@@ -1,6 +1,6 @@
 /*
      This file is part of libmicrohttpd
-     Copyright (C) 2014-2022 Evgeny Grin (Karlson2k)
+     Copyright (C) 2014-2025 Evgeny Grin (Karlson2k)
      Copyright (C) 2007, 2009, 2011 Christian Grothoff
 
      libmicrohttpd is free software; you can redistribute it and/or modify
@@ -300,7 +300,7 @@ check_uri_cb (void *cls,
                    uri))
   {
     fprintf (stderr,
-             "Wrong URI: `%s', line: %d\n",
+             "Wrong URI: '%s', line: %d\n",
              uri, __LINE__);
     exit (22);
   }
@@ -485,8 +485,18 @@ curlEasyInitForTest (struct curlQueryParams *p,
   if (NULL == c)
     libcurlErrorExitDesc ("curl_easy_init() failed");
 
+#if CURL_AT_LEAST_VERSION (7, 62, 0)
+  if (NULL != p->url)
+  {
+    if (CURLE_OK != curl_easy_setopt (c, CURLOPT_CURLU, p->url))
+      libcurlErrorExitDesc ("curl_easy_setopt() failed");
+  }
+  else /* combined with the next 'if()' */
+#endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
+  if (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, p->queryPath))
+    libcurlErrorExitDesc ("curl_easy_setopt() failed");
+
   if ((CURLE_OK != curl_easy_setopt (c, CURLOPT_NOSIGNAL, 1L)) ||
-      (CURLE_OK != curl_easy_setopt (c, CURLOPT_URL, p->queryPath)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_PORT, (long) p->queryPort)) ||
       (CURLE_OK != curl_easy_setopt (c, CURLOPT_WRITEFUNCTION,
                                      &copyBuffer)) ||
@@ -518,13 +528,6 @@ curlEasyInitForTest (struct curlQueryParams *p,
   if (CURLE_OK != curl_easy_setopt (c, CURLOPT_HTTPHEADER, p->headers))
     libcurlErrorExitDesc ("curl_easy_setopt() failed");
 
-#if CURL_AT_LEAST_VERSION (7, 62, 0)
-  if (NULL != p->url)
-  {
-    if (CURLE_OK != curl_easy_setopt (c, CURLOPT_CURLU, p->url))
-      libcurlErrorExitDesc ("curl_easy_setopt() failed");
-  }
-#endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
 
 #if CURL_AT_LEAST_VERSION (7, 55, 0)
   if (NULL != p->queryTarget)
@@ -780,25 +783,29 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
 
   if (tricky_url)
   {
+#if CURL_AT_LEAST_VERSION (7, 55, 0)
 #if CURL_AT_LEAST_VERSION (7, 62, 0)
+    unsigned int urlu_flags = CURLU_PATH_AS_IS;
     CURLU *url;
     url = curl_url ();
     if (NULL == url)
       externalErrorExit ();
     qParam.url = url;
 
+#ifdef CURLU_ALLOW_SPACE
+    urlu_flags |= CURLU_ALLOW_SPACE;
+#endif /* CURLU_ALLOW_SPACE */
+
     if ((CURLUE_OK != curl_url_set (qParam.url, CURLUPART_SCHEME, "http", 0)) ||
         (CURLUE_OK != curl_url_set (qParam.url, CURLUPART_HOST, URL_HOST,
-                                    CURLU_PATH_AS_IS
-#ifdef CURLU_ALLOW_SPACE
-                                    | CURLU_ALLOW_SPACE
-#endif /* CURLU_ALLOW_SPACE */
-                                    )) ||
+                                    urlu_flags)) ||
         (CURLUE_OK != curl_url_set (qParam.url, CURLUPART_PATH,
-                                    EXPECTED_URI_BASE_PATH_TRICKY, 0)))
+                                    EXPECTED_URI_BASE_PATH_TRICKY,
+                                    urlu_flags)))
       libcurlErrorExit ();
 
-    qParam.queryPath = NULL;
+#endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
+
     qParam.queryTarget = EXPECTED_URI_BASE_PATH_TRICKY;
     uri_cb_param->uri = EXPECTED_URI_BASE_PATH_TRICKY;
     ahc_param->rq_url = EXPECTED_URI_BASE_PATH_TRICKY;
@@ -842,11 +849,13 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
       if (! ahc_param->header_check_param.found_header4)
         mhdErrorExitDesc ("Required header4 was not detected in request");
     }
+#if CURL_AT_LEAST_VERSION (7, 62, 0)
     curl_url_cleanup (url);
-#else
-    fprintf (stderr, "This test requires libcurl version 7.62.0 or newer.\n");
-    abort ();
 #endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
+#else
+    fprintf (stderr, "This test requires libcurl version 7.55.0 or newer.\n");
+    abort ();
+#endif /* CURL_AT_LEAST_VERSION(7, 55, 0) */
   }
   else if (tricky_header2)
   {
@@ -1095,6 +1104,20 @@ testMultithreadedPoolGet (enum testMhdPollType pollType)
 }
 
 
+static void
+check_test_can_be_used (void)
+{
+#if ! CURL_AT_LEAST_VERSION (7, 55, 0)
+  if (tricky_url)
+  {
+    fprintf (stderr, "This test requires libcurl version 7.55.0 or newer.\n");
+    exit (77);
+  }
+#endif /* ! CURL_AT_LEAST_VERSION(7, 55, 0) */
+  return;
+}
+
+
 int
 main (int argc, char *const *argv)
 {
@@ -1114,13 +1137,7 @@ main (int argc, char *const *argv)
                has_param (argc, argv, "-s") ||
                has_param (argc, argv, "--silent"));
 
-#if ! CURL_AT_LEAST_VERSION (7, 62, 0)
-  if (tricky_url)
-  {
-    fprintf (stderr, "This test requires libcurl version 7.62.0 or newer.\n");
-    return 77;
-  }
-#endif /* ! CURL_AT_LEAST_VERSION(7, 62, 0) */
+  check_test_can_be_used ();
 
   test_global_init ();
 
