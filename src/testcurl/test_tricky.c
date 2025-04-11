@@ -452,6 +452,11 @@ struct curlQueryParams
   CURLU *url;
 #endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
 
+#if CURL_AT_LEAST_VERSION (7, 55, 0)
+  /* A string used as the request target directly, without modifications */
+  const char *queryTarget;
+#endif /* CURL_AT_LEAST_VERSION(7, 55, 0) */
+
   /* Custom query method, NULL for default */
   const char *method;
 
@@ -520,6 +525,16 @@ curlEasyInitForTest (struct curlQueryParams *p,
       libcurlErrorExitDesc ("curl_easy_setopt() failed");
   }
 #endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
+
+#if CURL_AT_LEAST_VERSION (7, 55, 0)
+  if (NULL != p->queryTarget)
+  {
+    if (CURLE_OK != curl_easy_setopt (c, CURLOPT_REQUEST_TARGET,
+                                      p->queryTarget))
+      libcurlErrorExitDesc ("curl_easy_setopt() failed");
+  }
+#endif /* CURL_AT_LEAST_VERSION(7, 55, 0) */
+
   return c;
 }
 
@@ -738,6 +753,9 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
   qParam.queryPort = d_port;
   qParam.method = NULL;  /* Use libcurl default: GET */
   qParam.queryPath = URL_SCHEME_HOST EXPECTED_URI_BASE_PATH;
+#if CURL_AT_LEAST_VERSION (7, 55, 0)
+  qParam.queryTarget = NULL;
+#endif /* CURL_AT_LEAST_VERSION(7, 55, 0) */
 #if CURL_AT_LEAST_VERSION (7, 62, 0)
   qParam.url = NULL;
 #endif /* CURL_AT_LEAST_VERSION(7, 62, 0) */
@@ -781,6 +799,7 @@ performTestQueries (struct MHD_Daemon *d, uint16_t d_port,
       libcurlErrorExit ();
 
     qParam.queryPath = NULL;
+    qParam.queryTarget = EXPECTED_URI_BASE_PATH_TRICKY;
     uri_cb_param->uri = EXPECTED_URI_BASE_PATH_TRICKY;
     ahc_param->rq_url = EXPECTED_URI_BASE_PATH_TRICKY;
 
