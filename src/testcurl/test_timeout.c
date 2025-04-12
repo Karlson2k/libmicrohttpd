@@ -392,8 +392,12 @@ testWithTimeout (void)
       }
     }
     else
-      /* curl had the timeout first */
+    {
+      fprintf (stderr, "libcurl reported error: %s (%u)\n",
+               curl_easy_strerror (errornum),
+               errornum);
       return 32;
+    }
   }
   curl_easy_cleanup (c);
   MHD_stop_daemon (d);
