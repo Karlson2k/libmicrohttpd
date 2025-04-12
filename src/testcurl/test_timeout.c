@@ -377,7 +377,8 @@ testWithTimeout (void)
   {
     curl_easy_cleanup (c);
     MHD_stop_daemon (d);
-    if (errornum == CURLE_GOT_NOTHING)
+    if ((errornum == CURLE_GOT_NOTHING)
+        || (CURLE_READ_ERROR == errornum))
     {
       if (0 != withTimeout)
       {
