@@ -994,8 +994,8 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   struct MHD_Connection *pos;
   struct MHD_Connection *posn;
   enum MHD_Result result = MHD_YES;
-  MHD_socket ls;
   bool itc_added;
+  bool listen_fds_added;
 
 #ifndef HAS_FD_SETSIZE_OVERRIDABLE
   (void) fd_setsize;  /* Mute compiler warning */
@@ -1022,19 +1022,27 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
       result = MHD_NO;
   }
 
-  ls = daemon->was_quiesced ? MHD_INVALID_SOCKET : daemon->listen_fd;
-  if (! itc_added &&
-      (MHD_INVALID_SOCKET != ls))
+  /* Add every listen FD if ITC was not added. Listen FDs can be used to
+     signal the daemon shutdown (via shutdown(fd, SHUT_RDWR)) and are
+     required by external pollers. @e listen_fds_added tracks whether the
+     listen sockets have already been put in @e read_fd_set so the second
+     accept-conditioned attempt below can skip them. */
+  listen_fds_added = false;
+  if ( (! itc_added) && (! daemon->was_quiesced) )
   {
-    /* Add listen FD if ITC was not added. Listen FD could be used to signal
-       the daemon shutdown. */
-    if (MHD_add_to_fd_set_ (ls,
-                            read_fd_set,
-                            max_fd,
-                            fd_setsize))
-      ls = MHD_INVALID_SOCKET;   /* Already added */
-    else
-      result = MHD_NO;
+    size_t li;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
+    {
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      if (! MHD_add_to_fd_set_ (lfd,
+                                read_fd_set,
+                                max_fd,
+                                fd_setsize))
+        result = MHD_NO;
+    }
+    listen_fds_added = true;
   }
 
   /* Add all sockets to 'except_fd_set' as well to watch for
@@ -1124,13 +1132,20 @@ internal_get_fdset2 (struct MHD_Daemon *daemon,
   }
 #endif
 
-  if (MHD_INVALID_SOCKET != ls)
+  /* If listen FDs were not added above (because ITC took the shutdown
+     signaling role), add them now — but only when we are below the
+     connection limit. */
+  if ( (! listen_fds_added) && (! daemon->was_quiesced) &&
+       (daemon->connections < daemon->connection_limit) &&
+       (! daemon->at_limit) )
   {
-    /* The listen socket is present and hasn't been added */
-    if ((daemon->connections < daemon->connection_limit) &&
-        ! daemon->at_limit)
+    size_t li;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
     {
-      if (! MHD_add_to_fd_set_ (ls,
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      if (! MHD_add_to_fd_set_ (lfd,
                                 read_fd_set,
                                 max_fd,
                                 fd_setsize))
@@ -3794,6 +3809,9 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  * daemon's select()/poll()/etc.
  *
  * @param daemon handle with the listen socket
+ * @param listen_fd which listen socket to accept on; pass a value of
+ *        @e MHD_INVALID_SOCKET to fall back to @e daemon->listen_fd
+ *        (legacy single-socket callers).
  * @return #MHD_YES on success (connections denied by policy or due
  *         to 'out of memory' and similar errors) are still considered
  *         successful as far as #MHD_accept_connection() is concerned);
@@ -3801,7 +3819,8 @@ MHD_add_connection (struct MHD_Daemon *daemon,
  *         accept() system call.
  */
 static enum MHD_Result
-MHD_accept_connection (struct MHD_Daemon *daemon)
+MHD_accept_connection (struct MHD_Daemon *daemon,
+                       MHD_socket listen_fd)
 {
   struct sockaddr_storage addrstorage;
   socklen_t addrlen;
@@ -3825,7 +3844,8 @@ MHD_accept_connection (struct MHD_Daemon *daemon)
   mhd_assert (NULL == daemon->worker_pool);
 #endif /* MHD_USE_THREADS */
 
-  if ( (MHD_INVALID_SOCKET == (fd = daemon->listen_fd)) ||
+  fd = (MHD_INVALID_SOCKET != listen_fd) ? listen_fd : daemon->listen_fd;
+  if ( (MHD_INVALID_SOCKET == fd) ||
        (daemon->was_quiesced) )
     return MHD_NO;
 
@@ -4484,7 +4504,6 @@ internal_run_from_select (struct MHD_Daemon *daemon,
                           const fd_set *except_fd_set,
                           int fd_setsize)
 {
-  MHD_socket ds;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   struct MHD_UpgradeResponseHandle *urh;
   struct MHD_UpgradeResponseHandle *urhn;
@@ -4527,20 +4546,26 @@ internal_run_from_select (struct MHD_Daemon *daemon,
   if (daemon->have_new)
     new_connections_list_process_ (daemon);
 
-  /* select connection thread handling type */
-  ds = daemon->listen_fd;
-  if ( (MHD_INVALID_SOCKET != ds) &&
-       (! daemon->was_quiesced) )
+  /* For each listen socket, accept if its bit is set in @e read_fd_set
+     (or unconditionally when the fd does not fit FD_SETSIZE and the
+     socket is non-blocking). */
+  if (! daemon->was_quiesced)
   {
-    bool need_to_accept;
-    if (MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (ds, NULL, fd_setsize))
-      need_to_accept = FD_ISSET (ds,
-                                 (fd_set *) _MHD_DROP_CONST (read_fd_set));
-    else                                       /* Cannot check whether new connection are pending */
-      need_to_accept = daemon->listen_nonblk;  /* Try to accept if non-blocking */
-
-    if (need_to_accept)
-      (void) MHD_accept_connection (daemon);
+    size_t li;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
+    {
+      const MHD_socket ds_i = daemon->listen_fds[li];
+      bool need_to_accept;
+      if (MHD_INVALID_SOCKET == ds_i)
+        continue;
+      if (MHD_SCKT_FD_FITS_FDSET_SETSIZE_ (ds_i, NULL, fd_setsize))
+        need_to_accept = FD_ISSET (ds_i,
+                                   (fd_set *) _MHD_DROP_CONST (read_fd_set));
+      else
+        need_to_accept = daemon->listen_nonblk;
+      if (need_to_accept)
+        (void) MHD_accept_connection (daemon, ds_i);
+    }
   }
 
   if (! MHD_D_IS_USING_THREAD_PER_CONN_ (daemon))
@@ -4805,7 +4830,6 @@ MHD_select (struct MHD_Daemon *daemon,
   struct timeval timeout;
   struct timeval *tv;
   int err_state;
-  MHD_socket ls;
 
   timeout.tv_sec = 0;
   timeout.tv_usec = 0;
@@ -4859,20 +4883,19 @@ MHD_select (struct MHD_Daemon *daemon,
         err_state = MHD_YES;
       }
     }
-    if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
-         (! daemon->was_quiesced) )
-    {
-      /* Stop listening if we are at the configured connection limit */
-      /* If we're at the connection limit, no point in really
-         accepting new connections; however, make sure we do not miss
-         the shutdown OR the termination of an existing connection; so
-         only do this optimisation if we have a signaling ITC in
-         place. */
-      if (! itc_added ||
+    if ( (! daemon->was_quiesced) &&
+         (! itc_added ||
           ((daemon->connections < daemon->connection_limit) &&
-           ! daemon->at_limit))
+           ! daemon->at_limit)) )
+    {
+      /* Add each listen socket to the read fdset. */
+      size_t li;
+      for (li = 0; li < daemon->num_listen_fds; ++li)
       {
-        if (! MHD_add_to_fd_set_ (ls,
+        const MHD_socket lfd = daemon->listen_fds[li];
+        if (MHD_INVALID_SOCKET == lfd)
+          continue;
+        if (! MHD_add_to_fd_set_ (lfd,
                                   &rs,
                                   &maxsock,
                                   (int) FD_SETSIZE))
@@ -5008,12 +5031,12 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     unsigned int i;
     int timeout;
     unsigned int poll_server;
-    int poll_listen;
+    int poll_listen_first; /* idx of first listen pollfd, -1 if none */
+    unsigned int poll_listen_count; /* number of listen pollfds */
     int poll_itc_idx;
     struct pollfd *p;
-    MHD_socket ls;
 
-    p = MHD_calloc_ ((2 + (size_t) num_connections),
+    p = MHD_calloc_ ((1 + MHD_MAX_LISTEN_SOCKETS_ + (size_t) num_connections),
                      sizeof (struct pollfd));
     if (NULL == p)
     {
@@ -5025,18 +5048,26 @@ MHD_poll_all (struct MHD_Daemon *daemon,
       return MHD_NO;
     }
     poll_server = 0;
-    poll_listen = -1;
-    if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
-         (! daemon->was_quiesced) &&
+    poll_listen_first = -1;
+    poll_listen_count = 0;
+    if ( (! daemon->was_quiesced) &&
          (daemon->connections < daemon->connection_limit) &&
          (! daemon->at_limit) )
     {
-      /* only listen if we are not at the connection limit */
-      p[poll_server].fd = ls;
-      p[poll_server].events = POLLIN;
-      p[poll_server].revents = 0;
-      poll_listen = (int) poll_server;
-      poll_server++;
+      size_t li;
+      for (li = 0; li < daemon->num_listen_fds; ++li)
+      {
+        const MHD_socket lfd = daemon->listen_fds[li];
+        if (MHD_INVALID_SOCKET == lfd)
+          continue;
+        if (-1 == poll_listen_first)
+          poll_listen_first = (int) poll_server;
+        p[poll_server].fd = lfd;
+        p[poll_server].events = POLLIN;
+        p[poll_server].revents = 0;
+        poll_server++;
+        poll_listen_count++;
+      }
     }
     poll_itc_idx = -1;
     if (MHD_ITC_IS_VALID_ (daemon->itc))
@@ -5121,10 +5152,17 @@ MHD_poll_all (struct MHD_Daemon *daemon,
     if (daemon->have_new)
       new_connections_list_process_ (daemon);
 
-    /* handle 'listen' FD */
-    if ( (-1 != poll_listen) &&
-         (0 != (p[poll_listen].revents & POLLIN)) )
-      (void) MHD_accept_connection (daemon);
+    /* handle 'listen' FD(s) */
+    if (-1 != poll_listen_first)
+    {
+      unsigned int li;
+      for (li = 0; li < poll_listen_count; ++li)
+      {
+        const unsigned int idx = (unsigned int) poll_listen_first + li;
+        if (0 != (p[idx].revents & POLLIN))
+          (void) MHD_accept_connection (daemon, p[idx].fd);
+      }
+    }
 
     /* Reset. New value will be set when connections are processed. */
     daemon->data_already_pending = false;
@@ -5199,12 +5237,12 @@ static enum MHD_Result
 MHD_poll_listen_socket (struct MHD_Daemon *daemon,
                         int may_block)
 {
-  struct pollfd p[2];
+  struct pollfd p[1 + MHD_MAX_LISTEN_SOCKETS_];
   int timeout;
   unsigned int poll_count;
-  int poll_listen;
+  int poll_listen_first;
+  unsigned int poll_listen_count;
   int poll_itc_idx;
-  MHD_socket ls;
 
   mhd_assert (MHD_thread_handle_ID_is_valid_ID_ (daemon->tid));
   mhd_assert (MHD_thread_handle_ID_is_current_thread_ (daemon->tid));
@@ -5213,17 +5251,25 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
           0,
           sizeof (p));
   poll_count = 0;
-  poll_listen = -1;
+  poll_listen_first = -1;
+  poll_listen_count = 0;
   poll_itc_idx = -1;
-  if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
-       (! daemon->was_quiesced) )
-
+  if (! daemon->was_quiesced)
   {
-    p[poll_count].fd = ls;
-    p[poll_count].events = POLLIN;
-    p[poll_count].revents = 0;
-    poll_listen = (int) poll_count;
-    poll_count++;
+    size_t li;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
+    {
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      if (-1 == poll_listen_first)
+        poll_listen_first = (int) poll_count;
+      p[poll_count].fd = lfd;
+      p[poll_count].events = POLLIN;
+      p[poll_count].revents = 0;
+      poll_count++;
+      poll_listen_count++;
+    }
   }
   if (MHD_ITC_IS_VALID_ (daemon->itc))
   {
@@ -5270,9 +5316,16 @@ MHD_poll_listen_socket (struct MHD_Daemon *daemon,
   if (daemon->have_new)
     new_connections_list_process_ (daemon);
 
-  if ( (0 <= poll_listen) &&
-       (0 != (p[poll_listen].revents & POLLIN)) )
-    (void) MHD_accept_connection (daemon);
+  if (-1 != poll_listen_first)
+  {
+    unsigned int li;
+    for (li = 0; li < poll_listen_count; ++li)
+    {
+      const unsigned int idx = (unsigned int) poll_listen_first + li;
+      if (0 != (p[idx].revents & POLLIN))
+        (void) MHD_accept_connection (daemon, p[idx].fd);
+    }
+  }
   return MHD_YES;
 }
 
@@ -5508,7 +5561,6 @@ MHD_epoll (struct MHD_Daemon *daemon,
   int timeout_ms;
   int num_events;
   unsigned int i;
-  MHD_socket ls;
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   bool run_upgraded = false;
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
@@ -5525,38 +5577,55 @@ MHD_epoll (struct MHD_Daemon *daemon,
     return MHD_NO; /* we're down! */
   if (daemon->shutdown)
     return MHD_NO;
-  if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
+  if ( (0 != daemon->num_listen_fds) &&
        (! daemon->was_quiesced) &&
        (daemon->connections < daemon->connection_limit) &&
        (! daemon->listen_socket_in_epoll) &&
        (! daemon->at_limit) )
   {
-    event.events = EPOLLIN | EPOLLRDHUP;
-    event.data.ptr = daemon;
-    if (0 != epoll_ctl (daemon->epoll_fd,
-                        EPOLL_CTL_ADD,
-                        ls,
-                        &event))
+    size_t li;
+    bool any_ok = false;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
     {
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      event.events = EPOLLIN | EPOLLRDHUP;
+      event.data.ptr = daemon;
+      if (0 != epoll_ctl (daemon->epoll_fd,
+                          EPOLL_CTL_ADD,
+                          lfd,
+                          &event))
+      {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Call to epoll_ctl failed: %s\n"),
-                MHD_socket_last_strerr_ ());
+        MHD_DLOG (daemon,
+                  _ ("Call to epoll_ctl failed: %s\n"),
+                  MHD_socket_last_strerr_ ());
 #endif
-      return MHD_NO;
+        return MHD_NO;
+      }
+      any_ok = true;
     }
-    daemon->listen_socket_in_epoll = true;
+    if (any_ok)
+      daemon->listen_socket_in_epoll = true;
   }
   if ( (daemon->was_quiesced) &&
        (daemon->listen_socket_in_epoll) )
   {
-    if ( (0 != epoll_ctl (daemon->epoll_fd,
-                          EPOLL_CTL_DEL,
-                          ls,
-                          NULL)) &&
-         (ENOENT != errno) )   /* ENOENT can happen due to race with
-                                  #MHD_quiesce_daemon() */
-      MHD_PANIC ("Failed to remove listen FD from epoll set.\n");
+    size_t li;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
+    {
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      if ( (0 != epoll_ctl (daemon->epoll_fd,
+                            EPOLL_CTL_DEL,
+                            lfd,
+                            NULL)) &&
+           (ENOENT != errno) )   /* ENOENT can happen due to race with
+                                    #MHD_quiesce_daemon() */
+        MHD_PANIC ("Failed to remove listen FD from epoll set.\n");
+    }
     daemon->listen_socket_in_epoll = false;
   }
 
@@ -5586,13 +5655,20 @@ MHD_epoll (struct MHD_Daemon *daemon,
          (daemon->at_limit) ||
          (daemon->was_quiesced) ) )
   {
-    /* we're at the connection limit, disable listen socket
- for event loop for now */
-    if (0 != epoll_ctl (daemon->epoll_fd,
-                        EPOLL_CTL_DEL,
-                        ls,
-                        NULL))
-      MHD_PANIC (_ ("Failed to remove listen FD from epoll set.\n"));
+    /* we're at the connection limit, disable listen socket(s)
+       for the event loop for now */
+    size_t li;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
+    {
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      if (0 != epoll_ctl (daemon->epoll_fd,
+                          EPOLL_CTL_DEL,
+                          lfd,
+                          NULL))
+        MHD_PANIC (_ ("Failed to remove listen FD from epoll set.\n"));
+    }
     daemon->listen_socket_in_epoll = false;
   }
 
@@ -5717,16 +5793,35 @@ MHD_epoll (struct MHD_Daemon *daemon,
   if (need_to_accept)
   {
     unsigned int series_length = 0;
+    bool any_accepted;
 
-    /* Run 'accept' until it fails or daemon at limit of connections.
-     * Do not accept more then 10 connections at once. The rest will
-     * be accepted on next turn (level trigger is used for listen
-     * socket). */
-    while ( (MHD_NO != MHD_accept_connection (daemon)) &&
-            (series_length < 10) &&
-            (daemon->connections < daemon->connection_limit) &&
-            (! daemon->at_limit) )
-      series_length++;
+    /* Run 'accept' across every listen socket until none accept,
+     * or daemon hits the connection limit, or we hit the 10-accept cap.
+     * Level trigger is used for the listen sockets so the rest will
+     * be picked up on the next turn. */
+    do
+    {
+      size_t li;
+      any_accepted = false;
+      for (li = 0; li < daemon->num_listen_fds; ++li)
+      {
+        const MHD_socket lfd = daemon->listen_fds[li];
+        if (MHD_INVALID_SOCKET == lfd)
+          continue;
+        if (MHD_NO != MHD_accept_connection (daemon, lfd))
+        {
+          any_accepted = true;
+          if (++series_length >= 10)
+            break;
+          if ( (daemon->connections >= daemon->connection_limit)
+               || daemon->at_limit)
+            break;
+        }
+      }
+    } while (any_accepted
+             && (series_length < 10)
+             && (daemon->connections < daemon->connection_limit)
+             && (! daemon->at_limit));
   }
 
   /* Handle timed-out connections; we need to do this here
@@ -6180,11 +6275,18 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
           (-1 != daemon->worker_pool[i].epoll_fd) &&
           (daemon->worker_pool[i].listen_socket_in_epoll) )
       {
-        if (0 != epoll_ctl (daemon->worker_pool[i].epoll_fd,
-                            EPOLL_CTL_DEL,
-                            ret,
-                            NULL))
-          MHD_PANIC (_ ("Failed to remove listen FD from epoll set.\n"));
+        size_t li;
+        for (li = 0; li < daemon->worker_pool[i].num_listen_fds; ++li)
+        {
+          const MHD_socket lfd = daemon->worker_pool[i].listen_fds[li];
+          if (MHD_INVALID_SOCKET == lfd)
+            continue;
+          if (0 != epoll_ctl (daemon->worker_pool[i].epoll_fd,
+                              EPOLL_CTL_DEL,
+                              lfd,
+                              NULL))
+            MHD_PANIC (_ ("Failed to remove listen FD from epoll set.\n"));
+        }
         daemon->worker_pool[i].listen_socket_in_epoll = false;
       }
       else
@@ -6203,13 +6305,20 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
       (-1 != daemon->epoll_fd) &&
       (daemon->listen_socket_in_epoll) )
   {
-    if ( (0 != epoll_ctl (daemon->epoll_fd,
-                          EPOLL_CTL_DEL,
-                          ret,
-                          NULL)) &&
-         (ENOENT != errno) )   /* ENOENT can happen due to race with
-                                  #MHD_epoll() */
-      MHD_PANIC ("Failed to remove listen FD from epoll set.\n");
+    size_t li;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
+    {
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      if ( (0 != epoll_ctl (daemon->epoll_fd,
+                            EPOLL_CTL_DEL,
+                            lfd,
+                            NULL)) &&
+           (ENOENT != errno) )   /* ENOENT can happen due to race with
+                                    #MHD_epoll() */
+        MHD_PANIC ("Failed to remove listen FD from epoll set.\n");
+    }
     daemon->listen_socket_in_epoll = false;
   }
 #endif
@@ -6222,10 +6331,44 @@ MHD_quiesce_daemon (struct MHD_Daemon *daemon)
 
 
 /**
+ * Set @e listen_fd and the matching @e listen_fds[0] / @e num_listen_fds
+ * fields together. Keeps the legacy single-fd readers in sync with the
+ * array storage while the multi-listen migration is in progress.
+ */
+static void
+mhd_daemon_set_single_listen_fd_ (struct MHD_Daemon *daemon,
+                                  MHD_socket fd)
+{
+  daemon->listen_fd = fd;
+  daemon->listen_fds[0] = fd;
+  daemon->num_listen_fds = (MHD_INVALID_SOCKET == fd) ? 0 : 1;
+}
+
+
+/**
  * Temporal location of the application-provided parameters/options.
  * Used when options are decoded from #MHD_start_deamon() parameters, but
  * not yet processed/applied.
  */
+/**
+ * One sockaddr entry provided via MHD_OPTION_SOCK_ADDR{,_LEN}.
+ * The MHD_MAX_LISTEN_SOCKETS_ limit is defined in internal.h so the
+ * daemon struct can share it.
+ */
+struct MHD_InterimSockAddr_
+{
+  /**
+   * Application-provided 'struct sockaddr' to bind one listen socket to.
+   */
+  const struct sockaddr *addr;
+  /**
+   * Application-provided size of memory pointed by @a addr; zero means
+   * "infer from sa_family" (matches the legacy MHD_OPTION_SOCK_ADDR
+   * behaviour and MHD_OPTION_SOCK_ADDR_LEN with len == 0).
+   */
+  socklen_t addr_len;
+};
+
 struct MHD_InterimParams_
 {
   /**
@@ -6253,21 +6396,17 @@ struct MHD_InterimParams_
    */
   MHD_socket listen_fd;
   /**
-   * Set to 'true' if @a server_addr is set by application.
+   * Number of valid entries in @a pserver_addrs (0 if no
+   * MHD_OPTION_SOCK_ADDR{,_LEN} option was given).
    */
-  bool pserver_addr_set;
+  size_t num_pserver_addrs;
   /**
-   * Application-provided struct sockaddr to bind server to.
+   * Application-provided sockaddrs for listen sockets, in the order in
+   * which the options were supplied. Currently only entry [0] is honoured
+   * by the bind path; supporting the full set is the remaining work for
+   * multi-listen-socket support (see TODO at the bind site).
    */
-  const struct sockaddr *pserver_addr;
-  /**
-   * Set to 'true' if @a server_addr_len is set by application.
-   */
-  bool server_addr_len_set;
-  /**
-   * Applicaiton-provided the size of the memory pointed by @a server_addr.
-   */
-  socklen_t server_addr_len;
+  struct MHD_InterimSockAddr_ pserver_addrs[MHD_MAX_LISTEN_SOCKETS_];
 };
 
 /**
@@ -6611,10 +6750,10 @@ parse_options_va (struct MHD_Daemon *daemon,
 #ifdef HTTPS_SUPPORT
   const char *pstr;
 #if GNUTLS_VERSION_MAJOR >= 3
-  gnutls_certificate_retrieve_function2 * pgcrf;
+  gnutls_certificate_retrieve_function2 *pgcrf;
 #endif
 #if GNUTLS_VERSION_NUMBER >= 0x030603
-  gnutls_certificate_retrieve_function3 * pgcrf2;
+  gnutls_certificate_retrieve_function3 *pgcrf2;
 #endif
 #endif /* HTTPS_SUPPORT */
 
@@ -6715,18 +6854,41 @@ parse_options_va (struct MHD_Daemon *daemon,
                                                 unsigned int);
       break;
     case MHD_OPTION_SOCK_ADDR_LEN:
-      params->server_addr_len = va_arg (ap,
-                                        socklen_t);
-      params->server_addr_len_set = true;
-      params->pserver_addr = va_arg (ap,
-                                     const struct sockaddr *);
-      params->pserver_addr_set = true;
+      {
+        socklen_t alen = va_arg (ap, socklen_t);
+        const struct sockaddr *aptr = va_arg (ap, const struct sockaddr *);
+        if (params->num_pserver_addrs >= MHD_MAX_LISTEN_SOCKETS_)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _ ("Too many MHD_OPTION_SOCK_ADDR / " \
+                       "MHD_OPTION_SOCK_ADDR_LEN options (max %u).\n"),
+                    (unsigned) MHD_MAX_LISTEN_SOCKETS_);
+#endif
+          return MHD_NO;
+        }
+        params->pserver_addrs[params->num_pserver_addrs].addr = aptr;
+        params->pserver_addrs[params->num_pserver_addrs].addr_len = alen;
+        params->num_pserver_addrs++;
+      }
       break;
     case MHD_OPTION_SOCK_ADDR:
-      params->server_addr_len_set = false;
-      params->pserver_addr = va_arg (ap,
-                                     const struct sockaddr *);
-      params->pserver_addr_set = true;
+      {
+        const struct sockaddr *aptr = va_arg (ap, const struct sockaddr *);
+        if (params->num_pserver_addrs >= MHD_MAX_LISTEN_SOCKETS_)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _ ("Too many MHD_OPTION_SOCK_ADDR / " \
+                       "MHD_OPTION_SOCK_ADDR_LEN options (max %u).\n"),
+                    (unsigned) MHD_MAX_LISTEN_SOCKETS_);
+#endif
+          return MHD_NO;
+        }
+        params->pserver_addrs[params->num_pserver_addrs].addr = aptr;
+        params->pserver_addrs[params->num_pserver_addrs].addr_len = 0;
+        params->num_pserver_addrs++;
+      }
       break;
     case MHD_OPTION_URI_LOG_CALLBACK:
       daemon->uri_log_callback = va_arg (ap,
@@ -7413,12 +7575,11 @@ static enum MHD_Result
 setup_epoll_to_listen (struct MHD_Daemon *daemon)
 {
   struct epoll_event event;
-  MHD_socket ls;
 
   mhd_assert (MHD_D_IS_USING_EPOLL_ (daemon));
   mhd_assert (0 == (daemon->options & MHD_USE_THREAD_PER_CONNECTION));
   mhd_assert ( (! MHD_D_IS_USING_THREADS_ (daemon)) || \
-               (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) || \
+               (0 != daemon->num_listen_fds) || \
                MHD_ITC_IS_VALID_ (daemon->itc) );
   daemon->epoll_fd = setup_epoll_fd (daemon);
   if (! MHD_D_IS_USING_THREADS_ (daemon)
@@ -7450,24 +7611,34 @@ setup_epoll_to_listen (struct MHD_Daemon *daemon)
       return MHD_NO;
   }
 #endif /* HTTPS_SUPPORT && UPGRADE_SUPPORT */
-  if ( (MHD_INVALID_SOCKET != (ls = daemon->listen_fd)) &&
+  if ( (0 != daemon->num_listen_fds) &&
        (! daemon->was_quiesced) )
   {
-    event.events = EPOLLIN | EPOLLRDHUP;
-    event.data.ptr = daemon;
-    if (0 != epoll_ctl (daemon->epoll_fd,
-                        EPOLL_CTL_ADD,
-                        ls,
-                        &event))
+    size_t li;
+    bool any_ok = false;
+    for (li = 0; li < daemon->num_listen_fds; ++li)
     {
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      event.events = EPOLLIN | EPOLLRDHUP;
+      event.data.ptr = daemon;
+      if (0 != epoll_ctl (daemon->epoll_fd,
+                          EPOLL_CTL_ADD,
+                          lfd,
+                          &event))
+      {
 #ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Call to epoll_ctl failed: %s\n"),
-                MHD_socket_last_strerr_ ());
+        MHD_DLOG (daemon,
+                  _ ("Call to epoll_ctl failed: %s\n"),
+                  MHD_socket_last_strerr_ ());
 #endif
-      return MHD_NO;
+        return MHD_NO;
+      }
+      any_ok = true;
     }
-    daemon->listen_socket_in_epoll = true;
+    if (any_ok)
+      daemon->listen_socket_in_epoll = true;
   }
 
   if (MHD_ITC_IS_VALID_ (daemon->itc))
@@ -7590,7 +7761,7 @@ process_interim_params (struct MHD_Daemon *d,
     }
     else
     {
-      d->listen_fd = params->listen_fd;
+      mhd_daemon_set_single_listen_fd_ (d, params->listen_fd);
       d->listen_is_unix = _MHD_UNKNOWN;
 #ifdef MHD_USE_GETSOCKNAME
       d->port = 0;  /* Force use of autodetection */
@@ -7598,13 +7769,20 @@ process_interim_params (struct MHD_Daemon *d,
     }
   }
 
-  mhd_assert (! params->server_addr_len_set || params->pserver_addr_set);
-  if (params->pserver_addr_set)
+  if (params->num_pserver_addrs > 0)
   {
-    if (NULL == params->pserver_addr)
+    const struct MHD_InterimSockAddr_ *first = &params->pserver_addrs[0];
+
+    /* Cross-option compatibility checks (only the FIRST sockaddr is
+       validated here for incompatibility with MHD_OPTION_LISTEN_SOCKET /
+       MHD_USE_NO_LISTEN_SOCKET — those flags are daemon-wide, so failing
+       on the first entry is sufficient). The bind loop later iterates
+       every entry. */
+
+    if (NULL == first->addr)
     {
       /* The size must be zero if set */
-      if (params->server_addr_len_set && (0 != params->server_addr_len))
+      if (0 != first->addr_len)
         return false;
       /* Ignore parameter if it is NULL */
     }
@@ -7634,16 +7812,8 @@ process_interim_params (struct MHD_Daemon *d,
     }
     else
     {
-      *ppsockaddr = params->pserver_addr;
-      if (params->server_addr_len_set)
-      {
-        /* The size must be non-zero if set */
-        if (0 == params->server_addr_len)
-          return false;
-        *psockaddr_len = params->server_addr_len;
-      }
-      else
-        *psockaddr_len = 0;
+      *ppsockaddr = first->addr;
+      *psockaddr_len = first->addr_len;  /* 0 == "infer from sa_family" */
     }
   }
   return true;
@@ -7671,6 +7841,388 @@ process_interim_params (struct MHD_Daemon *d,
  * @return NULL on error, handle to daemon on success
  * @ingroup event
  */
+
+
+/**
+ * Create, configure, bind and listen on one listen socket using @a pservaddr
+ * (or a default INADDR_ANY / in6addr_any for the given flags + port when
+ * @a pservaddr is NULL).
+ *
+ * Side effects on @a daemon (preserved from the original inline block):
+ *   - sets @e daemon->port from the sockaddr's port (or 0 for UNIX/unknown)
+ *   - sets @e daemon->listen_is_unix per the sockaddr's family
+ *   - may set @e daemon->fastopen_queue_size to a default when TFO is on
+ * Side effect on @a *pflags: OR'd with MHD_USE_IPv6 when the sockaddr forces it.
+ *
+ * @return the bound, listening fd on success; MHD_INVALID_SOCKET on failure
+ *         (errors are logged when HAVE_MESSAGES). On failure any partially
+ *         created socket is closed before returning.
+ */
+static MHD_socket
+create_one_listen_socket_ (struct MHD_Daemon *daemon,
+                           const enum MHD_FLAG *pflags,
+                           uint16_t port,
+                           const struct sockaddr *pservaddr,
+                           socklen_t addrlen)
+{
+  const MHD_SCKT_OPT_BOOL_ on = 1;
+  struct sockaddr_in servaddr4;
+#ifdef HAVE_INET6
+  struct sockaddr_in6 servaddr6;
+  const bool use_ipv6 = (0 != (*pflags & MHD_USE_IPv6));
+#else  /* ! HAVE_INET6 */
+  const bool use_ipv6 = false;
+#endif /* ! HAVE_INET6 */
+  int domain;
+  MHD_socket sock = MHD_INVALID_SOCKET;
+
+  if (NULL != pservaddr)
+  {
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+    const socklen_t sa_len = pservaddr->sa_len;
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+    switch (pservaddr->sa_family)
+    {
+    case AF_INET:
+      if (1)
+      {
+        struct sockaddr_in sa4;
+        uint16_t sa4_port;
+        if ((0 != addrlen)
+            && (((socklen_t) sizeof(sa4)) > addrlen))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _ ("The size specified for MHD_OPTION_SOCK_ADDR_LEN " \
+                       "option is wrong.\n"));
+#endif /* HAVE_MESSAGES */
+          goto fail;
+        }
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+        if (0 != sa_len)
+        {
+          if (((socklen_t) sizeof(sa4)) > sa_len)
+          {
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (daemon,
+                      _ ("The value of 'struct sockaddr.sa_len' provided " \
+                         "via MHD_OPTION_SOCK_ADDR_LEN option is not zero " \
+                         "and does not match 'sa_family' value of the " \
+                         "same structure.\n"));
+#endif /* HAVE_MESSAGES */
+            goto fail;
+          }
+          if ((0 == addrlen) || (sa_len < addrlen))
+            addrlen = sa_len; /* Use smaller value for safety */
+        }
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+        if (0 == addrlen)
+          addrlen = sizeof(sa4);
+        memcpy (&sa4, pservaddr, sizeof(sa4));
+        sa4_port = (uint16_t) ntohs (sa4.sin_port);
+#ifndef MHD_USE_GETSOCKNAME
+        if (0 != sa4_port)
+#endif /* ! MHD_USE_GETSOCKNAME */
+        daemon->port = sa4_port;
+        domain = PF_INET;
+      }
+      break;
+#ifdef HAVE_INET6
+    case AF_INET6:
+      if (1)
+      {
+        if (! use_ipv6)
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _ ("MHD_USE_IPv6 is disabled, but 'struct sockaddr *' " \
+                       "specified for MHD_OPTION_SOCK_ADDR_LEN or " \
+                       "MHD_OPTION_SOCK_ADDR is IPv6 address.\n"));
+#endif /* HAVE_MESSAGES */
+          goto fail;
+        }
+        struct sockaddr_in6 sa6;
+        uint16_t sa6_port;
+        if ((0 != addrlen)
+            && (((socklen_t) sizeof(sa6)) > addrlen))
+        {
+#ifdef HAVE_MESSAGES
+          MHD_DLOG (daemon,
+                    _ ("The size specified for MHD_OPTION_SOCK_ADDR_LEN " \
+                       "option is wrong.\n"));
+#endif /* HAVE_MESSAGES */
+          goto fail;
+        }
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+        if (0 != sa_len)
+        {
+          if (((socklen_t) sizeof(sa6)) > sa_len)
+          {
+#ifdef HAVE_MESSAGES
+            MHD_DLOG (daemon,
+                      _ ("The value of 'struct sockaddr.sa_len' provided " \
+                         "via MHD_OPTION_SOCK_ADDR_LEN option is not zero " \
+                         "and does not match 'sa_family' value of the " \
+                         "same structure.\n"));
+#endif /* HAVE_MESSAGES */
+            goto fail;
+          }
+          if ((0 == addrlen) || (sa_len < addrlen))
+            addrlen = sa_len; /* Use smaller value for safety */
+        }
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+        if (0 == addrlen)
+          addrlen = sizeof(sa6);
+        memcpy (&sa6, pservaddr, sizeof(sa6));
+        sa6_port = (uint16_t) ntohs (sa6.sin6_port);
+#ifndef MHD_USE_GETSOCKNAME
+        if (0 != sa6_port)
+#endif /* ! MHD_USE_GETSOCKNAME */
+        daemon->port = sa6_port;
+        domain = PF_INET6;
+      }
+      break;
+#endif /* HAVE_INET6 */
+#ifdef AF_UNIX
+    case AF_UNIX:
+#endif /* AF_UNIX */
+    default:
+#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
+      if (0 == addrlen)
+        addrlen = sa_len;
+      else if ((0 != sa_len) && (sa_len < addrlen))
+        addrlen = sa_len; /* Use smaller value for safety */
+#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
+      if (0 >= addrlen)
+      {
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("The 'sa_family' of the 'struct sockaddr' provided " \
+                     "via MHD_OPTION_SOCK_ADDR option is not supported.\n"));
+#endif /* HAVE_MESSAGES */
+        goto fail;
+      }
+#ifdef AF_UNIX
+      if (AF_UNIX == pservaddr->sa_family)
+      {
+        daemon->port = 0;
+        daemon->listen_is_unix = _MHD_YES;
+#ifdef PF_UNIX
+        domain = PF_UNIX;
+#else /* ! PF_UNIX */
+        domain = AF_UNIX;
+#endif /* ! PF_UNIX */
+      }
+      else /* combined with next 'if' */
+#endif /* AF_UNIX */
+      if (1)
+      {
+        daemon->port = 0;
+        daemon->listen_is_unix = _MHD_UNKNOWN;
+        domain = pservaddr->sa_family;
+      }
+      break;
+    }
+  }
+  else
+  {
+    if (! use_ipv6)
+    {
+      memset (&servaddr4, 0, sizeof (struct sockaddr_in));
+      servaddr4.sin_family = AF_INET;
+      servaddr4.sin_port = htons (port);
+      if (0 != INADDR_ANY)
+        servaddr4.sin_addr.s_addr = htonl (INADDR_ANY);
+#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
+      servaddr4.sin_len = sizeof (struct sockaddr_in);
+#endif
+      pservaddr = (struct sockaddr *) &servaddr4;
+      addrlen = (socklen_t) sizeof(servaddr4);
+      daemon->listen_is_unix = _MHD_NO;
+      domain = PF_INET;
+    }
+#ifdef HAVE_INET6
+    else
+    {
+#ifdef IN6ADDR_ANY_INIT
+      static const struct in6_addr static_in6any = IN6ADDR_ANY_INIT;
+#endif
+      memset (&servaddr6, 0, sizeof (struct sockaddr_in6));
+      servaddr6.sin6_family = AF_INET6;
+      servaddr6.sin6_port = htons (port);
+#ifdef IN6ADDR_ANY_INIT
+      servaddr6.sin6_addr = static_in6any;
+#endif
+#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
+      servaddr6.sin6_len = sizeof (struct sockaddr_in6);
+#endif
+      pservaddr = (struct sockaddr *) &servaddr6;
+      addrlen = (socklen_t) sizeof (servaddr6);
+      daemon->listen_is_unix = _MHD_NO;
+      domain = PF_INET6;
+    }
+#endif /* HAVE_INET6 */
+  }
+
+  sock = MHD_socket_create_listen_ (domain);
+  if (MHD_INVALID_SOCKET == sock)
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Failed to create socket for listening: %s\n"),
+              MHD_socket_last_strerr_ ());
+#endif
+    goto fail;
+  }
+  if (MHD_D_IS_USING_SELECT_ (daemon) &&
+      (! MHD_D_DOES_SCKT_FIT_FDSET_ (sock, daemon)) )
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Listen socket descriptor (%d) is not " \
+                 "less than daemon FD_SETSIZE value (%d).\n"),
+              (int) sock,
+              (int) MHD_D_GET_FD_SETSIZE_ (daemon));
+#endif
+    goto fail;
+  }
+
+  if (0 == daemon->listening_address_reuse)
+  {
+#ifndef MHD_WINSOCK_SOCKETS
+    if (0 > setsockopt (sock, SOL_SOCKET, SO_REUSEADDR,
+                        (const void *) &on, sizeof (on)))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon, _ ("setsockopt failed: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif
+    }
+#endif /* ! MHD_WINSOCK_SOCKETS */
+  }
+  else if (daemon->listening_address_reuse > 0)
+  {
+#ifndef MHD_WINSOCK_SOCKETS
+    if (0 > setsockopt (sock, SOL_SOCKET, SO_REUSEADDR,
+                        (const void *) &on, sizeof (on)))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon, _ ("setsockopt failed: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif
+    }
+#endif /* ! MHD_WINSOCK_SOCKETS */
+#if defined(MHD_WINSOCK_SOCKETS) || defined(SO_REUSEPORT)
+    if (0 > setsockopt (sock, SOL_SOCKET,
+#ifndef MHD_WINSOCK_SOCKETS
+                        SO_REUSEPORT,
+#else  /* MHD_WINSOCK_SOCKETS */
+                        SO_REUSEADDR,
+#endif /* MHD_WINSOCK_SOCKETS */
+                        (const void *) &on, sizeof (on)))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon, _ ("setsockopt failed: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif
+      goto fail;
+    }
+#else  /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon, _ ("Cannot allow listening address reuse: " \
+                         "SO_REUSEPORT not defined.\n"));
+#endif
+    goto fail;
+#endif /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
+  }
+  else  /* listening_address_reuse < 0 */
+  {
+#if (defined(MHD_WINSOCK_SOCKETS) && defined(SO_EXCLUSIVEADDRUSE)) || \
+    (defined(__sun) && defined(SO_EXCLBIND))
+    if (0 > setsockopt (sock, SOL_SOCKET,
+#ifdef SO_EXCLUSIVEADDRUSE
+                        SO_EXCLUSIVEADDRUSE,
+#else  /* SO_EXCLBIND */
+                        SO_EXCLBIND,
+#endif /* SO_EXCLBIND */
+                        (const void *) &on, sizeof (on)))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon, _ ("setsockopt failed: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif
+      goto fail;
+    }
+#elif defined(MHD_WINSOCK_SOCKETS)
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon, _ ("Cannot disallow listening address reuse: " \
+                         "SO_EXCLUSIVEADDRUSE not defined.\n"));
+#endif
+    goto fail;
+#endif /* MHD_WINSOCK_SOCKETS */
+  }
+
+  if (use_ipv6 && (pservaddr != NULL) && (pservaddr->sa_family == AF_INET6))
+  {
+#ifdef IPPROTO_IPV6
+#ifdef IPV6_V6ONLY
+    const MHD_SCKT_OPT_BOOL_ v6_only =
+      (MHD_USE_DUAL_STACK != (*pflags & MHD_USE_DUAL_STACK));
+    if (0 > setsockopt (sock, IPPROTO_IPV6, IPV6_V6ONLY,
+                        (const void *) &v6_only, sizeof (v6_only)))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon, _ ("setsockopt failed: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif
+    }
+#endif
+#endif
+  }
+
+  if (0 != bind (sock, pservaddr, addrlen))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Failed to bind to port %u: %s\n"),
+              (unsigned int) port, MHD_socket_last_strerr_ ());
+#endif
+    goto fail;
+  }
+#ifdef TCP_FASTOPEN
+  if (0 != (*pflags & MHD_USE_TCP_FASTOPEN))
+  {
+    if (0 == daemon->fastopen_queue_size)
+      daemon->fastopen_queue_size = MHD_TCP_FASTOPEN_QUEUE_SIZE_DEFAULT;
+    if (0 != setsockopt (sock, IPPROTO_TCP, TCP_FASTOPEN,
+                         (const void *) &daemon->fastopen_queue_size,
+                         sizeof (daemon->fastopen_queue_size)))
+    {
+#ifdef HAVE_MESSAGES
+      MHD_DLOG (daemon, _ ("setsockopt failed: %s\n"),
+                MHD_socket_last_strerr_ ());
+#endif
+    }
+  }
+#endif
+  if (0 != listen (sock, (int) daemon->listen_backlog_size))
+  {
+#ifdef HAVE_MESSAGES
+    MHD_DLOG (daemon,
+              _ ("Failed to listen for connections: %s\n"),
+              MHD_socket_last_strerr_ ());
+#endif
+    goto fail;
+  }
+  return sock;
+
+fail:
+  if (MHD_INVALID_SOCKET != sock)
+    (void) MHD_socket_close_ (sock);
+  return MHD_INVALID_SOCKET;
+}
+
+
 _MHD_EXTERN struct MHD_Daemon *
 MHD_start_daemon_va (unsigned int flags,
                      uint16_t port,
@@ -7802,7 +8354,7 @@ MHD_start_daemon_va (unsigned int flags,
 #ifdef HTTPS_SUPPORT
   daemon->priority_cache = NULL;
 #endif /* HTTPS_SUPPORT */
-  daemon->listen_fd = MHD_INVALID_SOCKET;
+  mhd_daemon_set_single_listen_fd_ (daemon, MHD_INVALID_SOCKET);
   daemon->listen_is_unix = _MHD_NO;
   daemon->listening_address_reuse = 0;
   daemon->options = *pflags;
@@ -7866,10 +8418,8 @@ MHD_start_daemon_va (unsigned int flags,
   interim_params->fdset_size = 0;
   interim_params->listen_fd_set = false;
   interim_params->listen_fd = MHD_INVALID_SOCKET;
-  interim_params->pserver_addr_set = false;
-  interim_params->pserver_addr = NULL;
-  interim_params->server_addr_len_set = false;
-  interim_params->server_addr_len = 0;
+  interim_params->num_pserver_addrs = 0;
+  /* pserver_addrs[] left zeroed by the earlier MHD_calloc_ */
 
   if (MHD_NO == parse_options_va (daemon,
                                   interim_params,
@@ -7893,8 +8443,9 @@ MHD_start_daemon_va (unsigned int flags,
     free (daemon);
     return NULL;
   }
-  free (interim_params);
-  interim_params = NULL;
+  /* Note: @e interim_params is freed below, after the listen-socket
+     bind loop has read @e pserver_addrs[]. Any @c goto free_and_fail
+     between here and that free will free @e interim_params there. */
 #ifdef HTTPS_SUPPORT
   if ((0 != (*pflags & MHD_USE_TLS))
       && (NULL == daemon->priority_cache)
@@ -8063,411 +8614,42 @@ MHD_start_daemon_va (unsigned int flags,
   if ( (MHD_INVALID_SOCKET == daemon->listen_fd) &&
        (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET)) )
   {
-    /* try to open listen socket */
-    struct sockaddr_in servaddr4;
-#ifdef HAVE_INET6
-    struct sockaddr_in6 servaddr6;
-    const bool use_ipv6 = (0 != (*pflags & MHD_USE_IPv6));
-#else  /* ! HAVE_INET6 */
-    const bool use_ipv6 = false;
-#endif /* ! HAVE_INET6 */
-    int domain;
+    const size_t n_addrs = interim_params->num_pserver_addrs;
+    size_t i;
 
-    if (NULL != pservaddr)
+    if (0 == n_addrs)
     {
-#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-      const socklen_t sa_len = pservaddr->sa_len;
-#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
-#ifdef HAVE_INET6
-      if (use_ipv6 && (AF_INET6 != pservaddr->sa_family))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("MHD_USE_IPv6 is enabled, but 'struct sockaddr *' " \
-                     "specified for MHD_OPTION_SOCK_ADDR_LEN or " \
-                     "MHD_OPTION_SOCK_ADDR is not IPv6 address.\n"));
-#endif /* HAVE_MESSAGES */
+      /* No sockaddr supplied: bind a single default listen socket using
+         INADDR_ANY / in6addr_any and the @e port argument. */
+      const MHD_socket sock =
+        create_one_listen_socket_ (daemon, pflags, port, NULL, 0);
+      if (MHD_INVALID_SOCKET == sock)
         goto free_and_fail;
-      }
-#endif /* HAVE_INET6 */
-      switch (pservaddr->sa_family)
-      {
-      case AF_INET:
-        if (1)
-        {
-          struct sockaddr_in sa4;
-          uint16_t sa4_port;
-          if ((0 != addrlen)
-              && (((socklen_t) sizeof(sa4)) > addrlen))
-          {
-#ifdef HAVE_MESSAGES
-            MHD_DLOG (daemon,
-                      _ ("The size specified for MHD_OPTION_SOCK_ADDR_LEN " \
-                         "option is wrong.\n"));
-#endif /* HAVE_MESSAGES */
-            goto free_and_fail;
-          }
-#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-          if (0 != sa_len)
-          {
-            if (((socklen_t) sizeof(sa4)) > sa_len)
-            {
-#ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _ ("The value of 'struct sockaddr.sa_len' provided " \
-                           "via MHD_OPTION_SOCK_ADDR_LEN option is not zero " \
-                           "and does not match 'sa_family' value of the " \
-                           "same structure.\n"));
-#endif /* HAVE_MESSAGES */
-              goto free_and_fail;
-            }
-            if ((0 == addrlen) || (sa_len < addrlen))
-              addrlen = sa_len; /* Use smaller value for safety */
-          }
-#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
-          if (0 == addrlen)
-            addrlen = sizeof(sa4);
-          memcpy (&sa4, pservaddr, sizeof(sa4));  /* Required due to stronger alignment */
-          sa4_port = (uint16_t) ntohs (sa4.sin_port);
-#ifndef MHD_USE_GETSOCKNAME
-          if (0 != sa4_port)
-#endif /* ! MHD_USE_GETSOCKNAME */
-          daemon->port = sa4_port;
-          domain = PF_INET;
-        }
-        break;
-#ifdef HAVE_INET6
-      case AF_INET6:
-        if (1)
-        {
-          struct sockaddr_in6 sa6;
-          uint16_t sa6_port;
-          if ((0 != addrlen)
-              && (((socklen_t) sizeof(sa6)) > addrlen))
-          {
-#ifdef HAVE_MESSAGES
-            MHD_DLOG (daemon,
-                      _ ("The size specified for MHD_OPTION_SOCK_ADDR_LEN " \
-                         "option is wrong.\n"));
-#endif /* HAVE_MESSAGES */
-            goto free_and_fail;
-          }
-#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-          if (0 != sa_len)
-          {
-            if (((socklen_t) sizeof(sa6)) > sa_len)
-            {
-#ifdef HAVE_MESSAGES
-              MHD_DLOG (daemon,
-                        _ ("The value of 'struct sockaddr.sa_len' provided " \
-                           "via MHD_OPTION_SOCK_ADDR_LEN option is not zero " \
-                           "and does not match 'sa_family' value of the " \
-                           "same structure.\n"));
-#endif /* HAVE_MESSAGES */
-              goto free_and_fail;
-            }
-            if ((0 == addrlen) || (sa_len < addrlen))
-              addrlen = sa_len; /* Use smaller value for safety */
-          }
-#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
-          if (0 == addrlen)
-            addrlen = sizeof(sa6);
-          memcpy (&sa6, pservaddr, sizeof(sa6));  /* Required due to stronger alignment */
-          sa6_port = (uint16_t) ntohs (sa6.sin6_port);
-#ifndef MHD_USE_GETSOCKNAME
-          if (0 != sa6_port)
-#endif /* ! MHD_USE_GETSOCKNAME */
-          daemon->port = sa6_port;
-          domain = PF_INET6;
-          *pflags |= ((enum MHD_FLAG) MHD_USE_IPv6);
-        }
-        break;
-#endif /* HAVE_INET6 */
-#ifdef AF_UNIX
-      case AF_UNIX:
-#endif /* AF_UNIX */
-      default:
-#ifdef HAVE_STRUCT_SOCKADDR_SA_LEN
-        if (0 == addrlen)
-          addrlen = sa_len;
-        else if ((0 != sa_len) && (sa_len < addrlen))
-          addrlen = sa_len; /* Use smaller value for safety */
-#endif /* HAVE_STRUCT_SOCKADDR_SA_LEN */
-        if (0 >= addrlen)
-        {
-#ifdef HAVE_MESSAGES
-          MHD_DLOG (daemon,
-                    _ ("The 'sa_family' of the 'struct sockaddr' provided " \
-                       "via MHD_OPTION_SOCK_ADDR option is not supported.\n"));
-#endif /* HAVE_MESSAGES */
-          goto free_and_fail;
-        }
-#ifdef AF_UNIX
-        if (AF_UNIX == pservaddr->sa_family)
-        {
-          daemon->port = 0;     /* special value for UNIX domain sockets */
-          daemon->listen_is_unix = _MHD_YES;
-#ifdef PF_UNIX
-          domain = PF_UNIX;
-#else /* ! PF_UNIX */
-          domain = AF_UNIX;
-#endif /* ! PF_UNIX */
-        }
-        else /* combined with the next 'if' */
-#endif /* AF_UNIX */
-        if (1)
-        {
-          daemon->port = 0;     /* ugh */
-          daemon->listen_is_unix = _MHD_UNKNOWN;
-          /* Assumed the same values for AF_* and PF_* */
-          domain = pservaddr->sa_family;
-        }
-        break;
-      }
+      daemon->listen_fds[0] = sock;
+      daemon->num_listen_fds = 1;
+      daemon->listen_fd = sock;
     }
     else
     {
-      if (! use_ipv6)
+      for (i = 0; i < n_addrs; ++i)
       {
-        memset (&servaddr4,
-                0,
-                sizeof (struct sockaddr_in));
-        servaddr4.sin_family = AF_INET;
-        servaddr4.sin_port = htons (port);
-        if (0 != INADDR_ANY)
-          servaddr4.sin_addr.s_addr = htonl (INADDR_ANY);
-#ifdef HAVE_STRUCT_SOCKADDR_IN_SIN_LEN
-        servaddr4.sin_len = sizeof (struct sockaddr_in);
-#endif
-        pservaddr = (struct sockaddr *) &servaddr4;
-        addrlen = (socklen_t) sizeof(servaddr4);
-        daemon->listen_is_unix = _MHD_NO;
-        domain = PF_INET;
+        const MHD_socket sock = create_one_listen_socket_ (
+          daemon, pflags, port,
+          interim_params->pserver_addrs[i].addr,
+          interim_params->pserver_addrs[i].addr_len);
+        if (MHD_INVALID_SOCKET == sock)
+        {
+          /* close any previously created listen sockets */
+          size_t j;
+          for (j = 0; j < daemon->num_listen_fds; ++j)
+            (void) MHD_socket_close_ (daemon->listen_fds[j]);
+          daemon->num_listen_fds = 0;
+          daemon->listen_fd = MHD_INVALID_SOCKET;
+          goto free_and_fail;
+        }
+        daemon->listen_fds[daemon->num_listen_fds++] = sock;
       }
-#ifdef HAVE_INET6
-      else
-      {
-#ifdef IN6ADDR_ANY_INIT
-        static const struct in6_addr static_in6any = IN6ADDR_ANY_INIT;
-#endif
-        memset (&servaddr6,
-                0,
-                sizeof (struct sockaddr_in6));
-        servaddr6.sin6_family = AF_INET6;
-        servaddr6.sin6_port = htons (port);
-#ifdef IN6ADDR_ANY_INIT
-        servaddr6.sin6_addr = static_in6any;
-#endif
-#ifdef HAVE_STRUCT_SOCKADDR_IN6_SIN6_LEN
-        servaddr6.sin6_len = sizeof (struct sockaddr_in6);
-#endif
-        pservaddr = (struct sockaddr *) &servaddr6;
-        addrlen = (socklen_t) sizeof (servaddr6);
-        daemon->listen_is_unix = _MHD_NO;
-        domain = PF_INET6;
-      }
-#endif /* HAVE_INET6 */
-    }
-
-    daemon->listen_fd = MHD_socket_create_listen_ (domain);
-    if (MHD_INVALID_SOCKET == daemon->listen_fd)
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Failed to create socket for listening: %s\n"),
-                MHD_socket_last_strerr_ ());
-#endif
-      goto free_and_fail;
-    }
-    if (MHD_D_IS_USING_SELECT_ (daemon) &&
-        (! MHD_D_DOES_SCKT_FIT_FDSET_ (daemon->listen_fd,
-                                       daemon)) )
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Listen socket descriptor (%d) is not " \
-                   "less than daemon FD_SETSIZE value (%d).\n"),
-                (int) daemon->listen_fd,
-                (int) MHD_D_GET_FD_SETSIZE_ (daemon));
-#endif
-      goto free_and_fail;
-    }
-
-    /* Apply the socket options according to listening_address_reuse. */
-    if (0 == daemon->listening_address_reuse)
-    {
-#ifndef MHD_WINSOCK_SOCKETS
-      /* No user requirement, use "traditional" default SO_REUSEADDR
-       * on non-W32 platforms, and do not fail if it doesn't work.
-       * Don't use it on W32, because on W32 it will allow multiple
-       * bind to the same address:port, like SO_REUSEPORT on others. */
-      if (0 > setsockopt (daemon->listen_fd,
-                          SOL_SOCKET,
-                          SO_REUSEADDR,
-                          (const void *) &on, sizeof (on)))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("setsockopt failed: %s\n"),
-                  MHD_socket_last_strerr_ ());
-#endif
-      }
-#endif /* ! MHD_WINSOCK_SOCKETS */
-    }
-    else if (daemon->listening_address_reuse > 0)
-    {
-      /* User requested to allow reusing listening address:port. */
-#ifndef MHD_WINSOCK_SOCKETS
-      /* Use SO_REUSEADDR on non-W32 platforms, and do not fail if
-       * it doesn't work. */
-      if (0 > setsockopt (daemon->listen_fd,
-                          SOL_SOCKET,
-                          SO_REUSEADDR,
-                          (const void *) &on, sizeof (on)))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("setsockopt failed: %s\n"),
-                  MHD_socket_last_strerr_ ());
-#endif
-      }
-#endif /* ! MHD_WINSOCK_SOCKETS */
-      /* Use SO_REUSEADDR on Windows and SO_REUSEPORT on most platforms.
-       * Fail if SO_REUSEPORT is not defined or setsockopt fails.
-       */
-      /* SO_REUSEADDR on W32 has the same semantics
-         as SO_REUSEPORT on BSD/Linux */
-#if defined(MHD_WINSOCK_SOCKETS) || defined(SO_REUSEPORT)
-      if (0 > setsockopt (daemon->listen_fd,
-                          SOL_SOCKET,
-#ifndef MHD_WINSOCK_SOCKETS
-                          SO_REUSEPORT,
-#else  /* MHD_WINSOCK_SOCKETS */
-                          SO_REUSEADDR,
-#endif /* MHD_WINSOCK_SOCKETS */
-                          (const void *) &on,
-                          sizeof (on)))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("setsockopt failed: %s\n"),
-                  MHD_socket_last_strerr_ ());
-#endif
-        goto free_and_fail;
-      }
-#else  /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
-      /* we're supposed to allow address:port re-use, but
-         on this platform we cannot; fail hard */
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Cannot allow listening address reuse: " \
-                   "SO_REUSEPORT not defined.\n"));
-#endif
-      goto free_and_fail;
-#endif /* !MHD_WINSOCK_SOCKETS && !SO_REUSEPORT */
-    }
-    else   /* if (daemon->listening_address_reuse < 0) */
-    {
-      /* User requested to disallow reusing listening address:port.
-       * Do nothing except for Windows where SO_EXCLUSIVEADDRUSE
-       * is used and Solaris with SO_EXCLBIND.
-       * Fail if MHD was compiled for W32 without SO_EXCLUSIVEADDRUSE
-       * or setsockopt fails.
-       */
-#if (defined(MHD_WINSOCK_SOCKETS) && defined(SO_EXCLUSIVEADDRUSE)) || \
-      (defined(__sun) && defined(SO_EXCLBIND))
-      if (0 > setsockopt (daemon->listen_fd,
-                          SOL_SOCKET,
-#ifdef SO_EXCLUSIVEADDRUSE
-                          SO_EXCLUSIVEADDRUSE,
-#else  /* SO_EXCLBIND */
-                          SO_EXCLBIND,
-#endif /* SO_EXCLBIND */
-                          (const void *) &on,
-                          sizeof (on)))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("setsockopt failed: %s\n"),
-                  MHD_socket_last_strerr_ ());
-#endif
-        goto free_and_fail;
-      }
-#elif defined(MHD_WINSOCK_SOCKETS) /* SO_EXCLUSIVEADDRUSE not defined on W32? */
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Cannot disallow listening address reuse: " \
-                   "SO_EXCLUSIVEADDRUSE not defined.\n"));
-#endif
-      goto free_and_fail;
-#endif /* MHD_WINSOCK_SOCKETS */
-    }
-
-    /* check for user supplied sockaddr */
-    if (0 != (*pflags & MHD_USE_IPv6))
-    {
-#ifdef IPPROTO_IPV6
-#ifdef IPV6_V6ONLY
-      /* Note: "IPV6_V6ONLY" is declared by Windows Vista ff., see "IPPROTO_IPV6 Socket Options"
-         (http://msdn.microsoft.com/en-us/library/ms738574%28v=VS.85%29.aspx);
-         and may also be missing on older POSIX systems; good luck if you have any of those,
-         your IPv6 socket may then also bind against IPv4 anyway... */
-      const MHD_SCKT_OPT_BOOL_ v6_only =
-        (MHD_USE_DUAL_STACK != (*pflags & MHD_USE_DUAL_STACK));
-      if (0 > setsockopt (daemon->listen_fd,
-                          IPPROTO_IPV6, IPV6_V6ONLY,
-                          (const void *) &v6_only,
-                          sizeof (v6_only)))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("setsockopt failed: %s\n"),
-                  MHD_socket_last_strerr_ ());
-#endif
-      }
-#endif
-#endif
-    }
-    if (0 != bind (daemon->listen_fd,
-                   pservaddr,
-                   addrlen))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Failed to bind to port %u: %s\n"),
-                (unsigned int) port,
-                MHD_socket_last_strerr_ ());
-#endif
-      goto free_and_fail;
-    }
-#ifdef TCP_FASTOPEN
-    if (0 != (*pflags & MHD_USE_TCP_FASTOPEN))
-    {
-      if (0 == daemon->fastopen_queue_size)
-        daemon->fastopen_queue_size = MHD_TCP_FASTOPEN_QUEUE_SIZE_DEFAULT;
-      if (0 != setsockopt (daemon->listen_fd,
-                           IPPROTO_TCP,
-                           TCP_FASTOPEN,
-                           (const void *) &daemon->fastopen_queue_size,
-                           sizeof (daemon->fastopen_queue_size)))
-      {
-#ifdef HAVE_MESSAGES
-        MHD_DLOG (daemon,
-                  _ ("setsockopt failed: %s\n"),
-                  MHD_socket_last_strerr_ ());
-#endif
-      }
-    }
-#endif
-    if (0 != listen (daemon->listen_fd,
-                     (int) daemon->listen_backlog_size))
-    {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Failed to listen for connections: %s\n"),
-                MHD_socket_last_strerr_ ());
-#endif
-      goto free_and_fail;
+      daemon->listen_fd = daemon->listen_fds[0];
     }
   }
   else
@@ -8544,6 +8726,12 @@ MHD_start_daemon_va (unsigned int flags,
     daemon->port = 0;  /* Force use of autodetection */
 #endif /* MHD_USE_GETSOCKNAME */
   }
+
+  /* Listen sockets are now bound; @e interim_params is no longer needed.
+     If any later goto free_and_fail fires, the label-side cleanup is a
+     no-op for @e interim_params because we set it to NULL here. */
+  free (interim_params);
+  interim_params = NULL;
 
 #ifdef MHD_USE_GETSOCKNAME
   if ( (0 == daemon->port) &&
@@ -8632,31 +8820,39 @@ MHD_start_daemon_va (unsigned int flags,
   }
 #endif /* MHD_USE_GETSOCKNAME */
 
-  if (MHD_INVALID_SOCKET != daemon->listen_fd)
+  if (0 != daemon->num_listen_fds)
   {
+    size_t li;
+    bool all_nonblk = true;
     mhd_assert (0 == (*pflags & MHD_USE_NO_LISTEN_SOCKET));
-    if (! MHD_socket_nonblocking_ (daemon->listen_fd))
+    for (li = 0; li < daemon->num_listen_fds; ++li)
     {
-#ifdef HAVE_MESSAGES
-      MHD_DLOG (daemon,
-                _ ("Failed to set nonblocking mode on listening socket: %s\n"),
-                MHD_socket_last_strerr_ ());
-#endif
-      if (MHD_D_IS_USING_EPOLL_ (daemon)
-#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
-          || (daemon->worker_pool_size > 0)
-#endif
-          )
+      const MHD_socket lfd = daemon->listen_fds[li];
+      if (MHD_INVALID_SOCKET == lfd)
+        continue;
+      if (! MHD_socket_nonblocking_ (lfd))
       {
-        /* Accept must be non-blocking. Multiple children may wake up
-         * to handle a new connection, but only one will win the race.
-         * The others must immediately return. */
-        goto free_and_fail;
+#ifdef HAVE_MESSAGES
+        MHD_DLOG (daemon,
+                  _ ("Failed to set nonblocking mode on listening "
+                     "socket: %s\n"),
+                  MHD_socket_last_strerr_ ());
+#endif
+        if (MHD_D_IS_USING_EPOLL_ (daemon)
+#if defined(MHD_USE_POSIX_THREADS) || defined(MHD_USE_W32_THREADS)
+            || (daemon->worker_pool_size > 0)
+#endif
+            )
+        {
+          /* Accept must be non-blocking. Multiple children may wake up
+           * to handle a new connection, but only one will win the race.
+           * The others must immediately return. */
+          goto free_and_fail;
+        }
+        all_nonblk = false;
       }
-      daemon->listen_nonblk = false;
     }
-    else
-      daemon->listen_nonblk = true;
+    daemon->listen_nonblk = all_nonblk;
   }
   else
   {
@@ -8981,6 +9177,11 @@ thread_failed:
 free_and_fail:
   /* clean up basic memory state in 'daemon' and return NULL to
      indicate failure */
+  if (NULL != interim_params)
+  {
+    free (interim_params);
+    interim_params = NULL;
+  }
 #ifdef EPOLL_SUPPORT
 #if defined(HTTPS_SUPPORT) && defined(UPGRADE_SUPPORT)
   if (daemon->upgrade_fd_in_epoll)
@@ -9019,8 +9220,14 @@ free_and_fail:
 #endif /* HTTPS_SUPPORT */
   if (MHD_ITC_IS_VALID_ (daemon->itc))
     MHD_itc_destroy_chk_ (daemon->itc);
-  if (MHD_INVALID_SOCKET != daemon->listen_fd)
-    (void) MHD_socket_close_ (daemon->listen_fd);
+  {
+    size_t i;
+    for (i = 0; i < daemon->num_listen_fds; ++i)
+    {
+      if (MHD_INVALID_SOCKET != daemon->listen_fds[i])
+        (void) MHD_socket_close_ (daemon->listen_fds[i]);
+    }
+  }
   free (daemon);
   return NULL;
 }
@@ -9296,10 +9503,15 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
         mhd_assert (MHD_INVALID_SOCKET != fd);
     }
 #ifdef HAVE_LISTEN_SHUTDOWN
-    if (MHD_INVALID_SOCKET != fd)
+    if ( (MHD_INVALID_SOCKET != fd) && (! daemon->was_quiesced) )
     {
-      (void) shutdown (fd,
-                       SHUT_RDWR);
+      size_t li;
+      for (li = 0; li < daemon->num_listen_fds; ++li)
+      {
+        const MHD_socket lfd = daemon->listen_fds[li];
+        if (MHD_INVALID_SOCKET != lfd)
+          (void) shutdown (lfd, SHUT_RDWR);
+      }
     }
 #endif /* HAVE_LISTEN_SHUTDOWN */
     for (i = 0; i < daemon->worker_pool_size; ++i)
@@ -9333,11 +9545,18 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
       else
       {
 #ifdef HAVE_LISTEN_SHUTDOWN
-        if (MHD_INVALID_SOCKET != fd)
+        if ( (MHD_INVALID_SOCKET != fd) && (! daemon->was_quiesced) )
         {
           if (NULL == daemon->master)
-            (void) shutdown (fd,
-                             SHUT_RDWR);
+          {
+            size_t li;
+            for (li = 0; li < daemon->num_listen_fds; ++li)
+            {
+              const MHD_socket lfd = daemon->listen_fds[li];
+              if (MHD_INVALID_SOCKET != lfd)
+                (void) shutdown (lfd, SHUT_RDWR);
+            }
+          }
         }
         else
 #endif /* HAVE_LISTEN_SHUTDOWN */
@@ -9388,8 +9607,19 @@ MHD_stop_daemon (struct MHD_Daemon *daemon)
   {   /* Cleanup that should be done only one time in master/single daemon.
        * Do not perform this cleanup in worker daemons. */
 
-    if (MHD_INVALID_SOCKET != fd)
-      MHD_socket_close_chk_ (fd);
+    /* Close every listen socket we own. If the daemon was quiesced the
+       caller took ownership of the listen socket(s), so we leave them
+       alone (the local @e fd above is already MHD_INVALID_SOCKET in
+       that case, mirroring the historical single-socket behaviour). */
+    if (! daemon->was_quiesced)
+    {
+      size_t li;
+      for (li = 0; li < daemon->num_listen_fds; ++li)
+      {
+        if (MHD_INVALID_SOCKET != daemon->listen_fds[li])
+          MHD_socket_close_chk_ (daemon->listen_fds[li]);
+      }
+    }
 
     /* TLS clean up */
 #ifdef HTTPS_SUPPORT

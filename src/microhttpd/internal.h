@@ -141,6 +141,13 @@
  */
 #define MHD_BUF_INC_SIZE 1500
 
+/**
+ * Maximum number of MHD_OPTION_SOCK_ADDR / MHD_OPTION_SOCK_ADDR_LEN
+ * entries (and corresponding listen sockets) that a single daemon
+ * may own.
+ */
+#define MHD_MAX_LISTEN_SOCKETS_ 8
+
 #ifndef MHD_STATICSTR_LEN_
 /**
  * Determine length of static string / macro strings at compile time.
@@ -2104,12 +2111,31 @@ struct MHD_Daemon
   struct MHD_Daemon *master;
 
   /**
-   * Listen socket.
+   * Listen socket. For backward compatibility this remains a single
+   * MHD_socket: it always equals @e listen_fds[0] when at least one
+   * listen socket exists, and is referenced by the event-loop /
+   * accept paths until they are migrated to iterate @e listen_fds.
    *
    * @remark Keep this member after pointer value to keep it
    * properly aligned as it will be used as member of union MHD_DaemonInfo.
    */
   MHD_socket listen_fd;
+
+  /**
+   * All listen sockets owned by this daemon. The first @e num_listen_fds
+   * entries are valid; the rest are MHD_INVALID_SOCKET.
+   *
+   * Today @e num_listen_fds is always 0 (no listen socket) or 1, and
+   * @e listen_fds[0] equals @e listen_fd. The array exists so the bind
+   * path and the event-loop paths can later be migrated to multiple
+   * listen sockets per daemon without further struct churn.
+   */
+  MHD_socket listen_fds[MHD_MAX_LISTEN_SOCKETS_];
+
+  /**
+   * Number of valid entries in @e listen_fds.
+   */
+  size_t num_listen_fds;
 
   /**
    * Listen socket is non-blocking.
